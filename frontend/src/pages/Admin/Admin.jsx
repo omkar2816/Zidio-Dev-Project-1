@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
-import { Users, Trash2, AlertTriangle } from 'lucide-react';
+import { Users, Trash2, AlertTriangle, Shield, UserCog } from 'lucide-react';
 import toast from 'react-hot-toast';
+import AdminRequests from '../../components/Admin/AdminRequests';
 
 const Admin = () => {
   const { user, token } = useSelector((state) => state.auth);
@@ -11,6 +12,10 @@ const Admin = () => {
   const [error, setError] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [activeTab, setActiveTab] = useState('users');
+
+  // Check if user is superadmin
+  const isSuperAdmin = user?.role === 'superadmin';
 
   const fetchUsers = async () => {
     try {
@@ -66,21 +71,63 @@ const Admin = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Admin Panel
+            {isSuperAdmin ? 'Super Admin Panel' : 'Admin Panel'}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Manage users, monitor system, and configure settings
+            {isSuperAdmin 
+              ? 'Full system access: Manage all users, approve admin requests, and system configuration' 
+              : 'User management access: Manage regular users (cannot manage other admins)'
+            }
           </p>
         </div>
         <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full">
+            <Shield className="w-4 h-4 text-blue-600" />
+            <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+              {isSuperAdmin ? 'Super Admin' : 'Admin'}
+            </span>
+          </div>
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            Logged in as: {user?.firstName} {user?.lastName}
+            {user?.firstName} {user?.lastName}
           </span>
         </div>
       </div>
 
-      {/* Real stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Tabs - Only show for superadmin */}
+      {isSuperAdmin && (
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'users'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              <Users className="w-5 h-5 inline mr-2" />
+              User Management
+            </button>
+            <button
+              onClick={() => setActiveTab('requests')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'requests'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              <UserCog className="w-5 h-5 inline mr-2" />
+              Admin Requests
+            </button>
+          </nav>
+        </div>
+      )}
+
+      {/* Tab Content */}
+      {(activeTab === 'users' || !isSuperAdmin) && (
+        <>
+          {/* Role-based stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
@@ -92,19 +139,62 @@ const Admin = () => {
             </div>
           </div>
         </div>
+        
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Files Processed</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">No data available</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Regular Users</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                {users.filter(u => u.role === 'user').length}
+              </p>
+            </div>
+            <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/20">
+              <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
         </div>
+        
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Sessions</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">No data available</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Admins</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                {users.filter(u => u.role === 'admin').length}
+              </p>
+            </div>
+            <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-900/20">
+              <UserCog className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            </div>
+          </div>
         </div>
+        
+        {isSuperAdmin && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Super Admins</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                  {users.filter(u => u.role === 'superadmin').length}
+                </p>
+              </div>
+              <div className="p-3 rounded-lg bg-red-100 dark:bg-red-900/20">
+                <Shield className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Users table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Users</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Users</h3>
+          {!isSuperAdmin && (
+            <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
+              Regular Admin View: Admins and Super Admins are hidden
+            </div>
+          )}
+        </div>
         {isLoading ? (
           <div className="flex items-center justify-center py-10">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
@@ -131,8 +221,18 @@ const Admin = () => {
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{u.firstName} {u.lastName}</td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{u.email}</td>
                     <td className="px-4 py-2 whitespace-nowrap">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>
-                        {u.role}
+                      <span className={`px-2 py-1 rounded text-xs font-medium flex items-center space-x-1 ${
+                        u.role === 'superadmin' 
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300' 
+                          : u.role === 'admin' 
+                          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300' 
+                          : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                      }`}>
+                        {u.role === 'superadmin' && <Shield className="w-3 h-3" />}
+                        {u.role === 'admin' && <UserCog className="w-3 h-3" />}
+                        <span className="capitalize">
+                          {u.role === 'superadmin' ? 'Super Admin' : u.role}
+                        </span>
                       </span>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
@@ -143,16 +243,44 @@ const Admin = () => {
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '—'}</td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{u.createdAt ? new Date(u.createdAt).toLocaleString() : '—'}</td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                      {/* Only show delete button for non-admin users and not for the current user */}
-                      {u.role !== 'admin' && u._id !== user._id && (
-                        <button
-                          onClick={() => confirmDelete(u)}
-                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                          title="Delete user"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
+                      {/* Delete button logic based on role hierarchy */}
+                      {(() => {
+                        // Cannot delete yourself
+                        if (u._id === user._id) return null;
+                        
+                        // Superadmin can delete admins and users, but not other superadmins
+                        if (isSuperAdmin && u.role !== 'superadmin') {
+                          return (
+                            <button
+                              onClick={() => confirmDelete(u)}
+                              className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                              title="Delete user"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          );
+                        }
+                        
+                        // Regular admin can only delete users (not admins or superadmins)
+                        if (!isSuperAdmin && u.role === 'user') {
+                          return (
+                            <button
+                              onClick={() => confirmDelete(u)}
+                              className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                              title="Delete user"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          );
+                        }
+                        
+                        // No delete permission
+                        return (
+                          <span className="text-gray-400 dark:text-gray-600" title="Cannot delete this user">
+                            <Trash2 className="h-4 w-4" />
+                          </span>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}
@@ -161,6 +289,13 @@ const Admin = () => {
           </div>
         )}
       </div>
+      </>
+      )}
+
+      {/* Admin Requests Tab - Only for superadmin */}
+      {isSuperAdmin && activeTab === 'requests' && (
+        <AdminRequests />
+      )}
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (

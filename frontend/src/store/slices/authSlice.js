@@ -165,10 +165,15 @@ const authSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload.data.user;
-        state.token = action.payload.data.token;
-        state.isAuthenticated = true;
-        state.isAdmin = action.payload.data.user.role === 'admin';
-        localStorage.setItem('token', action.payload.data.token);
+        
+        // Only set token and authenticated if not an admin request
+        if (action.payload.data.token) {
+          state.token = action.payload.data.token;
+          state.isAuthenticated = true;
+          localStorage.setItem('token', action.payload.data.token);
+        }
+        
+        state.isAdmin = action.payload.data.user.role === 'admin' || action.payload.data.user.role === 'superadmin';
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { toggleTheme, toggleSidebar, toggleSidebarCollapsed } from '../../store/slices/uiSlice';
 import { logoutUser } from '../../store/slices/authSlice';
+import NotificationPanel from './NotificationPanel';
 import toast from 'react-hot-toast';
 
 const Header = () => {
@@ -26,6 +27,38 @@ const Header = () => {
   const { recentFiles, chartHistory } = useSelector((state) => state.analytics);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread notification count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch('/api/auth/notifications?limit=1', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUnreadCount(data.data.unreadCount);
+        }
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -150,11 +183,14 @@ const Header = () => {
 
           {/* Notifications */}
           <div className="relative">
-            <button className="p-2 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors relative">
+            <button 
+              onClick={() => setNotificationPanelOpen(!notificationPanelOpen)}
+              className="p-2 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors relative"
+            >
               <Bell size={20} />
-              {notifications.length > 0 && (
+              {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 bg-red-500 text-white text-[10px] sm:text-xs rounded-full flex items-center justify-center">
-                  {notifications.length}
+                  {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </button>
@@ -227,6 +263,20 @@ const Header = () => {
         <div
           className="fixed inset-0 z-40"
           onClick={() => setUserMenuOpen(false)}
+        />
+      )}
+
+      {/* Notification Panel */}
+      <NotificationPanel 
+        isOpen={notificationPanelOpen} 
+        onClose={() => setNotificationPanelOpen(false)} 
+      />
+
+      {/* Click outside to close notification panel */}
+      {notificationPanelOpen && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setNotificationPanelOpen(false)}
         />
       )}
     </header>

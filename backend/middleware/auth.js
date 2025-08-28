@@ -106,3 +106,43 @@ export const optionalAuth = async (req, res, next) => {
     next();
   }
 };
+
+// Require superadmin role
+export const requireSuperAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'superadmin') {
+    next();
+  } else {
+    return res.status(403).json({
+      error: 'Access denied',
+      message: 'Super admin access required'
+    });
+  }
+};
+
+// Require admin or superadmin role
+export const requireAdmin = (req, res, next) => {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'superadmin')) {
+    next();
+  } else {
+    return res.status(403).json({
+      error: 'Access denied',
+      message: 'Admin access required'
+    });
+  }
+};
+
+// Require user to be the owner of the resource or admin/superadmin
+export const requireOwnerOrAdmin = (req, res, next) => {
+  if (req.user && (
+    req.user._id.toString() === req.params.id || 
+    req.user.role === 'admin' || 
+    req.user.role === 'superadmin'
+  )) {
+    next();
+  } else {
+    return res.status(403).json({
+      error: 'Access denied',
+      message: 'You can only access your own resources'
+    });
+  }
+};

@@ -10,7 +10,6 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import analyticsRoutes from './routes/analytics.js';
-import User from './models/User.js';
 import { getTransporter } from './utils/mailer.js';
 
 // Load environment variables
@@ -33,46 +32,8 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Database connection
 mongoose
   .connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/excelAnalytics')
-  .then(async () => {
+  .then(() => {
     console.log('Connected to MongoDB');
-    // Ensure default admin exists
-    try {
-      const adminEmail = process.env.ADMIN_EMAIL || 'admin@excel-analytics.local';
-      const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
-      const adminForceReset = (process.env.ADMIN_FORCE_RESET || 'false').toLowerCase() === 'true';
-      const firstName = process.env.ADMIN_FIRST_NAME || 'Admin';
-      const lastName = process.env.ADMIN_LAST_NAME || 'User';
-
-      const existingAdmin = await User.findOne({ email: adminEmail }).select('+password');
-      if (!existingAdmin) {
-        const adminUser = new User({
-          firstName,
-          lastName,
-          email: adminEmail,
-          password: adminPassword,
-          role: 'admin',
-        });
-        await adminUser.save();
-        console.log(`Default admin created: ${adminEmail}`);
-      } else {
-        let changed = false;
-        if (existingAdmin.role !== 'admin') {
-          existingAdmin.role = 'admin';
-          changed = true;
-          console.log(`Existing user promoted to admin: ${adminEmail}`);
-        }
-        if (adminForceReset && process.env.ADMIN_PASSWORD) {
-          existingAdmin.password = adminPassword; // will be hashed by pre-save hook
-          changed = true;
-          console.log(`Admin password reset as ADMIN_FORCE_RESET=true for: ${adminEmail}`);
-        }
-        if (changed) {
-          await existingAdmin.save();
-        }
-      }
-    } catch (seedErr) {
-      console.error('Failed to ensure default admin exists:', seedErr);
-    }
   })
   .catch(err => console.error('MongoDB connection error:', err));
 

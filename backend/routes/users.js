@@ -3,7 +3,7 @@ import { body, validationResult } from 'express-validator';
 import User from '../models/User.js';
 import UserActivity from '../models/UserActivity.js';
 import UploadedFile from '../models/UploadedFile.js';
-import { protect, authorize } from '../middleware/auth.js';
+import { protect, requireAdmin, requireOwnerOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -23,10 +23,20 @@ const logActivity = async (userId, activityType, description, metadata = {}, req
   }
 };
 
-// Get all users (admin only)
-router.get('/', protect, authorize('admin'), async (req, res) => {
+// Get all users (admin and superadmin only)
+router.get('/', protect, requireAdmin, async (req, res) => {
   try {
-    const users = await User.find({}).select('-password');
+    // Regular admins can only see users and other admins
+    // Superadmins can see everyone including other superadmins
+    let query = {};
+    
+    if (req.user.role === 'admin') {
+      // Regular admins cannot see superadmins
+      query.role = { $in: ['user', 'admin'] };
+    }
+    // Superadmins can see all users (no query restriction)
+
+    const users = await User.find(query).select('-password');
     
     res.json({
       success: true,
@@ -190,7 +200,7 @@ router.put('/change-password', protect, [
 });
 
 // Admin: Update user role
-router.put('/:userId/role', protect, authorize('admin'), [
+router.put('/:userId/role', protect, requireAdmin, [
   body('role')
     .isIn(['user', 'admin'])
     .withMessage('Role must be either user or admin')
@@ -238,7 +248,7 @@ router.put('/:userId/role', protect, authorize('admin'), [
 });
 
 // Admin: Deactivate/Activate user
-router.put('/:userId/status', protect, authorize('admin'), [
+router.put('/:userId/status', protect, requireAdmin, [
   body('isActive')
     .isBoolean()
     .withMessage('isActive must be a boolean value')
@@ -286,7 +296,7 @@ router.put('/:userId/status', protect, authorize('admin'), [
 });
 
 // Admin: Delete user
-router.delete('/:userId', protect, authorize('admin'), async (req, res) => {
+router.delete('/:userId', protect, requireAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -307,7 +317,24 @@ router.delete('/:userId', protect, authorize('admin'), async (req, res) => {
       });
     }
 
-    // Prevent deletion of other admins (optional security measure)
+    // Role-based deletion restrictions
+    if (req.user.role === 'admin') {
+      // Regular admins can only delete users, not other admins or superadmins
+      if (userToDelete.role === 'admin' || userToDelete.role === 'superadmin') {
+        return res.status(403).json({
+          error: 'Access denied',
+          message: 'Regular admins cannot delete other admins or superadmins'
+        });
+      }
+    } else if (req.user.role === 'superadmin') {
+      // Superadmin cannot delete other superadmins (maintain single superadmin)
+      if (userToDelete.role === 'superadmin') {
+        return res.status(403).json({
+          error: 'Access denied',
+          message: 'Cannot delete superadmin accounts'
+        });
+      }
+    }
     if (userToDelete.role === 'admin') {
       return res.status(403).json({
         error: 'Cannot delete admin',

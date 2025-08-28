@@ -2,7 +2,9 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import User from '../models/User.js';
 import UserActivity from '../models/UserActivity.js';
-import { protect } from '../middleware/auth.js';
+import AdminRequest from '../models/AdminRequest.js';
+import Notification from '../models/Notification.js';
+import { protect, requireSuperAdmin, requireAdmin } from '../middleware/auth.js';
 import crypto from 'crypto';
 import { sendMail } from '../utils/mailer.js';
 
@@ -69,7 +71,7 @@ router.post('/register', validateRegistration, async (req, res) => {
       });
     }
 
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, email, password, isAdmin = false } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -80,33 +82,85 @@ router.post('/register', validateRegistration, async (req, res) => {
       });
     }
 
-    // Create new user
-    const user = new User({
-      firstName,
-      lastName,
-      email,
-      password
-    });
+    // If registering as admin, create an admin request instead
+    if (isAdmin) {
+      // Prevent superadmin registration through normal flow
+      // Only one superadmin should exist and it should be created manually
+      
+      // Create user with pending admin status (for regular admin only)
+      const user = new User({
+        firstName,
+        lastName,
+        email,
+        password,
+        role: 'user', // Start as user until approved
+        adminStatus: 'pending'
+      });
 
-    await user.save();
+      await user.save();
 
-    // Generate token
-    const token = user.generateAuthToken();
+      // Create admin request
+      const adminRequest = new AdminRequest({
+        user: user._id,
+        status: 'pending'
+      });
 
-    // Update last login
-    await user.updateLastLogin();
+      await adminRequest.save();
 
-    // Log activity
-    await logActivity(user._id, 'login', 'User registered and logged in', { action: 'registration' }, req);
-
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      data: {
-        user: user.getProfile(),
-        token
+      // Notify the superadmin about the new admin request
+      const superadmin = await User.findOne({ role: 'superadmin' });
+      if (superadmin) {
+        await Notification.create({
+          recipient: superadmin._id,
+          type: 'admin_request',
+          message: `New admin request from ${firstName} ${lastName} (${email})`,
+          metadata: { adminRequestId: adminRequest._id }
+        });
       }
-    });
+
+      // Log activity
+      await logActivity(user._id, 'registration', 'User registered with admin request', { 
+        action: 'admin_registration',
+        adminRequestId: adminRequest._id 
+      }, req);
+
+      res.status(201).json({
+        success: true,
+        message: 'Admin request submitted successfully. You will be notified once your request is reviewed.',
+        data: {
+          user: user.getProfile(),
+          adminRequestStatus: 'pending'
+        }
+      });
+    } else {
+      // Normal user registration
+      const user = new User({
+        firstName,
+        lastName,
+        email,
+        password
+      });
+
+      await user.save();
+
+      // Generate token
+      const token = user.generateAuthToken();
+
+      // Update last login
+      await user.updateLastLogin();
+
+      // Log activity
+      await logActivity(user._id, 'login', 'User registered and logged in', { action: 'registration' }, req);
+
+      res.status(201).json({
+        success: true,
+        message: 'User registered successfully',
+        data: {
+          user: user.getProfile(),
+          token
+        }
+      });
+    }
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({
@@ -198,7 +252,10 @@ router.post('/admin/login', validateLogin, async (req, res) => {
     const { email, password } = req.body;
 
     // Find user and include password for comparison
-    const user = await User.findOne({ email, role: 'admin' }).select('+password');
+    const user = await User.findOne({ 
+      email, 
+      role: { $in: ['admin', 'superadmin'] } 
+    }).select('+password');
     
     if (!user) {
       return res.status(401).json({
@@ -399,6 +456,266 @@ router.post('/reset-password', async (req, res) => {
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ error: 'Failed to reset password', message: 'Internal server error' });
+  }
+});
+
+// Admin management routes
+
+// Get all admin requests (superadmin only)
+router.get('/admin-requests', protect, requireSuperAdmin, async (req, res) => {
+  try {
+    const adminRequests = await AdminRequest.find()
+      .populate('user', 'firstName lastName email createdAt')
+      .populate('reviewedBy', 'firstName lastName email')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: adminRequests
+    });
+  } catch (error) {
+    console.error('Get admin requests error:', error);
+    res.status(500).json({
+      error: 'Failed to fetch admin requests',
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Approve admin request (superadmin only)
+router.post('/admin-requests/:id/approve', protect, requireSuperAdmin, async (req, res) => {
+  try {
+    const adminRequest = await AdminRequest.findById(req.params.id).populate('user');
+    if (!adminRequest) {
+      return res.status(404).json({
+        error: 'Admin request not found'
+      });
+    }
+
+    if (adminRequest.status !== 'pending') {
+      return res.status(400).json({
+        error: 'Request already processed',
+        message: 'This admin request has already been approved or rejected'
+      });
+    }
+
+    // Update admin request
+    adminRequest.status = 'approved';
+    adminRequest.reviewedBy = req.user._id;
+    adminRequest.reviewedAt = new Date();
+    await adminRequest.save();
+
+    // Update user role and admin status (make them regular admin, not superadmin)
+    const user = await User.findById(adminRequest.user._id);
+    user.role = 'admin'; // Regular admin only - superadmin is unique
+    user.adminStatus = 'approved';
+    await user.save();
+
+    // Create notification for the user
+    await Notification.create({
+      recipient: user._id,
+      type: 'admin_approved',
+      message: 'Your admin request has been approved! You now have admin access.',
+      metadata: { adminRequestId: adminRequest._id }
+    });
+
+    // Log activity
+    await logActivity(req.user._id, 'admin_management', 'Approved admin request', {
+      action: 'approve_admin',
+      targetUserId: user._id,
+      adminRequestId: adminRequest._id
+    }, req);
+
+    res.json({
+      success: true,
+      message: 'Admin request approved successfully',
+      data: adminRequest
+    });
+  } catch (error) {
+    console.error('Approve admin request error:', error);
+    res.status(500).json({
+      error: 'Failed to approve admin request',
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Reject admin request (superadmin only)
+router.post('/admin-requests/:id/reject', protect, requireSuperAdmin, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const adminRequest = await AdminRequest.findById(req.params.id).populate('user');
+    
+    if (!adminRequest) {
+      return res.status(404).json({
+        error: 'Admin request not found'
+      });
+    }
+
+    if (adminRequest.status !== 'pending') {
+      return res.status(400).json({
+        error: 'Request already processed',
+        message: 'This admin request has already been approved or rejected'
+      });
+    }
+
+    // Update admin request
+    adminRequest.status = 'rejected';
+    adminRequest.reviewedBy = req.user._id;
+    adminRequest.reviewedAt = new Date();
+    adminRequest.rejectionReason = reason;
+    await adminRequest.save();
+
+    // Update user admin status
+    const user = await User.findById(adminRequest.user._id);
+    user.adminStatus = 'rejected';
+    await user.save();
+
+    // Create notification for the user
+    await Notification.create({
+      recipient: user._id,
+      type: 'admin_rejected',
+      message: `Your admin request has been rejected. ${reason ? `Reason: ${reason}` : ''}`,
+      metadata: { adminRequestId: adminRequest._id, reason }
+    });
+
+    // Log activity
+    await logActivity(req.user._id, 'admin_management', 'Rejected admin request', {
+      action: 'reject_admin',
+      targetUserId: user._id,
+      adminRequestId: adminRequest._id,
+      reason
+    }, req);
+
+    res.json({
+      success: true,
+      message: 'Admin request rejected successfully',
+      data: adminRequest
+    });
+  } catch (error) {
+    console.error('Reject admin request error:', error);
+    res.status(500).json({
+      error: 'Failed to reject admin request',
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Get user's admin request status
+router.get('/admin-request-status', protect, async (req, res) => {
+  try {
+    const adminRequest = await AdminRequest.findOne({ user: req.user._id })
+      .populate('reviewedBy', 'firstName lastName email')
+      .sort({ createdAt: -1 });
+
+    if (!adminRequest) {
+      return res.json({
+        success: true,
+        data: {
+          hasRequest: false,
+          status: null
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        hasRequest: true,
+        status: adminRequest.status,
+        requestDate: adminRequest.createdAt,
+        reviewDate: adminRequest.reviewedAt,
+        reviewedBy: adminRequest.reviewedBy,
+        rejectionReason: adminRequest.rejectionReason
+      }
+    });
+  } catch (error) {
+    console.error('Get admin request status error:', error);
+    res.status(500).json({
+      error: 'Failed to fetch admin request status',
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Get user notifications
+router.get('/notifications', protect, async (req, res) => {
+  try {
+    const { limit = 20, offset = 0 } = req.query;
+
+    const notifications = await Notification.find({ recipient: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(offset));
+
+    const unreadCount = await Notification.countDocuments({
+      recipient: req.user._id,
+      isRead: false
+    });
+
+    res.json({
+      success: true,
+      data: {
+        notifications,
+        unreadCount,
+        hasMore: notifications.length === parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get notifications error:', error);
+    res.status(500).json({
+      error: 'Failed to fetch notifications',
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Mark notification as read
+router.patch('/notifications/:id/read', protect, async (req, res) => {
+  try {
+    const notification = await Notification.findOneAndUpdate(
+      { _id: req.params.id, recipient: req.user._id },
+      { isRead: true, readAt: new Date() },
+      { new: true }
+    );
+
+    if (!notification) {
+      return res.status(404).json({
+        error: 'Notification not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: notification
+    });
+  } catch (error) {
+    console.error('Mark notification as read error:', error);
+    res.status(500).json({
+      error: 'Failed to mark notification as read',
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Mark all notifications as read
+router.patch('/notifications/mark-all-read', protect, async (req, res) => {
+  try {
+    await Notification.updateMany(
+      { recipient: req.user._id, isRead: false },
+      { isRead: true, readAt: new Date() }
+    );
+
+    res.json({
+      success: true,
+      message: 'All notifications marked as read'
+    });
+  } catch (error) {
+    console.error('Mark all notifications as read error:', error);
+    res.status(500).json({
+      error: 'Failed to mark all notifications as read',
+      message: 'Internal server error'
+    });
   }
 });
 

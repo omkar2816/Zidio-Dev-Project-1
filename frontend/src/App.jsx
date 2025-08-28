@@ -10,6 +10,7 @@ import { getCurrentUser } from './store/slices/authSlice';
 // Components
 import Layout from './components/Layout/Layout';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
+import Landing from './pages/Landing/Landing';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import Dashboard from './pages/Dashboard/Dashboard';
@@ -51,24 +52,37 @@ function App() {
         <Router>
           <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
             <Routes>
-              {/* Public Routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/admin/login" element={<Login />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
+              {/* Landing Page - Always accessible */}
+              <Route path="/" element={<Landing />} />
               
               {/* Protected Routes */}
-              <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-                <Route index element={<Navigate to="/dashboard" replace />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="analytics" element={<Analytics />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="files" element={<Files />} />
-                <Route path="charts" element={<Charts />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="admin" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route index element={<Dashboard />} />
               </Route>
+              <Route path="/analytics" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route index element={<Analytics />} />
+              </Route>
+              <Route path="/settings" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route index element={<Settings />} />
+              </Route>
+              <Route path="/files" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route index element={<Files />} />
+              </Route>
+              <Route path="/charts" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route index element={<Charts />} />
+              </Route>
+              <Route path="/profile" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route index element={<Profile />} />
+              </Route>
+              <Route path="/admin" element={<ProtectedRoute adminOnly><Layout /></ProtectedRoute>}>
+                <Route index element={<Admin />} />
+              </Route>
+              
+              {/* Legacy routes for backward compatibility */}
+              <Route path="/login" element={<Navigate to="/" replace />} />
+              <Route path="/register" element={<Navigate to="/" replace />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               
               {/* 404 Route */}
               <Route path="*" element={<NotFound />} />

@@ -15,9 +15,9 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     );
   }
 
-  // Redirect to login if not authenticated
+  // Redirect to landing page if not authenticated
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
   // Check admin access if required

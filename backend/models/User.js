@@ -32,8 +32,30 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'admin', 'superadmin'],
     default: 'user'
+  },
+  adminStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: function() {
+      return this.role === 'admin' ? 'pending' : undefined;
+    }
+  },
+  adminRequestedAt: {
+    type: Date,
+    default: function() {
+      return this.role === 'admin' ? new Date() : undefined;
+    }
+  },
+  adminApprovedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  adminApprovedAt: {
+    type: Date,
+    default: null
   },
   isActive: {
     type: Boolean,
