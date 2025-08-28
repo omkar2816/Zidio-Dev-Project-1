@@ -1,8 +1,46 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useLenisContext } from '../LenisProvider';
+import { useModalScroll } from '../../hooks/useModalScroll';
 
 const Modal = ({ isOpen, onClose, children, title }) => {
+  const { enableModalMode, disableModalMode } = useLenisContext();
+  const modalContentRef = useModalScroll(isOpen);
+
+  // Disable Lenis smooth scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      enableModalMode();
+      // Prevent body scroll and save current scroll position
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    } else {
+      disableModalMode();
+      // Re-enable body scroll and restore scroll position
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+
+    // Cleanup on unmount
+    return () => {
+      disableModalMode();
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, enableModalMode, disableModalMode]);
+
   const overlayVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1 }
@@ -50,16 +88,20 @@ const Modal = ({ isOpen, onClose, children, title }) => {
           exit="hidden"
           onClick={handleOverlayClick}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          style={{ pointerEvents: 'auto' }}
         >
           <motion.div
             variants={modalVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-hidden"
+            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-h-[95vh] overflow-hidden flex flex-col modal-content"
+            style={{ pointerEvents: 'auto' }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {title}
               </h2>
@@ -74,7 +116,18 @@ const Modal = ({ isOpen, onClose, children, title }) => {
             </div>
 
             {/* Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+            <div 
+              ref={modalContentRef}
+              className="flex-1 p-6 overflow-y-auto overscroll-contain modal-scroll
+                         scrollbar-thin scrollbar-thumb-blue-500 hover:scrollbar-thumb-blue-600 
+                         scrollbar-track-gray-100 dark:scrollbar-track-gray-800
+                         scroll-smooth"
+              style={{
+                scrollBehavior: 'smooth',
+                WebkitOverflowScrolling: 'touch',
+                msOverflowStyle: 'scrollbar',
+              }}
+            >
               {children}
             </div>
           </motion.div>

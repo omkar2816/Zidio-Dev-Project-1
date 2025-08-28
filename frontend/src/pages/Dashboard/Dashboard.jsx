@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { BarChart3, Activity, Upload, Download } from 'lucide-react';
 
 const Dashboard = () => {
-  const { user } = useSelector((state) => state.auth);
+  const { user, isAdmin, isSuperAdmin } = useSelector((state) => state.auth);
   const { theme } = useSelector((state) => state.ui);
   const { recentFiles, chartHistory } = useSelector((state) => state.analytics);
 
@@ -65,26 +65,28 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">
-              Welcome back, {user?.firstName || 'User'}!
-            </h1>
-            <p className="text-blue-100 mt-1">
-              Ready to analyze some data today?
-            </p>
-          </div>
-          <div className="hidden md:block">
-            <div className="text-right">
-              <p className="text-blue-100 text-sm">Current Time</p>
-              <p className="text-xl font-semibold">
-                {new Date().toLocaleTimeString()}
+      {!isAdmin && !isSuperAdmin && (
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">
+                Welcome back, {user?.firstName || 'User'}!
+              </h1>
+              <p className="text-blue-100 mt-1">
+                Ready to analyze some data today?
               </p>
+            </div>
+            <div className="hidden md:block">
+              <div className="text-right">
+                <p className="text-blue-100 text-sm">Current Time</p>
+                <p className="text-xl font-semibold">
+                  {new Date().toLocaleTimeString()}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Stats Grid removed (no dummy data) */}
 

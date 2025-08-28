@@ -49,6 +49,130 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Modal scroll improvements */
+.modal-content {
+  overscroll-behavior: contain;
+}
+
+.modal-content * {
+  overscroll-behavior: auto;
+}
+
+/* Ensure modal scrollbars are always visible */
+.modal-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb {
+  background: #3b82f6;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #2563eb;
+}
+
+/* Dark mode scrollbar */
+.dark .modal-scroll::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.dark .modal-scroll::-webkit-scrollbar-thumb {
+  background: #6b7280;
+}
+
+.dark .modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Lenis smooth scrolling */
+html.lenis {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+/* Smooth transitions for all elements during scroll */
+* {
+  will-change: auto;
+}
+
+/* Optimize animations for scroll */
+@media (prefers-reduced-motion: no-preference) {
+  .scroll-smooth {
+    scroll-behavior: smooth;
+  }
+  
+  .parallax {
+    will-change: transform;
+  }
+}
+
+/* Touch optimizations */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Improve touch targets */
+button, a, [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Smooth touch interactions */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Optimize for mobile scrolling */
+@media (max-width: 768px) {
+  .lenis.lenis-smooth {
+    scroll-behavior: auto;
+  }
+  
+  /* Enable momentum scrolling on iOS */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Truncation utility for long labels inside flex containers */
 .truncate-inline {
   @apply truncate max-w-full block;

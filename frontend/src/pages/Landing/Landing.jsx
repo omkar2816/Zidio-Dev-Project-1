@@ -27,6 +27,7 @@ import Modal from '../../components/UI/Modal';
 import AuthModal from '../../components/Auth/AuthModal';
 import { Hero, Features, Stats, Testimonials, CTA, Footer } from './components';
 import { toggleTheme } from '../../store/slices/uiSlice';
+import { useLenisContext } from '../../components/LenisProvider';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ const Landing = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login');
   const [isAdminLogin, setIsAdminLogin] = useState(false);
+  const { scrollToElement } = useLenisContext();
 
   // Redirect to dashboard if already authenticated
   React.useEffect(() => {
@@ -46,6 +48,16 @@ const Landing = () => {
 
   const handleThemeToggle = () => {
     dispatch(toggleTheme());
+  };
+
+  const smoothScrollTo = (elementId) => {
+    const element = document.getElementById(elementId);
+    if (element && scrollToElement) {
+      scrollToElement(element, {
+        duration: 1.5,
+        easing: (t) => 1 - Math.pow(1 - t, 3)
+      });
+    }
   };
 
   const openAuthModal = (mode = 'login', adminMode = false) => {
@@ -77,15 +89,24 @@ const Landing = () => {
             </div>
             
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              <button 
+                onClick={() => smoothScrollTo('features')} 
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+              >
                 Features
-              </a>
-              <a href="#stats" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              </button>
+              <button 
+                onClick={() => smoothScrollTo('stats')} 
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+              >
                 Analytics
-              </a>
-              <a href="#testimonials" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              </button>
+              <button 
+                onClick={() => smoothScrollTo('testimonials')} 
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+              >
                 Reviews
-              </a>
+              </button>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

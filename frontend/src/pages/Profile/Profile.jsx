@@ -36,7 +36,7 @@ const passwordSchema = z.object({
 
 const Profile = () => {
   const dispatch = useDispatch();
-  const { user, isLoading } = useSelector((state) => state.auth);
+  const { user, isLoading, isSuperAdmin } = useSelector((state) => state.auth);
   const { theme } = useSelector((state) => state.ui);
 
   const [activeTab, setActiveTab] = useState('profile');
@@ -158,6 +158,18 @@ const Profile = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Personal Information
             </h3>
+            
+            {isSuperAdmin && (
+              <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-center">
+                  <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    Super Admin profile cannot be modified for security reasons.
+                  </p>
+                </div>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmitProfile(handleProfileUpdate)} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -171,10 +183,11 @@ const Profile = () => {
                     <input
                       {...registerProfile('firstName')}
                       type="text"
+                      disabled={isSuperAdmin}
                       className={`block w-full pl-10 pr-3 py-3 border rounded-lg text-sm transition-colors duration-200 ${
                         profileErrors.firstName
                           ? 'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900/20'
-                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20'
+                          : `border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 ${isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`
                       }`}
                       placeholder="First name"
                     />
@@ -198,10 +211,11 @@ const Profile = () => {
                     <input
                       {...registerProfile('lastName')}
                       type="text"
+                      disabled={isSuperAdmin}
                       className={`block w-full pl-10 pr-3 py-3 border rounded-lg text-sm transition-colors duration-200 ${
                         profileErrors.lastName
                           ? 'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900/20'
-                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20'
+                          : `border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 ${isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`
                       }`}
                       placeholder="Last name"
                     />
@@ -226,10 +240,11 @@ const Profile = () => {
                   <input
                     {...registerProfile('email')}
                     type="email"
+                    disabled={isSuperAdmin}
                     className={`block w-full pl-10 pr-3 py-3 border rounded-lg text-sm transition-colors duration-200 ${
                       profileErrors.email
                         ? 'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900/20'
-                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20'
+                        : `border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 ${isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`
                     }`}
                     placeholder="Email address"
                   />
@@ -245,8 +260,8 @@ const Profile = () => {
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors duration-200"
+                  disabled={isLoading || isSuperAdmin}
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {isLoading ? 'Saving...' : 'Save Changes'}
@@ -261,6 +276,18 @@ const Profile = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Change Password
             </h3>
+            
+            {isSuperAdmin && (
+              <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-center">
+                  <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    Super Admin password cannot be changed through this interface for security reasons.
+                  </p>
+                </div>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmitPassword(handlePasswordChange)} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

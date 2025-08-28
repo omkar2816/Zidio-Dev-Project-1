@@ -33,15 +33,16 @@ const AdminRequests = () => {
         }
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
-        setRequests(data.data);
+        setRequests(data.data || []);
       } else {
-        throw new Error('Failed to fetch admin requests');
+        throw new Error(data.message || data.error || 'Failed to fetch admin requests');
       }
     } catch (error) {
       console.error('Error fetching admin requests:', error);
-      toast.error('Failed to load admin requests');
+      toast.error(error.message || 'Failed to load admin requests');
     } finally {
       setIsLoading(false);
     }
@@ -58,16 +59,17 @@ const AdminRequests = () => {
         }
       });
 
+      const data = await response.json();
+      
       if (response.ok) {
         toast.success('Admin request approved successfully!');
         fetchAdminRequests(); // Refresh the list
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to approve request');
+        throw new Error(data.message || data.error || 'Failed to approve request');
       }
     } catch (error) {
       console.error('Error approving request:', error);
-      toast.error(error.message || 'Failed to approve request');
+      toast.error(error.message || 'Failed to approve admin request');
     }
   };
 
@@ -87,19 +89,20 @@ const AdminRequests = () => {
         })
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        toast.success('Admin request rejected');
+        toast.success('Admin request rejected successfully');
         setShowRejectModal(false);
         setRejectionReason('');
         setSelectedRequest(null);
         fetchAdminRequests(); // Refresh the list
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to reject request');
+        throw new Error(data.message || data.error || 'Failed to reject request');
       }
     } catch (error) {
       console.error('Error rejecting request:', error);
-      toast.error(error.message || 'Failed to reject request');
+      toast.error(error.message || 'Failed to reject admin request');
     }
   };
 

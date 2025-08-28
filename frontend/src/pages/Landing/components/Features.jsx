@@ -14,8 +14,12 @@ import {
   Smartphone,
   Globe
 } from 'lucide-react';
+import { useScrollReveal } from '../../../hooks/useScrollAnimations';
 
 const Features = () => {
+  const { ref: headerRef, isInView: headerInView } = useScrollReveal();
+  const { ref: gridRef, isInView: gridInView } = useScrollReveal({ amount: 0.2 });
+  
   const features = [
     {
       icon: FileSpreadsheet,
@@ -114,9 +118,9 @@ const Features = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
+          ref={headerRef}
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          animate={headerInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
@@ -133,10 +137,10 @@ const Features = () => {
 
         {/* Feature Grid */}
         <motion.div
+          ref={gridRef}
           variants={containerVariants}
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
+          animate={gridInView ? "visible" : "hidden"}
           className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20"
         >
           {features.map((feature, index) => (

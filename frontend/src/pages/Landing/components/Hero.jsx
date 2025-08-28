@@ -10,9 +10,19 @@ import {
   Play,
   Sparkles
 } from 'lucide-react';
+import { useLenisContext } from '../../../components/LenisProvider';
+import TouchOptimized from '../../../components/TouchOptimized';
 
 const Hero = ({ onGetStarted, onSignIn }) => {
   const navigate = useNavigate();
+  const { scrollBy } = useLenisContext();
+
+  const handleLearnMore = () => {
+    scrollBy(window.innerHeight, { 
+      duration: 1.5,
+      easing: (t) => 1 - Math.pow(1 - t, 3)
+    });
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -95,25 +105,25 @@ const Hero = ({ onGetStarted, onSignIn }) => {
               variants={itemVariants}
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onGetStarted}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group"
-              >
-                Get Started Free
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </motion.button>
+              <TouchOptimized tapScale={0.95} hoverScale={1.05}>
+                <motion.button
+                  onClick={onGetStarted}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group w-full sm:w-auto"
+                >
+                  Get Started Free
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </motion.button>
+              </TouchOptimized>
 
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onSignIn}
-                className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 flex items-center justify-center group"
-              >
-                <Play className="mr-2 w-5 h-5" />
-                Sign In
-              </motion.button>
+              <TouchOptimized tapScale={0.95} hoverScale={1.05}>
+                <motion.button
+                  onClick={onSignIn}
+                  className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 flex items-center justify-center group w-full sm:w-auto"
+                >
+                  <Play className="mr-2 w-5 h-5" />
+                  Sign In
+                </motion.button>
+              </TouchOptimized>
             </motion.div>
 
             <motion.div
@@ -135,7 +145,7 @@ const Hero = ({ onGetStarted, onSignIn }) => {
             </motion.div>
           </motion.div>
 
-          {/* Right Content - Dashboard Preview */}
+          {/* Right Content - Analytics Visualization */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
@@ -143,13 +153,13 @@ const Hero = ({ onGetStarted, onSignIn }) => {
             className="relative"
           >
             <div className="relative">
-              {/* Main Dashboard */}
+              {/* Main Analytics Dashboard */}
               <motion.div
                 animate={floatingAnimation}
                 className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 border border-gray-200 dark:border-gray-700"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Analytics Dashboard</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Real-time Analytics</h3>
                   <div className="flex space-x-2">
                     <div className="w-3 h-3 bg-red-400 rounded-full"></div>
                     <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
@@ -157,29 +167,92 @@ const Hero = ({ onGetStarted, onSignIn }) => {
                   </div>
                 </div>
                 
-                {/* Chart Area */}
-                <div className="h-48 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-600 rounded-lg mb-4 flex items-center justify-center">
-                  <BarChart3 className="w-16 h-16 text-blue-500" />
+                {/* Interactive Chart Area */}
+                <div className="h-48 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-600 rounded-lg mb-4 relative overflow-hidden">
+                  {/* Animated Bar Chart */}
+                  <div className="absolute inset-4 flex items-end justify-center space-x-2">
+                    {[65, 45, 80, 60, 90, 75, 85].map((height, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ height: 0 }}
+                        animate={{ height: `${height}%` }}
+                        transition={{ 
+                          duration: 1.5, 
+                          delay: 0.6 + index * 0.1,
+                          ease: "easeOut"
+                        }}
+                        className={`w-8 rounded-t-sm ${
+                          index % 3 === 0 ? 'bg-blue-500' :
+                          index % 3 === 1 ? 'bg-purple-500' : 'bg-green-500'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* Animated Trend Line */}
+                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 280 180">
+                    <motion.path
+                      d="M20,120 Q60,80 100,90 T180,70 T260,50"
+                      stroke="#F59E0B"
+                      strokeWidth="3"
+                      fill="none"
+                      strokeLinecap="round"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 2, delay: 1.2 }}
+                    />
+                    {/* Animated data points */}
+                    {[
+                      { x: 20, y: 120 }, { x: 60, y: 90 }, { x: 100, y: 95 },
+                      { x: 140, y: 75 }, { x: 180, y: 70 }, { x: 220, y: 60 }, { x: 260, y: 50 }
+                    ].map((point, index) => (
+                      <motion.circle
+                        key={index}
+                        cx={point.x}
+                        cy={point.y}
+                        r="4"
+                        fill="#F59E0B"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 1.4 + index * 0.1 }}
+                      />
+                    ))}
+                  </svg>
                 </div>
                 
-                {/* Stats */}
+                {/* Analytics Stats */}
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">142</div>
-                    <div className="text-xs text-gray-500">Total Records</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">98%</div>
+                  <motion.div 
+                    className="text-center"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.8 }}
+                  >
+                    <div className="text-2xl font-bold text-blue-600">1.2K</div>
+                    <div className="text-xs text-gray-500">Data Points</div>
+                  </motion.div>
+                  <motion.div 
+                    className="text-center"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 2.0 }}
+                  >
+                    <div className="text-2xl font-bold text-green-600">98.7%</div>
                     <div className="text-xs text-gray-500">Accuracy</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">5.2s</div>
+                  </motion.div>
+                  <motion.div 
+                    className="text-center"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 2.2 }}
+                  >
+                    <div className="text-2xl font-bold text-purple-600">2.1s</div>
                     <div className="text-xs text-gray-500">Process Time</div>
-                  </div>
+                  </motion.div>
                 </div>
               </motion.div>
 
-              {/* Floating Elements */}
+              {/* Floating Chart Elements */}
               <motion.div
                 animate={{ 
                   y: [-5, 5, -5],
@@ -191,9 +264,9 @@ const Hero = ({ onGetStarted, onSignIn }) => {
                   ease: "easeInOut",
                   delay: 1
                 }}
-                className="absolute -top-4 -left-4 bg-blue-500 p-3 rounded-xl shadow-lg"
+                className="absolute -top-4 -left-4 bg-gradient-to-r from-blue-500 to-blue-600 p-3 rounded-xl shadow-lg"
               >
-                <Database className="w-6 h-6 text-white" />
+                <BarChart3 className="w-6 h-6 text-white" />
               </motion.div>
 
               <motion.div
@@ -207,7 +280,7 @@ const Hero = ({ onGetStarted, onSignIn }) => {
                   ease: "easeInOut",
                   delay: 2
                 }}
-                className="absolute -top-4 -right-4 bg-purple-500 p-3 rounded-xl shadow-lg"
+                className="absolute -top-4 -right-4 bg-gradient-to-r from-purple-500 to-purple-600 p-3 rounded-xl shadow-lg"
               >
                 <TrendingUp className="w-6 h-6 text-white" />
               </motion.div>
@@ -223,9 +296,73 @@ const Hero = ({ onGetStarted, onSignIn }) => {
                   ease: "easeInOut",
                   delay: 0.5
                 }}
-                className="absolute -bottom-4 -left-4 bg-green-500 p-3 rounded-xl shadow-lg"
+                className="absolute -bottom-4 -left-4 bg-gradient-to-r from-green-500 to-green-600 p-3 rounded-xl shadow-lg"
+              >
+                <Database className="w-6 h-6 text-white" />
+              </motion.div>
+              
+              {/* Additional Analytics Element */}
+              <motion.div
+                animate={{ 
+                  y: [2, -2, 2],
+                  rotate: [0, -2, 0]
+                }}
+                transition={{ 
+                  duration: 6, 
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1.5
+                }}
+                className="absolute -bottom-4 -right-4 bg-gradient-to-r from-orange-500 to-orange-600 p-3 rounded-xl shadow-lg"
               >
                 <FileSpreadsheet className="w-6 h-6 text-white" />
+              </motion.div>
+            </div>
+            
+            {/* Additional Mini Charts */}
+            <div className="absolute -right-8 top-1/2 transform -translate-y-1/2">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 2.5, duration: 0.8 }}
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 border border-gray-200 dark:border-gray-700 w-24 h-20"
+              >
+                <div className="text-xs text-gray-500 mb-1">Revenue</div>
+                <div className="flex items-end space-x-1 h-8">
+                  {[40, 60, 80, 45, 70].map((height, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ height: 0 }}
+                      animate={{ height: `${height}%` }}
+                      transition={{ delay: 2.7 + index * 0.1 }}
+                      className="bg-gradient-to-t from-green-400 to-green-500 w-2 rounded-t-sm"
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+            
+            <div className="absolute -left-8 top-1/4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 3.0, duration: 0.8 }}
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 border border-gray-200 dark:border-gray-700 w-24 h-20"
+              >
+                <div className="text-xs text-gray-500 mb-1">Growth</div>
+                <div className="relative h-8">
+                  <svg className="w-full h-full" viewBox="0 0 80 32">
+                    <motion.path
+                      d="M5,25 Q20,15 35,18 T70,8"
+                      stroke="#8B5CF6"
+                      strokeWidth="2"
+                      fill="none"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ delay: 3.2, duration: 1.5 }}
+                    />
+                  </svg>
+                </div>
               </motion.div>
             </div>
           </motion.div>

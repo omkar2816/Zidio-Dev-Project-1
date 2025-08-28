@@ -128,6 +128,7 @@ const initialState = {
   isLoading: false,
   error: null,
   isAdmin: false,
+  isSuperAdmin: false,
 };
 
 const authSlice = createSlice({
@@ -208,7 +209,8 @@ const authSlice = createSlice({
         state.user = action.payload.data.user;
         state.token = action.payload.data.token;
         state.isAuthenticated = true;
-        state.isAdmin = true;
+        state.isAdmin = action.payload.data.user.role === 'admin' || action.payload.data.user.role === 'superadmin';
+        state.isSuperAdmin = action.payload.data.user.role === 'superadmin';
         localStorage.setItem('token', action.payload.data.token);
       })
       .addCase(adminLogin.rejected, (state, action) => {
@@ -224,7 +226,8 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.user = action.payload.data.user;
         state.isAuthenticated = true;
-        state.isAdmin = action.payload.data.user.role === 'admin';
+        state.isAdmin = action.payload.data.user.role === 'admin' || action.payload.data.user.role === 'superadmin';
+        state.isSuperAdmin = action.payload.data.user.role === 'superadmin';
       })
       .addCase(getCurrentUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -232,6 +235,7 @@ const authSlice = createSlice({
         state.token = null;
         state.isAuthenticated = false;
         state.isAdmin = false;
+        state.isSuperAdmin = false;
         localStorage.removeItem('token');
       })
       
@@ -241,6 +245,7 @@ const authSlice = createSlice({
         state.token = null;
         state.isAuthenticated = false;
         state.isAdmin = false;
+        state.isSuperAdmin = false;
         localStorage.removeItem('token');
       })
       .addCase(logoutUser.rejected, (state) => {
@@ -249,6 +254,7 @@ const authSlice = createSlice({
         state.token = null;
         state.isAuthenticated = false;
         state.isAdmin = false;
+        state.isSuperAdmin = false;
         localStorage.removeItem('token');
       })
       
