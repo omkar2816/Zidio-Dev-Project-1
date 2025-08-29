@@ -185,7 +185,7 @@ const Footer = () => {
                   href={social.href}
                   whileHover={{ scale: 1.1, y: -2 }}
                   whileTap={{ scale: 0.95 }}
-                  className="p-2 bg-gray-800 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-gray-700 transition-all duration-200"
+                  className="p-2 bg-gray-800 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-gray-700 transition-all duration-200 flex items-center justify-center"
                   aria-label={social.label}
                 >
                   <social.icon className="w-5 h-5" />
@@ -197,7 +197,7 @@ const Footer = () => {
                 onClick={scrollToTop}
                 whileHover={{ scale: 1.1, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                className="p-2 bg-blue-600 rounded-lg text-white hover:bg-blue-700 transition-all duration-200 ml-4"
+                className="p-2 bg-blue-600 rounded-lg text-white hover:bg-blue-700 transition-all duration-200 ml-4 flex items-center justify-center"
                 aria-label="Scroll to top"
               >
                 <ArrowUp className="w-5 h-5" />

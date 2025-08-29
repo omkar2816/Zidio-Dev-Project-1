@@ -87,7 +87,7 @@ const Modal = ({ isOpen, onClose, children, title }) => {
           animate="visible"
           exit="hidden"
           onClick={handleOverlayClick}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           style={{ pointerEvents: 'auto' }}
@@ -97,19 +97,19 @@ const Modal = ({ isOpen, onClose, children, title }) => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-h-[95vh] overflow-hidden flex flex-col modal-content"
+            className="relative w-full max-w-sm sm:max-w-md lg:max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-h-[95vh] overflow-hidden flex flex-col modal-content"
             style={{ pointerEvents: 'auto' }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white truncate pr-2">
                 {title}
               </h2>
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={onClose}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
               >
                 <X className="w-5 h-5" />
               </motion.button>
@@ -118,7 +118,7 @@ const Modal = ({ isOpen, onClose, children, title }) => {
             {/* Content */}
             <div 
               ref={modalContentRef}
-              className="flex-1 p-6 overflow-y-auto overscroll-contain modal-scroll
+              className="flex-1 p-4 sm:p-6 overflow-y-auto overscroll-contain modal-scroll
                          scrollbar-thin scrollbar-thumb-blue-500 hover:scrollbar-thumb-blue-600 
                          scrollbar-track-gray-100 dark:scrollbar-track-gray-800
                          scroll-smooth"

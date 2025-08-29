@@ -144,7 +144,7 @@ const Header = () => {
             )}
           </button>
           
-          <div className="relative w-full max-w-xs sm:max-w-sm">
+          <div className="relative w-full max-w-xs sm:max-w-sm lg:max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
             </div>
@@ -155,7 +155,7 @@ const Header = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-              className="block w-full pl-10 pr-9 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="block w-full pl-10 pr-9 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
             />
             {searchQuery && (
               <button
@@ -205,7 +205,7 @@ const Header = () => {
               <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium flex-shrink-0">
                 {user?.firstName?.charAt(0) || 'U'}
               </div>
-              <span className="hidden sm:block text-sm font-medium truncate max-w-[30vw]">
+              <span className="hidden sm:block text-sm font-medium truncate max-w-[100px] md:max-w-[120px] lg:max-w-[200px]">
                 {user?.firstName} {user?.lastName}
               </span>
             </button>

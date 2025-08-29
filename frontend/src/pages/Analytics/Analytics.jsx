@@ -165,9 +165,9 @@ const Analytics = () => {
 
       {/* Sheet Selection and Analysis */}
       {uploadedFile && sheetData && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           {/* Sheet Selection */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Select Sheet
             </h3>
@@ -183,8 +183,8 @@ const Analytics = () => {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">{sheetName}</span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                    <span className="font-medium truncate">{sheetName}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0 ml-2">
                       {sheetData[sheetName].length} rows
                     </span>
                   </div>
@@ -194,7 +194,7 @@ const Analytics = () => {
           </div>
 
           {/* Analysis Controls */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Analysis Options
             </h3>
@@ -248,7 +248,8 @@ const Analytics = () => {
                 
                 <button
                   onClick={handleGenerate3DCharts}
-                  className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg cursor-not-allowed"
+                  className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg cursor-not-allowed flex items-center justify-center"
+                  title="3D Charts (Coming Soon)"
                 >
                   <BarChart3 className="h-4 w-4" />
                 </button>

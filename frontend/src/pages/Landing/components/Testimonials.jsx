@@ -1,8 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Star, Quote } from 'lucide-react';
 
 const Testimonials = () => {
+  const [platformStats, setPlatformStats] = useState(null);
+
+  // Fetch platform statistics
+  useEffect(() => {
+    const fetchPlatformStats = async () => {
+      try {
+        const response = await fetch('/api/analytics/platform-stats');
+        const data = await response.json();
+        setPlatformStats(data);
+      } catch (error) {
+        console.error('Error fetching platform stats:', error);
+      }
+    };
+
+    fetchPlatformStats();
+  }, []);
   const testimonials = [
     {
       name: "Sarah Chen",
@@ -187,7 +203,9 @@ const Testimonials = () => {
             {/* Trust Indicators */}
             <div className="flex flex-wrap justify-center items-center gap-8 mt-8">
               <div className="text-center">
-                <div className="text-2xl font-bold">99.9%</div>
+                <div className="text-2xl font-bold">
+                  {platformStats ? `${platformStats.uptime}%` : '99.9%'}
+                </div>
                 <div className="text-blue-200 text-sm">Uptime</div>
               </div>
               <div className="text-center">

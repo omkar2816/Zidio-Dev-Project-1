@@ -109,9 +109,9 @@ const Profile = () => {
       </div>
 
       {/* Profile Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center space-x-6">
-          <div className="relative">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+          <div className="relative mx-auto sm:mx-0">
             <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
               {user?.firstName?.[0]}{user?.lastName?.[0]}
             </div>
@@ -119,11 +119,11 @@ const Profile = () => {
               <Camera className="h-4 w-4" />
             </button>
           </div>
-          <div>
+          <div className="text-center sm:text-left">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               {user?.firstName} {user?.lastName}
             </h2>
-            <p className="text-gray-600 dark:text-gray-400">{user?.email}</p>
+            <p className="text-gray-600 dark:text-gray-400 break-all">{user?.email}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
               {user?.role} Account
             </p>
@@ -133,12 +133,12 @@ const Profile = () => {
 
       {/* Tab Navigation */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-        <div className="flex space-x-1 p-1">
+        <div className="flex overflow-x-auto p-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+              className={`flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'

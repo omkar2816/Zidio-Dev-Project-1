@@ -91,10 +91,10 @@ const Dashboard = () => {
       {/* Stats Grid removed (no dummy data) */}
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Quick Actions */}
-        <div className="lg:col-span-2">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+        <div className="xl:col-span-2">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Quick Actions
             </h2>
@@ -110,7 +110,7 @@ const Dashboard = () => {
                     <div className={`p-2 rounded-lg ${colorStyles[action.color].bg} flex-shrink-0`}>
                       <action.icon className={`h-5 w-5 ${colorStyles[action.color].text} flex-shrink-0`} />
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
                         {action.title}
                       </h3>
@@ -126,8 +126,8 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Activity */}
-        <div className="lg:col-span-1">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+        <div className="xl:col-span-1">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Recent Activity
             </h2>
@@ -135,11 +135,12 @@ const Dashboard = () => {
               {recentFiles && recentFiles.length > 0 ? (
                 recentFiles.slice(0, 5).map((f) => (
                   <div key={f.uploadedAt} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2 min-w-0">
+                    <div className="flex items-center space-x-2 min-w-0 flex-1">
                       <Upload className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      <span className="text-gray-900 dark:text-gray-100 truncate max-w-[50vw] sm:max-w-[40vw]">{f.name}</span>
+                      <span className="text-gray-900 dark:text-gray-100 truncate">{f.name}</span>
                     </div>
-                    <span className="text-xs flex-shrink-0 ml-2">{new Date(f.uploadedAt).toLocaleString()}</span>
+                    <span className="text-xs flex-shrink-0 ml-2 hidden sm:inline">{new Date(f.uploadedAt).toLocaleString()}</span>
+                    <span className="text-xs flex-shrink-0 ml-2 sm:hidden">{new Date(f.uploadedAt).toLocaleDateString()}</span>
                   </div>
                 ))
               ) : (

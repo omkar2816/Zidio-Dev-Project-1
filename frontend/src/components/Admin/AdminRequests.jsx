@@ -189,33 +189,33 @@ const AdminRequests = () => {
               layout
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                     <User className="w-6 h-6 text-white" />
                   </div>
                   
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
                       {request.user.firstName} {request.user.lastName}
                     </h3>
-                    <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-sm text-gray-600 dark:text-gray-400 space-y-1 sm:space-y-0">
                       <div className="flex items-center space-x-1">
-                        <Mail className="w-4 h-4" />
-                        <span>{request.user.email}</span>
+                        <Mail className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate">{request.user.email}</span>
                       </div>
                       <div className="flex items-center space-x-1">
-                        <Calendar className="w-4 h-4" />
+                        <Calendar className="w-4 h-4 flex-shrink-0" />
                         <span>Requested {formatDate(request.createdAt)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-3">
-                  <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${getStatusColor(request.status)}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                  <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 w-fit ${getStatusColor(request.status)}`}>
                     {getStatusIcon(request.status)}
                     <span className="capitalize">{request.status}</span>
                   </div>
@@ -226,10 +226,10 @@ const AdminRequests = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => handleApprove(request._id)}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center space-x-1"
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center space-x-1"
                       >
                         <CheckCircle className="w-4 h-4" />
-                        <span>Approve</span>
+                        <span className="hidden sm:inline">Approve</span>
                       </motion.button>
                       
                       <motion.button
@@ -239,10 +239,10 @@ const AdminRequests = () => {
                           setSelectedRequest(request);
                           setShowRejectModal(true);
                         }}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center space-x-1"
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center space-x-1"
                       >
                         <XCircle className="w-4 h-4" />
-                        <span>Reject</span>
+                        <span className="hidden sm:inline">Reject</span>
                       </motion.button>
                     </div>
                   )}
