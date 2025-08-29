@@ -10,6 +10,8 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import analyticsRoutes from './routes/analytics.js';
+import notificationRoutes from './routes/notifications.js';
+import tabNotificationRoutes from './routes/tabNotifications.js';
 import { getTransporter } from './utils/mailer.js';
 
 // Load environment variables
@@ -21,7 +23,12 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:5174', 
+    'http://localhost:5175',
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
   credentials: true
 }));
 app.use(compression());
@@ -41,6 +48,8 @@ mongoose
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/tab-notifications', tabNotificationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

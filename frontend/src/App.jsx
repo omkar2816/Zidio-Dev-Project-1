@@ -42,22 +42,12 @@ function App() {
   useEffect(() => {
     initializeTheme();
     
-    // Clear session on page reload to force re-authentication
-    const handleBeforeUnload = () => {
-      localStorage.removeItem('token');
-      store.dispatch({ type: 'auth/logout/fulfilled' });
-    };
-
-    // Clear session on load (covers page refresh)
-    localStorage.removeItem('token');
-    store.dispatch({ type: 'auth/logout/fulfilled' });
-
-    // Also clear on browser close/tab close
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
+    // Initialize authentication state from localStorage token
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Validate token and get current user
+      store.dispatch(getCurrentUser());
+    }
   }, []);
 
   return (

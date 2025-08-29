@@ -124,7 +124,7 @@ export const changePassword = createAsyncThunk(
 const initialState = {
   user: null,
   token: localStorage.getItem('token'),
-  isAuthenticated: false,
+  isAuthenticated: !!localStorage.getItem('token'),
   isLoading: false,
   error: null,
   isAdmin: false,

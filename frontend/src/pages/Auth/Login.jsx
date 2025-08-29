@@ -62,15 +62,28 @@ const Login = () => {
         password: data.password,
       };
 
+      console.log('Attempting login with:', { email: credentials.email, isAdminLogin });
+
       if (isAdminLogin) {
-        await dispatch(adminLogin(credentials)).unwrap();
+        const result = await dispatch(adminLogin(credentials)).unwrap();
+        console.log('Admin login successful:', result);
       } else {
-        await dispatch(loginUser(credentials)).unwrap();
+        const result = await dispatch(loginUser(credentials)).unwrap();
+        console.log('User login successful:', result);
       }
 
       reset();
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Login error details:', {
+        error,
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      });
+      
+      // Show more specific error message
+      const errorMessage = error.message || error.error || 'Login failed. Please try again.';
+      toast.error(errorMessage, { position: 'bottom-center' });
     }
   };
 

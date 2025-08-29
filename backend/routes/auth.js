@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import UserActivity from '../models/UserActivity.js';
 import AdminRequest from '../models/AdminRequest.js';
 import Notification from '../models/Notification.js';
+import NotificationService from '../services/NotificationService.js';
 import { protect, requireSuperAdmin, requireAdmin } from '../middleware/auth.js';
 import crypto from 'crypto';
 import { sendMail } from '../utils/mailer.js';
@@ -107,16 +108,8 @@ router.post('/register', validateRegistration, async (req, res) => {
 
       await adminRequest.save();
 
-      // Notify the superadmin about the new admin request
-      const superadmin = await User.findOne({ role: 'superadmin' });
-      if (superadmin) {
-        await Notification.create({
-          recipient: superadmin._id,
-          type: 'admin_request',
-          message: `New admin request from ${firstName} ${lastName} (${email})`,
-          metadata: { adminRequestId: adminRequest._id }
-        });
-      }
+      // Notify superadmins about new admin request
+      await NotificationService.notifyAdminRequest(user);
 
       // Log activity
       await logActivity(user._id, 'registration', 'User registered with admin request', { 
@@ -142,6 +135,12 @@ router.post('/register', validateRegistration, async (req, res) => {
       });
 
       await user.save();
+
+      // Notify superadmins about new user registration
+      await NotificationService.notifyNewUserRegistration(user);
+
+      // Send welcome notification to the new user
+      await NotificationService.notifyWelcomeUser(user);
 
       // Generate token
       const token = user.generateAuthToken();
@@ -512,12 +511,10 @@ router.post('/admin-requests/:id/approve', protect, requireSuperAdmin, async (re
     await user.save();
 
     // Create notification for the user
-    await Notification.create({
-      recipient: user._id,
-      type: 'admin_approved',
-      message: 'Your admin request has been approved! You now have admin access.',
-      metadata: { adminRequestId: adminRequest._id }
-    });
+    await NotificationService.notifyAdminApproved(user);
+
+    // Notify superadmins about admin privileges being granted
+    await NotificationService.notifyAdminPrivilegesGranted(user, req.user);
 
     // Log activity
     await logActivity(req.user._id, 'admin_management', 'Approved admin request', {
@@ -572,12 +569,7 @@ router.post('/admin-requests/:id/reject', protect, requireSuperAdmin, async (req
     await user.save();
 
     // Create notification for the user
-    await Notification.create({
-      recipient: user._id,
-      type: 'admin_rejected',
-      message: `Your admin request has been rejected. ${reason ? `Reason: ${reason}` : ''}`,
-      metadata: { adminRequestId: adminRequest._id, reason }
-    });
+    await NotificationService.notifyAdminRejected(user, reason);
 
     // Log activity
     await logActivity(req.user._id, 'admin_management', 'Rejected admin request', {

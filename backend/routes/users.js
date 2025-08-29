@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator';
 import User from '../models/User.js';
 import UserActivity from '../models/UserActivity.js';
 import UploadedFile from '../models/UploadedFile.js';
+import NotificationService from '../services/NotificationService.js';
 import { protect, requireAdmin, requireOwnerOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -99,6 +100,15 @@ router.put('/profile', protect, [
       { firstName, lastName, email },
       { new: true, runValidators: true }
     ).select('-password');
+
+    // Send profile update notification
+    await NotificationService.notifyProfileUpdated(updatedUser);
+
+    // Log activity
+    await logActivity(req.user._id, 'profile_update', 'User updated profile', {
+      updatedFields: Object.keys(req.body),
+      email: email || req.user.email
+    }, req);
 
     res.json({
       success: true,

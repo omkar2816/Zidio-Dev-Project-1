@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Users, Trash2, AlertTriangle, Shield, UserCog } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminRequests from '../../components/Admin/AdminRequests';
+import TabNotificationBadge from '../../components/Layout/TabNotificationBadge';
 
 const Admin = () => {
   const { user, token } = useSelector((state) => state.auth);
@@ -99,7 +100,7 @@ const Admin = () => {
           <nav className="-mb-px flex space-x-8">
             <button
               onClick={() => setActiveTab('users')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
                 activeTab === 'users'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
@@ -107,10 +108,15 @@ const Admin = () => {
             >
               <Users className="w-5 h-5 inline mr-2" />
               User Management
+              <TabNotificationBadge 
+                tabId="admin-users"
+                category="admin_users_tab"
+                targetRoles={['admin', 'superadmin']}
+              />
             </button>
             <button
               onClick={() => setActiveTab('requests')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
                 activeTab === 'requests'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
@@ -118,6 +124,11 @@ const Admin = () => {
             >
               <UserCog className="w-5 h-5 inline mr-2" />
               Admin Requests
+              <TabNotificationBadge 
+                tabId="admin-requests"
+                category="admin_requests_tab"
+                targetRoles={['superadmin']}
+              />
             </button>
           </nav>
         </div>

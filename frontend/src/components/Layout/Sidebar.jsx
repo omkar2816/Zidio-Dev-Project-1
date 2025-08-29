@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { NavLink } from 'react-router-dom';
 import { 
@@ -12,11 +12,46 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { toggleSidebarCollapsed, toggleSidebar } from '../../store/slices/uiSlice';
+import TabNotificationBadge from './TabNotificationBadge';
 
 const Sidebar = () => {
   const dispatch = useDispatch();
   const { sidebarOpen, sidebarCollapsed } = useSelector((state) => state.ui);
-  const { isAdmin } = useSelector((state) => state.auth);
+  const { isAdmin, isSuperAdmin } = useSelector((state) => state.auth);
+  const [adminNotificationCount, setAdminNotificationCount] = useState(0);
+
+  // Fetch admin notification count for superadmins
+  useEffect(() => {
+    const fetchAdminNotificationCount = async () => {
+      if (!isSuperAdmin) return;
+      
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/notifications?category=admin&isRead=false&limit=50', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setAdminNotificationCount(data.data.unreadCount);
+        }
+      } catch (error) {
+        console.error('Error fetching admin notification count:', error);
+      }
+    };
+
+    fetchAdminNotificationCount();
+    
+    // Poll every 30 seconds for updates
+    const interval = isSuperAdmin ? setInterval(fetchAdminNotificationCount, 30000) : null;
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isSuperAdmin]);
 
   const navigation = [
     {
@@ -97,12 +132,14 @@ const Sidebar = () => {
           <nav className={`flex-1 ${sidebarCollapsed ? 'px-2' : 'px-4'} py-6 space-y-2`}>
             {navigation.map((item) => {
               const Icon = item.icon;
+              const showBadge = item.name === 'Admin Panel' && isSuperAdmin && adminNotificationCount > 0;
+              
               return (
                 <NavLink
                   key={item.name}
                   to={item.href}
                   className={({ isActive }) =>
-                    `flex items-center ${sidebarCollapsed ? 'justify-center px-0' : 'px-3'} py-2 text-sm font-medium rounded-md transition-colors ${
+                    `flex items-center ${sidebarCollapsed ? 'justify-center px-0' : 'px-3'} py-2 text-sm font-medium rounded-md transition-colors relative ${
                       isActive
                         ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
@@ -112,7 +149,48 @@ const Sidebar = () => {
                 >
                   <Icon className={`w-5 h-5 flex-shrink-0 ${sidebarCollapsed ? 'mx-auto' : ''}`} />
                   {!sidebarCollapsed && (
-                    <span className="ml-3 truncate">{item.name}</span>
+                    <>
+                      <span className="ml-3 truncate">{item.name}</span>
+                      {showBadge && (
+                        <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1 animate-pulse">
+                          {adminNotificationCount > 9 ? '9+' : adminNotificationCount}
+                        </span>
+                      )}
+                      {/* Tab-specific notification badges */}
+                      {item.name === 'Analytics' && (
+                        <TabNotificationBadge 
+                          tabId="analytics"
+                          category="analytics_tab"
+                          targetRoles={['user']}
+                        />
+                      )}
+                      {item.name === 'Charts' && (
+                        <TabNotificationBadge 
+                          tabId="charts"
+                          category="charts_tab"
+                          targetRoles={['user', 'admin', 'superadmin']}
+                        />
+                      )}
+                      {item.name === 'Excel Files' && (
+                        <TabNotificationBadge 
+                          tabId="files"
+                          category="files_tab"
+                          targetRoles={['user']}
+                        />
+                      )}
+                      {item.name === 'Dashboard' && (
+                        <TabNotificationBadge 
+                          tabId="dashboard"
+                          category="dashboard_tab"
+                          targetRoles={['user']}
+                        />
+                      )}
+                    </>
+                  )}
+                  {sidebarCollapsed && showBadge && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center animate-pulse">
+                      {adminNotificationCount > 9 ? '9' : adminNotificationCount}
+                    </span>
                   )}
                 </NavLink>
               );

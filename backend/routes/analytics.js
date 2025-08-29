@@ -5,6 +5,7 @@ import { protect, requireAdmin } from '../middleware/auth.js';
 import UploadedFile from '../models/UploadedFile.js';
 import UserActivity from '../models/UserActivity.js';
 import User from '../models/User.js';
+import NotificationService from '../services/NotificationService.js';
 
 const router = express.Router();
 
@@ -115,6 +116,15 @@ router.post('/upload', protect, upload.single('file'), async (req, res) => {
         totalRows: Object.values(sheets).reduce((sum, sheet) => sum + sheet.totalRows, 0)
       }
     );
+
+    // Notify superadmins about file upload (for monitoring purposes)
+    await NotificationService.notifyFileUpload(req.user, req.file.originalname);
+
+    // Notify the user that their file has been processed
+    await NotificationService.notifyFileProcessed(req.user, req.file.originalname, {
+      rowCount: Object.values(sheets).reduce((sum, sheet) => sum + sheet.totalRows, 0),
+      sheetCount: sheetNames.length
+    });
 
     res.json({
       success: true,
@@ -364,6 +374,14 @@ router.post('/analyze', protect, async (req, res) => {
         categoricalColumns: categoricalColumns.length
       }
     );
+
+    // Notify the user that their analysis is ready
+    await NotificationService.notifyAnalysisReady(req.user, {
+      totalRows: data.length,
+      totalColumns: headers.length,
+      numericColumns: numericColumns.length,
+      categoricalColumns: categoricalColumns.length
+    });
 
     res.json({
       success: true,
