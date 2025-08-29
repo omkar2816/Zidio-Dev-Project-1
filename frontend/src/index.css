@@ -96,8 +96,13 @@ html.lenis {
   height: auto;
 }
 
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
 .lenis.lenis-smooth {
-  scroll-behavior: auto;
+  scroll-behavior: auto !important;
 }
 
 .lenis.lenis-smooth [data-lenis-prevent] {
@@ -110,6 +115,34 @@ html.lenis {
 
 .lenis.lenis-scrolling iframe {
   pointer-events: none;
+}
+
+/* Ensure proper document flow for Lenis */
+html, body {
+  height: auto;
+  overflow-x: hidden;
+}
+
+body {
+  overflow-y: visible;
+}
+
+/* Prevent scroll conflicts with layout components */
+.layout-main {
+  min-height: 100vh;
+  /* Remove any overflow restrictions on main content areas */
+}
+
+/* Ensure fixed elements don't interfere with document scroll */
+.sidebar-fixed {
+  /* Sidebars should not affect document scroll height */
+  position: fixed;
+}
+
+/* Ensure modal containers don't interfere */
+.modal-overlay {
+  /* Modals should be positioned independently */
+  position: fixed;
 }
 
 /* Smooth transitions for all elements during scroll */

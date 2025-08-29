@@ -14,6 +14,8 @@ export const useLenis = (options = {}, isModalOpen = false) => {
       wheelMultiplier: 1,
       touchMultiplier: 2,
       normalizeWheel: true,
+      infinite: false,
+      autoResize: true,
       ...options
     });
 
@@ -27,8 +29,16 @@ export const useLenis = (options = {}, isModalOpen = false) => {
 
     requestAnimationFrame(raf);
 
+    // Add Lenis class to html element for CSS targeting
+    document.documentElement.classList.add('lenis');
+    
+    // Ensure body can scroll properly
+    document.body.style.height = 'auto';
+    document.body.style.overflow = 'visible';
+
     // Cleanup on unmount
     return () => {
+      document.documentElement.classList.remove('lenis');
       lenis.destroy();
     };
   }, []);
