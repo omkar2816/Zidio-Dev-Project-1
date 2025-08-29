@@ -8,19 +8,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: [
-      'admin_request_approved', 
-      'admin_request_rejected', 
-      'admin_request_pending',
-      'new_user_registration',
-      'file_upload_activity',
-      'data_analysis_completed',
-      'system_update',
-      'user_login_alert',
-      'bulk_operation_completed',
-      'security_alert',
-      'platform_milestone'
-    ],
+    enum: ['admin_request_approved', 'admin_request_rejected', 'admin_request_pending'],
     required: true
   },
   title: {
@@ -34,20 +22,6 @@ const notificationSchema = new mongoose.Schema({
   data: {
     type: mongoose.Schema.Types.Mixed,
     default: {}
-  },
-  actionUrl: {
-    type: String,
-    default: null
-  },
-  priority: {
-    type: String,
-    enum: ['low', 'medium', 'high', 'urgent'],
-    default: 'medium'
-  },
-  category: {
-    type: String,
-    enum: ['admin', 'user', 'system', 'security'],
-    default: 'admin'
   },
   isRead: {
     type: Boolean,
