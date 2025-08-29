@@ -12,7 +12,6 @@ import Layout from './components/Layout/Layout';
 import LenisProvider from './components/LenisProvider';
 import ScrollToTop from './components/ScrollToTop';
 import ScrollProgress from './components/ScrollProgress';
-import ScrollDebugPanel from './components/ScrollDebugPanel';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import Landing from './pages/Landing/Landing';
 import Login from './pages/Auth/Login';
@@ -131,9 +130,6 @@ function App() {
               
               {/* Scroll to Top Button */}
               <ScrollToTop />
-              
-              {/* Scroll Debug Panel (Development only) */}
-              <ScrollDebugPanel />
             </div>
           </Router>
         </LenisProvider>
