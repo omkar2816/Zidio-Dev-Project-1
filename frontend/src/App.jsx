@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 import store from './store';
 import { setTheme } from './store/slices/uiSlice';
 import { getCurrentUser } from './store/slices/authSlice';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 // Components
 import Layout from './components/Layout/Layout';
@@ -53,11 +54,12 @@ function App() {
   return (
     <Provider store={store}>
       <HelmetProvider>
-        <LenisProvider>
-          <ScrollProgress />
-          <Router>
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-              <Routes>
+        <NotificationProvider>
+          <LenisProvider>
+            <ScrollProgress />
+            <Router>
+              <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+                <Routes>
                 {/* Landing Page - Always accessible */}
                 <Route path="/" element={<Landing />} />
                 
@@ -123,8 +125,9 @@ function App() {
             </div>
           </Router>
         </LenisProvider>
-      </HelmetProvider>
-    </Provider>
+      </NotificationProvider>
+    </HelmetProvider>
+  </Provider>
   );
 }
 

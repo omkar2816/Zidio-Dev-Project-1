@@ -45,15 +45,7 @@ const notificationSchema = new mongoose.Schema({
       'user_activity_summary',
       'performance_report',
       'backup_completed',
-      // Tab-specific notifications
-      'dashboard_update',
-      'analytics_report_ready',
-      'charts_template_added',
-      'files_processing_complete',
-      'admin_user_action_required',
-      'admin_request_action_required',
-      'system_alert_tab',
-      'user_management_alert',
+      // Real activity-based notifications
       'analytics_data_ready',
       'chart_generation_complete'
     ],

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { 
   Bell, 
   X, 
@@ -27,113 +28,47 @@ import {
 const NotificationPanel = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const scrollRef = useRef(null);
-  const [notifications, setNotifications] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const {
+    notifications: allNotifications,
+    unreadCount,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    cleanupReadNotifications,
+    fetchNotifications
+  } = useNotifications();
+  
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedPriority, setSelectedPriority] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [filteredNotifications, setFilteredNotifications] = useState([]);
 
-  // Re-fetch notifications when filters change and auto-cleanup old read notifications
+  // Filter notifications based on selected filters
+  useEffect(() => {
+    let filtered = allNotifications;
+
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(notif => notif.category === selectedCategory);
+    }
+
+    if (selectedPriority !== 'all') {
+      filtered = filtered.filter(notif => notif.priority === selectedPriority);
+    }
+
+    setFilteredNotifications(filtered);
+  }, [allNotifications, selectedCategory, selectedPriority]);
+
+  // Re-fetch notifications when panel opens or filters change
   useEffect(() => {
     if (isOpen) {
-      fetchNotifications();
-      // Auto-cleanup old read notifications when panel opens
-      autoCleanupOldNotifications();
-    }
-  }, [isOpen, selectedCategory, selectedPriority]);
-
-  const autoCleanupOldNotifications = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      await fetch('/api/notifications/cleanup/read', {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      // Silent cleanup - no need to update UI as fresh data will be fetched
-    } catch (error) {
-      // Silent fail for auto-cleanup
-      console.debug('Auto-cleanup completed');
-    }
-  };
-
-  const fetchNotifications = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      let url = '/api/notifications';
+      const filters = {};
+      if (selectedCategory !== 'all') filters.category = selectedCategory;
+      if (selectedPriority !== 'all') filters.priority = selectedPriority;
       
-      // Add filter parameters
-      const params = new URLSearchParams();
-      if (selectedCategory !== 'all') params.append('category', selectedCategory);
-      if (selectedPriority !== 'all') params.append('priority', selectedPriority);
-      
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
-      
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data.data.notifications);
-        setUnreadCount(data.data.unreadCount);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    } finally {
-      setIsLoading(false);
+      fetchNotifications(filters);
     }
-  };
-
-  const markAsRead = async (notificationId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/notifications/${notificationId}/read`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        // Remove the notification from the panel after marking as read
-        setNotifications(prev => prev.filter(notif => notif._id !== notificationId));
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
-
-  const markAllAsRead = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/notifications/mark-all-read', {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        // Remove all notifications from the panel after marking all as read
-        setNotifications([]);
-        setUnreadCount(0);
-      }
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-    }
-  };
+  }, [isOpen, selectedCategory, selectedPriority, fetchNotifications]);
 
   const handleNotificationClick = (notification) => {
     // Mark as read if not already read
@@ -148,52 +83,9 @@ const NotificationPanel = ({ isOpen, onClose }) => {
     }
   };
 
-  const deleteNotification = async (notificationId, event) => {
+  const handleDeleteNotification = async (notificationId, event) => {
     event.stopPropagation(); // Prevent navigation when deleting
-    
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/notifications/${notificationId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        setNotifications(prev => prev.filter(notif => notif._id !== notificationId));
-        // Update unread count if the deleted notification was unread
-        const deletedNotification = notifications.find(n => n._id === notificationId);
-        if (deletedNotification && !deletedNotification.isRead) {
-          setUnreadCount(prev => Math.max(0, prev - 1));
-        }
-      }
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-    }
-  };
-
-  const cleanupReadNotifications = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/notifications/cleanup/all-read', {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Remove read notifications from the current view
-        setNotifications(prev => prev.filter(notif => !notif.isRead));
-        console.log(`Cleaned up ${data.deletedCount} read notifications`);
-      }
-    } catch (error) {
-      console.error('Error cleaning up notifications:', error);
-    }
+    await deleteNotification(notificationId);
   };
 
   const getNotificationIcon = (type) => {
@@ -394,7 +286,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
           )}
           
           {/* Cleanup Read Notifications Button */}
-          {notifications.some(n => n.isRead) && (
+          {allNotifications.some(n => n.isRead) && (
             <button
               onClick={cleanupReadNotifications}
               className="p-1 rounded text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
@@ -480,7 +372,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
           </div>
-        ) : notifications.length === 0 ? (
+        ) : filteredNotifications.length === 0 ? (
           <div className="text-center py-8">
             <Bell className="w-8 h-8 text-gray-400 mx-auto mb-2" />
             <p className="text-gray-500 dark:text-gray-400">
@@ -489,7 +381,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
           </div>
         ) : (
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
-            {notifications.map((notification) => (
+            {filteredNotifications.map((notification) => (
               <motion.div
                 key={notification._id}
                 layout
@@ -564,7 +456,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
                           </>
                         )}
                         <button
-                          onClick={(e) => deleteNotification(notification._id, e)}
+                          onClick={(e) => handleDeleteNotification(notification._id, e)}
                           className="p-1 rounded text-gray-400 hover:text-red-600 dark:hover:text-red-400"
                           title="Delete notification"
                         >

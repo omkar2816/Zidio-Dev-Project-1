@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useNotifications } from '../../contexts/NotificationContext';
 
 const TabNotificationBadge = ({ 
   tabId, 
@@ -7,55 +8,19 @@ const TabNotificationBadge = ({
   type = null, 
   priority = null,
   targetRoles = null,
-  refreshInterval = 30000, // 30 seconds
   maxCount = 99 
 }) => {
-  const { token, user } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
+  const { getUnreadCountByCategory, lastUpdate } = useNotifications();
   const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
-    if (!token || !tabId) return;
+    if (!tabId) return;
 
-    const fetchTabNotifications = async () => {
-      try {
-        // Build query parameters for filtering notifications
-        const params = new URLSearchParams();
-        
-        if (category) params.append('category', category);
-        if (type) params.append('type', type);
-        if (priority) params.append('priority', priority);
-        if (targetRoles) {
-          targetRoles.forEach(role => params.append('targetRoles', role));
-        }
-        
-        // Only count unread notifications
-        params.append('isRead', 'false');
-        params.append('limit', '100'); // Get a reasonable number to count
-        
-        const response = await fetch(`/api/notifications?${params.toString()}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setNotificationCount(data.data.unreadCount || 0);
-        }
-      } catch (error) {
-        console.error(`Error fetching tab notifications for ${tabId}:`, error);
-      }
-    };
-
-    // Fetch immediately
-    fetchTabNotifications();
-    
-    // Set up polling
-    const interval = setInterval(fetchTabNotifications, refreshInterval);
-    
-    return () => clearInterval(interval);
-  }, [token, tabId, category, type, priority, targetRoles, refreshInterval]);
+    // Get the notification count using the context
+    const count = getUnreadCountByCategory(category, targetRoles);
+    setNotificationCount(count);
+  }, [tabId, category, targetRoles, getUnreadCountByCategory, lastUpdate]);
 
   // Don't render if no notifications
   if (notificationCount === 0) return null;
