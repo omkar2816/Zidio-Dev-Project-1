@@ -5,13 +5,17 @@ import Header from './Header';
 
 const Layout = () => {
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-900 dark:to-indigo-950">
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <Header />
-        <main className="flex-1 bg-gray-50 dark:bg-gray-900">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-            <Outlet />
+        <main className="flex-1 relative">
+          {/* Glassmorphism background */}
+          <div className="absolute inset-0 bg-white/20 dark:bg-black/20 backdrop-blur-sm"></div>
+          <div className="relative z-10">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+              <Outlet />
+            </div>
           </div>
         </main>
       </div>

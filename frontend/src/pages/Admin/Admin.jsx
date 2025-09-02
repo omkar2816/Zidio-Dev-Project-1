@@ -71,7 +71,7 @@ const Admin = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             {isSuperAdmin ? 'Super Admin Panel' : 'Admin Panel'}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -82,9 +82,9 @@ const Admin = () => {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full">
-            <Shield className="w-4 h-4 text-blue-600" />
-            <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+          <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 px-4 py-2 rounded-xl border border-blue-200/50 dark:border-blue-700/30 backdrop-blur-sm">
+            <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">
               {isSuperAdmin ? 'Super Admin' : 'Admin'}
             </span>
           </div>

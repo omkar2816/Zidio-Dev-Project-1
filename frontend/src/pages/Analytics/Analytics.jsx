@@ -98,7 +98,7 @@ const Analytics = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Excel Analytics
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -108,7 +108,7 @@ const Analytics = () => {
         <div className="flex space-x-2">
           <button
             onClick={clearData}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-xl hover:bg-white/90 dark:hover:bg-gray-700/90 transition-all duration-200 shadow-lg flex items-center"
           >
             <RotateCcw className="h-4 w-4 mr-2" />
             Clear Data
@@ -117,29 +117,32 @@ const Analytics = () => {
       </div>
 
       {/* File Upload Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/30 shadow-xl">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+          <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg mr-2"></div>
           Upload Excel File
         </h2>
         
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
+          className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 backdrop-blur-sm ${
             isDragActive
-              ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
-              : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
+              ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-900/20 scale-105'
+              : 'border-white/40 dark:border-gray-600/40 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-white/30 dark:hover:bg-gray-700/30'
           }`}
         >
           <input {...getInputProps()} />
-          <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Upload className="h-8 w-8 text-white" />
+          </div>
           {isDragActive ? (
-            <p className="text-blue-600 dark:text-blue-400">Drop the file here...</p>
+            <p className="text-blue-600 dark:text-blue-400 font-medium">Drop the file here...</p>
           ) : (
             <div>
-              <p className="text-gray-600 dark:text-gray-400 mb-2">
+              <p className="text-gray-700 dark:text-gray-300 mb-2 font-medium">
                 Drag and drop your Excel file here, or click to browse
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Supports .xlsx, .xls, and .csv files
               </p>
             </div>
@@ -147,7 +150,7 @@ const Analytics = () => {
         </div>
 
         {uploadedFile && (
-          <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+          <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200/50 dark:border-green-800/50 rounded-xl backdrop-blur-sm">
             <div className="flex items-center">
               <FileSpreadsheet className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
               <div>

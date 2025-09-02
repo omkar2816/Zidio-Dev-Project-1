@@ -99,7 +99,7 @@ const Profile = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Profile Settings
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -109,13 +109,13 @@ const Profile = () => {
       </div>
 
       {/* Profile Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/30 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
           <div className="relative mx-auto sm:mx-0">
-            <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+            <div className="w-20 h-20 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg">
               {user?.firstName?.[0]}{user?.lastName?.[0]}
             </div>
-            <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
+            <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white hover:scale-105 transition-all shadow-lg">
               <Camera className="h-4 w-4" />
             </button>
           </div>
@@ -124,24 +124,25 @@ const Profile = () => {
               {user?.firstName} {user?.lastName}
             </h2>
             <p className="text-gray-600 dark:text-gray-400 break-all">{user?.email}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
+            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 text-blue-700 dark:text-blue-300 mt-2">
+              <Shield className="h-3 w-3 mr-1" />
               {user?.role} Account
-            </p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/30 shadow-xl">
         <div className="flex overflow-x-auto p-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 whitespace-nowrap ${
+              className={`flex items-center space-x-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-300/30 dark:border-blue-600/30 text-blue-700 dark:text-blue-300 shadow-lg'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/30 dark:hover:bg-gray-800/30 hover:backdrop-blur-md'
               }`}
             >
               <tab.icon className="h-4 w-4" />
