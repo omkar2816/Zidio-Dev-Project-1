@@ -56,15 +56,71 @@ export const deleteUploadedFile = createAsyncThunk(
 
 export const analyzeData = createAsyncThunk(
   'analytics/analyzeData',
-  async (data, { rejectWithValue, getState }) => {
+  async ({ fileId, analysisType = 'comprehensive' }, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token;
-      const response = await axios.post('/api/analytics/analyze', data, {
+      
+      if (!fileId) {
+        throw new Error('File ID is required');
+      }
+      
+      // First, fetch the file data
+      const fileResponse = await axios.get(`/api/analytics/files/${fileId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      return response.data;
+      
+      const fileData = fileResponse.data.data;
+      
+      // Check if we have sheet data
+      if (!fileData.sheets || Object.keys(fileData.sheets).length === 0) {
+        throw new Error('No sheet data found in file');
+      }
+      
+      // Get the first sheet (sheets is an object with sheetName as keys)
+      const firstSheetName = fileData.sheetNames[0];
+      const firstSheet = fileData.sheets[firstSheetName];
+      
+      if (!firstSheet.data || firstSheet.data.length === 0) {
+        throw new Error('No data found in the first sheet');
+      }
+      
+      // Prepare the data in the format expected by the analyze endpoint
+      const sheetData = {
+        headers: firstSheet.headers,
+        data: firstSheet.data
+      };
+      
+      // Now send to analyze endpoint
+      const response = await axios.post('/api/analytics/analyze', {
+        sheetData,
+        analysisType
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      return {
+        ...response.data,
+        fileInfo: {
+          fileName: fileData.fileName,
+          fileSize: fileData.fileSize,
+          sheetNames: fileData.sheetNames,
+          sheetName: firstSheetName
+        },
+        preview: firstSheet.data, // Pass all data instead of just 10 rows
+        fullData: firstSheet.data, // Also provide as fullData
+        statistics: {
+          totalRows: firstSheet.totalRows,
+          totalColumns: firstSheet.totalColumns,
+          numericColumns: firstSheet.headers?.filter(header => {
+            return firstSheet.data.some(row => {
+              const value = row[header];
+              return !isNaN(parseFloat(value)) && value !== '' && value !== null;
+            });
+          }).length || 0
+        }
+      };
     } catch (error) {
-      return rejectWithValue(error.response?.data || { message: 'Analysis failed' });
+      return rejectWithValue(error.response?.data || { message: error.message || 'Analysis failed' });
     }
   }
 );
@@ -260,6 +316,10 @@ const analyticsSlice = createSlice({
       .addCase(fetchUploadedFiles.fulfilled, (state, action) => {
         state.isLoading = false;
         const files = action.payload.data || [];
+        
+        // Store original files data for Analytics component
+        state.uploadedFiles = files;
+        
         // Normalize to recentFiles shape for Files page
         state.recentFiles = files.map(f => ({
           id: f._id,
@@ -293,18 +353,18 @@ const analyticsSlice = createSlice({
       })
       .addCase(analyzeData.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.analytics = action.payload.data.analytics;
+        state.analytics = action.payload.analysis; // Fixed: use analysis instead of data.analytics
         state.chartData = {
           ...state.chartData,
-          ...action.payload.data.chartData
+          ...(action.payload.chartData || {})
         };
-        state.summary = action.payload.data.summary;
+        state.summary = action.payload.analysis?.summary || action.payload.summary;
         // Append to chart history (metadata only)
         const timestamp = Date.now();
         const newCharts = [];
-        if (action.payload.data.chartData?.barCharts?.length) {
+        if (action.payload.chartData?.barCharts?.length) {
           newCharts.push(
-            ...action.payload.data.chartData.barCharts.map((c, idx) => ({
+            ...action.payload.chartData.barCharts.map((c, idx) => ({
               type: 'bar',
               title: c.title,
               createdAt: timestamp,
@@ -312,9 +372,9 @@ const analyticsSlice = createSlice({
             }))
           );
         }
-        if (action.payload.data.chartData?.lineCharts?.length) {
+        if (action.payload.chartData?.lineCharts?.length) {
           newCharts.push(
-            ...action.payload.data.chartData.lineCharts.map((c, idx) => ({
+            ...action.payload.chartData.lineCharts.map((c, idx) => ({
               type: 'line',
               title: c.title,
               createdAt: timestamp,
@@ -322,9 +382,9 @@ const analyticsSlice = createSlice({
             }))
           );
         }
-        if (action.payload.data.chartData?.pieCharts?.length) {
+        if (action.payload.chartData?.pieCharts?.length) {
           newCharts.push(
-            ...action.payload.data.chartData.pieCharts.map((c, idx) => ({
+            ...action.payload.chartData.pieCharts.map((c, idx) => ({
               type: 'pie',
               title: c.title,
               createdAt: timestamp,
@@ -332,7 +392,9 @@ const analyticsSlice = createSlice({
             }))
           );
         }
-        state.chartHistory = [...newCharts, ...state.chartHistory].slice(0, 50);
+        if (newCharts.length > 0) {
+          state.chartHistory = [...newCharts, ...state.chartHistory].slice(0, 50);
+        }
       })
       .addCase(analyzeData.rejected, (state, action) => {
         state.isLoading = false;

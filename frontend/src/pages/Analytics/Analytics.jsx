@@ -1,344 +1,664 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useDropzone } from 'react-dropzone';
+import { uploadExcelFile, fetchUploadedFiles, deleteUploadedFile, analyzeData } from '../../store/slices/analyticsSlice';
+import AdvancedChartDashboard from '../../components/Charts/AdvancedChartDashboard';
 import { 
   Upload, 
   FileSpreadsheet, 
+  Trash2, 
+  Plus, 
+  Grid3X3, 
   BarChart3, 
-  PieChart, 
-  TrendingUp,
+  Eye, 
+  TrendingUp, 
+  PieChart,
+  FileText,
+  X,
   Download,
-  Trash2,
-  Eye,
-  Settings,
-  Play,
-  Pause,
-  RotateCcw
+  Edit3,
+  Save
 } from 'lucide-react';
-import { uploadExcelFile, analyzeData, generate3DCharts, exportData } from '../../store/slices/analyticsSlice';
 import toast from 'react-hot-toast';
 
 const Analytics = () => {
   const dispatch = useDispatch();
-  const { uploadedFile, currentSheet, sheetData, analytics, chartData, isLoading } = useSelector((state) => state.analytics);
-  const { theme } = useSelector((state) => state.ui);
+  const { recentFiles, isLoading, error } = useSelector((state) => state.analytics);
+  const [activeTab, setActiveTab] = useState('upload');
+  const [analysisData, setAnalysisData] = useState(null);
+  const [analyzingFileId, setAnalyzingFileId] = useState(null);
+  const [editableData, setEditableData] = useState([]);
+  const [editingCell, setEditingCell] = useState(null);
+  const [showAllRows, setShowAllRows] = useState(false);
+  const tableRef = useRef(null);
 
-  const [selectedSheet, setSelectedSheet] = useState(null);
-  const [analysisType, setAnalysisType] = useState('basic');
-  const [chartType, setChartType] = useState('bar');
-
-  const onDrop = useCallback((acceptedFiles) => {
-    if (acceptedFiles.length > 0) {
-      const file = acceptedFiles[0];
-      if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
-          file.type === 'application/vnd.ms-excel' ||
-          file.name.endsWith('.xlsx') || 
-          file.name.endsWith('.xls') ||
-          file.name.endsWith('.csv')) {
-        dispatch(uploadExcelFile(file));
-        toast.success('File uploaded successfully!');
-      } else {
-        toast.error('Please upload a valid Excel or CSV file.');
-      }
-    }
+  useEffect(() => {
+    dispatch(fetchUploadedFiles());
   }, [dispatch]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-excel': ['.xls'],
-      'text/csv': ['.csv']
-    },
-    multiple: false
-  });
+  // Keyboard shortcuts for table interaction
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (activeTab === 'analysis' && editableData.length > 0) {
+        if (e.ctrlKey && e.key === 's') {
+          e.preventDefault();
+          exportEditedData();
+        } else if (e.ctrlKey && e.key === 'n') {
+          e.preventDefault();
+          addNewRow();
+        }
+      }
+    };
 
-  const handleAnalyze = async () => {
-    if (!uploadedFile || !selectedSheet) {
-      toast.error('Please upload a file and select a sheet first.');
-      return;
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeTab, editableData]);
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      try {
+        toast.loading('Uploading file...');
+        const result = await dispatch(uploadExcelFile(file)).unwrap();
+        toast.dismiss();
+        toast.success('File uploaded successfully!');
+        
+        // Refresh the files list
+        dispatch(fetchUploadedFiles());
+        
+        // Switch to recent files tab to show the uploaded file
+        setActiveTab('recent');
+      } catch (error) {
+        toast.dismiss();
+        toast.error('Upload failed: ' + (error.message || 'Unknown error'));
+        console.error('Upload failed:', error);
+      }
     }
+  };
 
+  const handleDeleteFile = async (fileId) => {
     try {
-      await dispatch(analyzeData({ sheetName: selectedSheet, analysisType })).unwrap();
+      await dispatch(deleteUploadedFile(fileId)).unwrap();
+      toast.success('File deleted successfully!');
+      dispatch(fetchUploadedFiles()); // Refresh the list
+    } catch (error) {
+      toast.error('Delete failed: ' + (error.message || 'Unknown error'));
+      console.error('Delete failed:', error);
+    }
+  };
+
+  const handleAnalyzeFile = async (file) => {
+    try {
+      console.log('Analyzing file:', file); // Debug log
+      
+      if (!file || !file.id) {
+        toast.error('Invalid file selected');
+        return;
+      }
+      
+      setAnalyzingFileId(file.id);
+      toast.loading('Analyzing file...');
+      
+      // Call the analysis API
+      const analysisResult = await dispatch(analyzeData({ 
+        fileId: file.id,
+        analysisType: 'comprehensive' 
+      })).unwrap();
+      
+      const analysisResultData = {
+        ...analysisResult,
+        fileName: file.name,
+        fileSize: file.size,
+        uploadDate: file.uploadedAt
+      };
+      
+      setAnalysisData(analysisResultData);
+      
+      // Initialize editable data
+      if (analysisResult.preview && analysisResult.preview.length > 0) {
+        setEditableData([...analysisResult.preview]);
+      } else if (analysisResult.fullData && analysisResult.fullData.length > 0) {
+        setEditableData([...analysisResult.fullData]);
+      }
+      
+      toast.dismiss();
       toast.success('Analysis completed successfully!');
+      
+      // Switch to analysis tab
+      setActiveTab('analysis');
+      
     } catch (error) {
-      toast.error('Analysis failed. Please try again.');
+      toast.dismiss();
+      toast.error('Analysis failed: ' + (error.message || 'Unknown error'));
+      console.error('Analysis failed:', error);
+    } finally {
+      setAnalyzingFileId(null);
     }
   };
 
-  // Chart generation module disabled for now
-  const handleGenerate3DCharts = async () => {
-    toast.error('3D chart generation is currently disabled.');
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleExport = async (format) => {
-    if (!analytics) {
-      toast.error('No data to export. Please analyze data first.');
-      return;
-    }
-
-    try {
-      await dispatch(exportData({ format, data: analytics })).unwrap();
-      toast.success(`Data exported as ${format.toUpperCase()} successfully!`);
-    } catch (error) {
-      toast.error('Export failed. Please try again.');
-    }
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  const clearData = () => {
-    dispatch({ type: 'analytics/clearAnalytics' });
-    dispatch({ type: 'analytics/clearUploadedFile' });
-    setSelectedSheet(null);
-    toast.success('Data cleared successfully!');
+  // Cell editing functions
+  const handleCellClick = (rowIndex, columnKey) => {
+    setEditingCell({ rowIndex, columnKey });
+  };
+
+  const handleCellChange = (rowIndex, columnKey, newValue) => {
+    const updatedData = [...editableData];
+    updatedData[rowIndex][columnKey] = newValue;
+    setEditableData(updatedData);
+  };
+
+  const handleCellSave = () => {
+    setEditingCell(null);
+    toast.success('Cell updated successfully!');
+  };
+
+  const handleCellCancel = () => {
+    setEditingCell(null);
+  };
+
+  const exportEditedData = () => {
+    const dataStr = JSON.stringify(editableData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'edited_data.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Data exported successfully!');
+  };
+
+  const addNewRow = () => {
+    if (editableData.length > 0) {
+      const newRow = {};
+      Object.keys(editableData[0]).forEach(key => {
+        newRow[key] = '';
+      });
+      setEditableData([...editableData, newRow]);
+      toast.success('New row added!');
+    }
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Excel Analytics
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Upload, analyze, and visualize your Excel data
-          </p>
-        </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={clearData}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/30 dark:border-gray-600/30 rounded-xl hover:bg-white/90 dark:hover:bg-gray-700/90 transition-all duration-200 shadow-lg flex items-center"
-          >
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Clear Data
-          </button>
+      <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/30 shadow-xl p-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
+              Analytics Dashboard
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-lg">
+              Upload, analyze, and visualize your Excel data with advanced charts
+            </p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full shadow-lg">
+              <BarChart3 className="w-8 h-8 text-white" />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* File Upload Section */}
-      <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/30 shadow-xl">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
-          <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg mr-2"></div>
-          Upload Excel File
-        </h2>
-        
-        <div
-          {...getRootProps()}
-          className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 backdrop-blur-sm ${
-            isDragActive
-              ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-900/20 scale-105'
-              : 'border-white/40 dark:border-gray-600/40 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-white/30 dark:hover:bg-gray-700/30'
-          }`}
-        >
-          <input {...getInputProps()} />
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Upload className="h-8 w-8 text-white" />
-          </div>
-          {isDragActive ? (
-            <p className="text-blue-600 dark:text-blue-400 font-medium">Drop the file here...</p>
-          ) : (
-            <div>
-              <p className="text-gray-700 dark:text-gray-300 mb-2 font-medium">
-                Drag and drop your Excel file here, or click to browse
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Supports .xlsx, .xls, and .csv files
-              </p>
-            </div>
-          )}
-        </div>
-
-        {uploadedFile && (
-          <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200/50 dark:border-green-800/50 rounded-xl backdrop-blur-sm">
-            <div className="flex items-center">
-              <FileSpreadsheet className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
-              <div>
-                <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                  {uploadedFile.name}
-                </p>
-                <p className="text-xs text-green-600 dark:text-green-400">
-                  {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
-                </p>
+      {/* Tab Navigation */}
+      <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/30 shadow-xl">
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="flex space-x-8 px-8">
+            <button
+              onClick={() => setActiveTab('upload')}
+              className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'upload'
+                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Upload className="w-5 h-5" />
+                <span>Upload Files</span>
               </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Sheet Selection and Analysis */}
-      {uploadedFile && sheetData && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-          {/* Sheet Selection */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Select Sheet
-            </h3>
-            <div className="space-y-2">
-              {Object.keys(sheetData).map((sheetName) => (
-                <button
-                  key={sheetName}
-                  onClick={() => setSelectedSheet(sheetName)}
-                  className={`w-full text-left p-3 rounded-lg border transition-colors duration-200 ${
-                    selectedSheet === sheetName
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium truncate">{sheetName}</span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0 ml-2">
-                      {sheetData[sheetName].length} rows
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Analysis Controls */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Analysis Options
-            </h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Analysis Type
-                </label>
-                <select
-                  value={analysisType}
-                  onChange={(e) => setAnalysisType(e.target.value)}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
-                >
-                  <option value="basic">Basic Statistics</option>
-                  <option value="categorical">Categorical Analysis</option>
-                  <option value="correlation">Correlation Analysis</option>
-                  <option value="trend">Trend Analysis</option>
-                </select>
+            </button>
+            <button
+              onClick={() => setActiveTab('recent')}
+              className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'recent'
+                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Grid3X3 className="w-5 h-5" />
+                <span>Recent Files</span>
+                {recentFiles && recentFiles.length > 0 && (
+                  <span className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 text-xs px-2 py-1 rounded-full">
+                    {recentFiles.length}
+                  </span>
+                )}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Chart Type
-                </label>
-                <select
-                  value={chartType}
-                  onChange={(e) => setChartType(e.target.value)}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
-                >
-                  <option value="bar">Bar Chart</option>
-                  <option value="line">Line Chart</option>
-                  <option value="pie">Pie Chart</option>
-                  <option value="scatter">Scatter Plot</option>
-                </select>
-              </div>
-
-              <div className="flex space-x-2">
-                <button
-                  onClick={handleAnalyze}
-                  disabled={!selectedSheet || isLoading}
-                  className="flex-1 flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                >
-                  {isLoading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  ) : (
-                    <Play className="h-4 w-4 mr-2" />
-                  )}
-                  Analyze Data
-                </button>
-                
-                <button
-                  onClick={handleGenerate3DCharts}
-                  className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg cursor-not-allowed flex items-center justify-center"
-                  title="3D Charts (Coming Soon)"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Export Options */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Export Data
-            </h3>
-            
-            <div className="space-y-2">
+            </button>
+            {analysisData && (
               <button
-                onClick={() => handleExport('json')}
-                disabled={!analytics}
-                className="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                onClick={() => setActiveTab('analysis')}
+                className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'analysis'
+                    ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
               >
-                <Download className="h-4 w-4 mr-2" />
-                Export as JSON
+                <div className="flex items-center space-x-2">
+                  <TrendingUp className="w-5 h-5" />
+                  <span>Analysis Results</span>
+                </div>
               </button>
-              
-              <button
-                onClick={() => handleExport('csv')}
-                disabled={!analytics}
-                className="w-full flex items-center justify-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export as CSV
-              </button>
-            </div>
-          </div>
+            )}
+          </nav>
         </div>
-      )}
 
-      {/* Analysis Results */}
-      {analytics && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Analysis Results
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {analytics.summary && Object.entries(analytics.summary).map(([key, value]) => (
-              <div key={key} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 capitalize">
-                  {key.replace(/([A-Z])/g, ' $1').trim()}
-                </p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {typeof value === 'number' ? value.toFixed(2) : value}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* Chart Placeholder */}
-          <div className="h-64 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-            <div className="text-center">
-              <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-500 dark:text-gray-400">
-                Charts will be displayed here
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 3D Charts Section */}
-      {false && chartData.charts3D && chartData.charts3D.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            3D Visualizations
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {chartData.charts3D.map((chart, index) => (
-              <div key={index} className="h-64 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+        {/* Tab Content */}
+        <div className="p-8">
+          {activeTab === 'upload' && (
+            <div className="space-y-8">
+              {/* File Upload Section */}
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 bg-gradient-to-br from-gray-50/50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-900/50 backdrop-blur-sm hover:border-emerald-400 dark:hover:border-emerald-500 transition-all duration-300">
                 <div className="text-center">
-                  <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500 dark:text-gray-400">
-                    3D {chart.type} Chart
+                  <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <Upload className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    Upload Excel File
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    Choose an Excel file (.xlsx, .xls) to analyze and create charts
+                  </p>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <div className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                      <Upload className="w-5 h-5 mr-2" />
+                      Choose File
+                    </div>
+                  </label>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                    Supports .xlsx and .xls files up to 10MB
                   </p>
                 </div>
               </div>
-            ))}
+
+              {/* Recent Upload Stats */}
+              {recentFiles && recentFiles.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-6 border border-emerald-200/50 dark:border-emerald-800/50">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                        <FileSpreadsheet className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Total Files</p>
+                        <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{recentFiles.length}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200/50 dark:border-blue-800/50">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                        <BarChart3 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Ready to Analyze</p>
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{recentFiles.length}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6 border border-purple-200/50 dark:border-purple-800/50">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                        <Grid3X3 className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-purple-800 dark:text-purple-200">Total Size</p>
+                        <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                          {formatFileSize(recentFiles.reduce((total, file) => total + (file.size || 0), 0))}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'recent' && (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Files</h3>
+                {recentFiles && recentFiles.length > 0 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {recentFiles.length} file{recentFiles.length !== 1 ? 's' : ''} uploaded
+                  </p>
+                )}
+              </div>
+              
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin w-8 h-8 border-4 border-emerald-200 dark:border-emerald-800 border-t-emerald-600 dark:border-t-emerald-400 rounded-full mx-auto mb-4"></div>
+                  <p className="text-gray-600 dark:text-gray-400">Loading files...</p>
+                </div>
+              ) : recentFiles && recentFiles.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {recentFiles.map((file) => (
+                    <div key={file.id} className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 rounded-xl p-6 hover:shadow-lg hover:shadow-emerald-500/10 dark:hover:shadow-emerald-400/10 transition-all duration-200 group">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg group-hover:bg-emerald-200 dark:group-hover:bg-emerald-800/50 transition-colors">
+                          <FileSpreadsheet className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
+                          {formatDate(file.uploadedAt)}
+                        </span>
+                      </div>
+                      
+                      {/* File Name - Made more prominent */}
+                      <div className="mb-3">
+                        <h4 className="font-bold text-lg text-gray-900 dark:text-white mb-1 leading-tight">
+                          {file.name || 'Unnamed File'}
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Excel File • {formatFileSize(file.size)}
+                        </p>
+                      </div>
+                      
+                      {/* Action Buttons */}
+                      <div className="flex space-x-2 mt-4">
+                        <button 
+                          onClick={() => handleAnalyzeFile(file)}
+                          disabled={analyzingFileId === file.id}
+                          className="flex-1 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 text-sm flex items-center justify-center font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {analyzingFileId === file.id ? (
+                            <>
+                              <div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full mr-2"></div>
+                              Analyzing...
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-4 h-4 mr-1" />
+                              Analyze
+                            </>
+                          )}
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteFile(file.id)}
+                          className="px-4 py-2 border border-red-300 dark:border-red-600 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-gradient-to-br from-gray-50/50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-xl border border-gray-200/50 dark:border-gray-700/50">
+                  <Grid3X3 className="mx-auto h-16 w-16 text-gray-400 dark:text-gray-600 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No files uploaded yet</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">Upload your first Excel file to get started with analytics</p>
+                  <button 
+                    onClick={() => setActiveTab('upload')}
+                    className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 font-medium"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload File
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Analysis Results Tab */}
+          {activeTab === 'analysis' && analysisData && (
+            <div className="space-y-6">
+              <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
+                    <TrendingUp className="w-6 h-6 mr-2 text-emerald-600 dark:text-emerald-400" />
+                    Analysis Results
+                  </h3>
+                  <button
+                    onClick={() => setActiveTab('files')}
+                    className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Interactive Chart Dashboard - Moved to Top */}
+                <div className="mb-8">
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <BarChart3 className="w-5 h-5 mr-2" />
+                    Interactive Charts & Visualization
+                  </h4>
+                  <AdvancedChartDashboard 
+                    data={editableData} 
+                    className="bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-900/80 rounded-xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm"
+                  />
+                </div>
+
+                {/* Enhanced Data Table */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                      <FileText className="w-5 h-5 mr-2" />
+                      Interactive Data Table
+                      <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                        ({editableData.length} rows • Editable • Ctrl+S to export, Ctrl+N to add row)
+                      </span>
+                    </h4>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setShowAllRows(!showAllRows)}
+                        className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                      >
+                        {showAllRows ? 'Show Less' : `Show All (${editableData.length})`}
+                      </button>
+                      <button
+                        onClick={addNewRow}
+                        className="px-3 py-1 text-sm bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors flex items-center"
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Add Row
+                      </button>
+                      <button
+                        onClick={exportEditedData}
+                        className="px-3 py-1 text-sm bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-800 transition-colors flex items-center"
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        Export
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div 
+                    ref={tableRef}
+                    className="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden enhanced-table-scroll"
+                    style={{ 
+                      maxHeight: showAllRows ? '80vh' : '400px',
+                      overflowY: 'auto',
+                      overflowX: 'auto'
+                    }}
+                    onWheel={(e) => {
+                      // Enable mouse wheel scrolling
+                      e.stopPropagation();
+                    }}
+                  >
+                    {editableData && editableData.length > 0 ? (
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-100 dark:bg-gray-700 sticky top-0 z-10">
+                          <tr>
+                            <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                              #
+                            </th>
+                            {Object.keys(editableData[0]).map((header) => (
+                              <th key={header} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-32">
+                                {header}
+                              </th>
+                            ))}
+                            <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                          {(showAllRows ? editableData : editableData.slice(0, 20)).map((row, rowIndex) => (
+                            <tr key={rowIndex} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                              <td className="px-2 py-2 text-xs text-gray-500 dark:text-gray-400 font-mono">
+                                {rowIndex + 1}
+                              </td>
+                              {Object.entries(row).map(([columnKey, value], cellIndex) => (
+                                <td key={cellIndex} className="px-4 py-2 relative group">
+                                  {editingCell?.rowIndex === rowIndex && editingCell?.columnKey === columnKey ? (
+                                    <div className="flex items-center space-x-1">
+                                      <input
+                                        type="text"
+                                        defaultValue={String(value)}
+                                        className="w-full px-2 py-1 text-sm border border-blue-300 dark:border-blue-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            handleCellChange(rowIndex, columnKey, e.target.value);
+                                            handleCellSave();
+                                          } else if (e.key === 'Escape') {
+                                            handleCellCancel();
+                                          }
+                                        }}
+                                        onBlur={(e) => {
+                                          handleCellChange(rowIndex, columnKey, e.target.value);
+                                          handleCellSave();
+                                        }}
+                                        autoFocus
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div
+                                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded transition-colors min-h-6 flex items-center"
+                                      onClick={() => handleCellClick(rowIndex, columnKey)}
+                                      title="Click to edit"
+                                    >
+                                      {String(value)}
+                                      <Edit3 className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-50 transition-opacity" />
+                                    </div>
+                                  )}
+                                </td>
+                              ))}
+                              <td className="px-2 py-2">
+                                <div className="flex items-center space-x-1">
+                                  <button
+                                    onClick={() => {
+                                      const newData = editableData.filter((_, i) => i !== rowIndex);
+                                      setEditableData(newData);
+                                      toast.success('Row deleted');
+                                    }}
+                                    className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    title="Delete row"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="p-8 text-center">
+                        <p className="text-gray-500 dark:text-gray-400">No data available</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {!showAllRows && editableData.length > 20 && (
+                    <div className="mt-3 text-center">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Showing 20 of {editableData.length} rows. 
+                        <button 
+                          onClick={() => setShowAllRows(true)}
+                          className="ml-1 text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          Show all rows
+                        </button>
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Statistics */}
+                {analysisData.statistics && (
+                  <div className="mb-8">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <PieChart className="w-5 h-5 mr-2" />
+                      Data Statistics
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
+                        <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">Total Rows</p>
+                        <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                          {analysisData.statistics.totalRows || 0}
+                        </p>
+                      </div>
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-4 rounded-lg border border-green-200 dark:border-green-700">
+                        <p className="text-sm text-green-600 dark:text-green-400 font-medium">Total Columns</p>
+                        <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+                          {analysisData.statistics.totalColumns || 0}
+                        </p>
+                      </div>
+                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
+                        <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">Numeric Columns</p>
+                        <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                          {analysisData.statistics.numericColumns || 0}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50/70 dark:bg-red-900/20 backdrop-blur-xl border border-red-200/50 dark:border-red-800/50 rounded-xl p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-6 h-6 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center">
+                <span className="text-red-600 dark:text-red-400 text-sm">!</span>
+              </div>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
+              <p className="text-sm text-red-700 dark:text-red-300 mt-1">{error}</p>
+            </div>
           </div>
         </div>
       )}

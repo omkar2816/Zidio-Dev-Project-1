@@ -1,6 +1,4 @@
 import axios from 'axios';
-import store from '../store';
-import { logout } from '../store/slices/authSlice';
 
 // Set base URL for all requests - this should match your backend port
 axios.defaults.baseURL = 'http://localhost:5000';
@@ -29,11 +27,15 @@ axios.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Token is invalid or expired
+      // Handle unauthorized access
       localStorage.removeItem('token');
-      store.dispatch(logout());
-      // Redirect to login page
-      window.location.href = '/';
+      localStorage.removeItem('user');
+      // Redirect to login only if we're not already on a public page
+      if (!window.location.pathname.includes('/login') && 
+          !window.location.pathname.includes('/register') && 
+          window.location.pathname !== '/') {
+        window.location.href = '/';
+      }
     }
     return Promise.reject(error);
   }
