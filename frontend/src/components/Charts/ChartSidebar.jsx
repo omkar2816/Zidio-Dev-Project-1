@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
   ChevronDown, 
@@ -11,7 +11,10 @@ import {
   Palette,
   Settings2,
   Filter,
-  Layers
+  Layers,
+  Wand2,
+  RefreshCw,
+  CheckCircle
 } from 'lucide-react';
 
 const ChartSidebar = ({ 
@@ -19,7 +22,8 @@ const ChartSidebar = ({
   onClose, 
   data = [], 
   onApplyConfig,
-  initialConfig = {}
+  initialConfig = {},
+  smartRecommendations = []
 }) => {
   // Default chart titles based on chart type
   const getDefaultTitle = (chartType) => {
@@ -46,8 +50,15 @@ const ChartSidebar = ({
     colorScheme: 'emerald',
     showAnimation: true,
     filters: {},
+    numericFilters: {},
+    autoConfigEnabled: true,
     ...initialConfig
   });
+
+  const [autoConfig, setAutoConfig] = useState(null);
+  const [showAutoSuggestions, setShowAutoSuggestions] = useState(false);
+  const [filteredData, setFilteredData] = useState(data);
+  const [activeFilters, setActiveFilters] = useState({});
 
   const [expandedSections, setExpandedSections] = useState({
     chartType: true,
@@ -56,11 +67,213 @@ const ChartSidebar = ({
     filters: false
   });
 
+  const scrollContainerRef = useRef(null);
+
   useEffect(() => {
     if (initialConfig && Object.keys(initialConfig).length > 0) {
       setConfig(prev => ({ ...prev, ...initialConfig }));
     }
   }, [initialConfig]);
+
+  // Apply filters to data whenever filters or data changes
+  useEffect(() => {
+    applyFilters();
+  }, [data, activeFilters]);
+
+  // Apply filters to the data
+  const applyFilters = () => {
+    if (!data || data.length === 0) {
+      setFilteredData([]);
+      return;
+    }
+
+    let filtered = [...data];
+
+    // Apply categorical filters
+    Object.entries(activeFilters).forEach(([column, selectedValues]) => {
+      if (selectedValues && selectedValues.length > 0) {
+        filtered = filtered.filter(row => {
+          const value = row[column];
+          return selectedValues.includes(value);
+        });
+      }
+    });
+
+    // Apply numeric range filters
+    Object.entries(config.numericFilters || {}).forEach(([column, range]) => {
+      if (range && (range.min !== undefined || range.max !== undefined)) {
+        filtered = filtered.filter(row => {
+          const value = parseFloat(row[column]);
+          if (isNaN(value)) return false;
+          
+          const meetsMin = range.min === undefined || value >= range.min;
+          const meetsMax = range.max === undefined || value <= range.max;
+          
+          return meetsMin && meetsMax;
+        });
+      }
+    });
+
+    setFilteredData(filtered);
+  };
+
+  const updateFilter = (column, selectedValues) => {
+    setActiveFilters(prev => ({
+      ...prev,
+      [column]: selectedValues
+    }));
+  };
+
+  const updateNumericFilter = (column, range) => {
+    setConfig(prev => ({
+      ...prev,
+      numericFilters: {
+        ...prev.numericFilters,
+        [column]: range
+      }
+    }));
+  };
+
+  const clearAllFilters = () => {
+    setActiveFilters({});
+    setConfig(prev => ({
+      ...prev,
+      numericFilters: {}
+    }));
+  };
+
+  const getFilteredDataCount = () => {
+    return {
+      total: data.length,
+      filtered: filteredData.length,
+      percentage: data.length > 0 ? Math.round((filteredData.length / data.length) * 100) : 0
+    };
+  };
+
+  // Enable mouse wheel scrolling
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const handleWheel = (e) => {
+      // Allow normal scrolling within the container
+      if (e.deltaY !== 0) {
+        e.stopPropagation();
+        scrollContainer.scrollTop += e.deltaY;
+      }
+    };
+
+    scrollContainer.addEventListener('wheel', handleWheel, { passive: true });
+    
+    return () => {
+      scrollContainer.removeEventListener('wheel', handleWheel);
+    };
+  }, [isOpen]);
+
+  // Auto-configuration functionality
+  const generateAutoConfig = () => {
+    const dataToAnalyze = filteredData.length > 0 ? filteredData : data;
+    if (!dataToAnalyze || dataToAnalyze.length === 0) return null;
+    
+    const columns = Object.keys(dataToAnalyze[0] || {});
+    const analysis = analyzeDataStructure(columns, dataToAnalyze);
+    
+    return {
+      recommendedXAxis: analysis.bestCategorical || analysis.bestTemporal || columns[0],
+      recommendedYAxis: analysis.bestNumeric || columns[1],
+      recommendedType: analysis.recommendedChartType,
+      recommendedSeries: analysis.bestSeries,
+      confidence: analysis.confidence
+    };
+  };
+
+  const analyzeDataStructure = (columns, data) => {
+    const analysis = {
+      numeric: [],
+      categorical: [],
+      temporal: [],
+      bestNumeric: null,
+      bestCategorical: null,
+      bestTemporal: null,
+      bestSeries: null,
+      recommendedChartType: 'bar',
+      confidence: 0
+    };
+
+    // Analyze each column
+    columns.forEach(column => {
+      const values = data.slice(0, 100).map(row => row[column]).filter(v => v !== null && v !== undefined);
+      const sampleValues = values.slice(0, 50);
+      
+      // Check if numeric
+      const numericCount = sampleValues.filter(v => !isNaN(parseFloat(v))).length;
+      const numericRatio = numericCount / sampleValues.length;
+      
+      // Check if date/temporal
+      const dateCount = sampleValues.filter(v => !isNaN(Date.parse(v))).length;
+      const dateRatio = dateCount / sampleValues.length;
+      
+      // Check if categorical
+      const uniqueRatio = new Set(sampleValues).size / sampleValues.length;
+      
+      if (numericRatio > 0.8) {
+        analysis.numeric.push({ column, quality: numericRatio });
+      } else if (dateRatio > 0.8) {
+        analysis.temporal.push({ column, quality: dateRatio });
+      } else if (uniqueRatio < 0.8) {
+        analysis.categorical.push({ column, quality: 1 - uniqueRatio });
+      }
+    });
+
+    // Select best columns
+    analysis.bestNumeric = analysis.numeric.sort((a, b) => b.quality - a.quality)[0]?.column;
+    analysis.bestCategorical = analysis.categorical.sort((a, b) => b.quality - a.quality)[0]?.column;
+    analysis.bestTemporal = analysis.temporal.sort((a, b) => b.quality - a.quality)[0]?.column;
+    analysis.bestSeries = analysis.categorical.filter(c => c.column !== analysis.bestCategorical)[0]?.column;
+
+    // Recommend chart type based on data structure
+    if (analysis.temporal.length > 0 && analysis.numeric.length > 0) {
+      analysis.recommendedChartType = 'line';
+      analysis.confidence = 0.9;
+    } else if (analysis.categorical.length > 0 && analysis.numeric.length > 0) {
+      analysis.recommendedChartType = 'bar';
+      analysis.confidence = 0.8;
+    } else if (analysis.numeric.length >= 2) {
+      analysis.recommendedChartType = 'scatter';
+      analysis.confidence = 0.7;
+    } else {
+      analysis.confidence = 0.5;
+    }
+
+    return analysis;
+  };
+
+  const applyAutoConfig = () => {
+    const generated = generateAutoConfig();
+    if (generated) {
+      setAutoConfig(generated);
+      setConfig(prev => ({
+        ...prev,
+        type: generated.recommendedType,
+        title: getDefaultTitle(generated.recommendedType),
+        xAxis: generated.recommendedXAxis,
+        yAxis: generated.recommendedYAxis,
+        series: generated.recommendedSeries || ''
+      }));
+      setShowAutoSuggestions(true);
+    }
+  };
+
+  const applySmartRecommendation = (recommendation) => {
+    setConfig(prev => ({
+      ...prev,
+      type: recommendation.type,
+      title: recommendation.title,
+      xAxis: recommendation.autoSelections?.xAxis || '',
+      yAxis: recommendation.autoSelections?.yAxis || '',
+      series: recommendation.autoSelections?.series || ''
+    }));
+  };
 
   // Chart types with descriptions
   const chartTypes = [
@@ -141,22 +354,25 @@ const ChartSidebar = ({
 
   // Get column names from data
   const getColumns = () => {
-    if (!data || data.length === 0) return [];
-    return Object.keys(data[0]);
+    const dataToUse = filteredData.length > 0 ? filteredData : data;
+    if (!dataToUse || dataToUse.length === 0) return [];
+    return Object.keys(dataToUse[0]);
   };
 
   const getNumericColumns = () => {
-    if (!data || data.length === 0) return [];
-    return Object.keys(data[0]).filter(key => {
-      const value = data[0][key];
+    const dataToUse = filteredData.length > 0 ? filteredData : data;
+    if (!dataToUse || dataToUse.length === 0) return [];
+    return Object.keys(dataToUse[0]).filter(key => {
+      const value = dataToUse[0][key];
       return !isNaN(parseFloat(value)) && isFinite(value);
     });
   };
 
   const getCategoricalColumns = () => {
-    if (!data || data.length === 0) return [];
-    return Object.keys(data[0]).filter(key => {
-      const value = data[0][key];
+    const dataToUse = filteredData.length > 0 ? filteredData : data;
+    if (!dataToUse || dataToUse.length === 0) return [];
+    return Object.keys(dataToUse[0]).filter(key => {
+      const value = dataToUse[0][key];
       return isNaN(parseFloat(value)) || !isFinite(value);
     });
   };
@@ -193,7 +409,15 @@ const ChartSidebar = ({
 
   const handleApply = () => {
     if (isConfigValid()) {
-      onApplyConfig(config);
+      const configToApply = {
+        ...config,
+        data: filteredData, // Use filtered data instead of original data
+        originalDataCount: data.length,
+        filteredDataCount: filteredData.length,
+        activeFilters: activeFilters,
+        numericFilters: config.numericFilters || {}
+      };
+      onApplyConfig(configToApply);
       onClose();
     }
   };
@@ -226,7 +450,11 @@ const ChartSidebar = ({
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800 hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-500">
+        <div 
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800 hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-500"
+          style={{ scrollBehavior: 'smooth' }}
+        >
           <div className="p-6 space-y-6">
           {/* Chart Title */}
           <div>
@@ -239,10 +467,75 @@ const ChartSidebar = ({
               onChange={(e) => updateConfig('title', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
               placeholder="Enter chart title"
-            />
+          />
+        </div>
+
+        {/* Auto-Configuration Section */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Wand2 className="text-blue-600" size={18} />
+              <h4 className="font-semibold text-gray-800">Smart Configuration</h4>
+            </div>
+            <button
+              onClick={applyAutoConfig}
+              className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+            >
+              <RefreshCw size={14} />
+              Auto-Configure
+            </button>
           </div>
 
-          {/* Chart Type Section */}
+          {autoConfig && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <CheckCircle size={14} className="text-green-500" />
+                <span>Confidence: {Math.round(autoConfig.confidence * 100)}%</span>
+              </div>
+              <div className="grid grid-cols-1 gap-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Recommended Chart:</span>
+                  <span className="font-medium capitalize">{autoConfig.recommendedType}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">X-Axis:</span>
+                  <span className="font-medium">{autoConfig.recommendedXAxis}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Y-Axis:</span>
+                  <span className="font-medium">{autoConfig.recommendedYAxis}</span>
+                </div>
+                {autoConfig.recommendedSeries && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Series:</span>
+                    <span className="font-medium">{autoConfig.recommendedSeries}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {smartRecommendations && smartRecommendations.length > 0 && (
+            <div className="mt-4">
+              <h5 className="text-sm font-medium text-gray-700 mb-2">Smart Recommendations:</h5>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {smartRecommendations.slice(0, 3).map((rec, index) => (
+                  <div 
+                    key={index}
+                    className="p-2 bg-white rounded border hover:border-blue-300 cursor-pointer transition-colors"
+                    onClick={() => applySmartRecommendation(rec)}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium capitalize">{rec.type}</span>
+                      <span className="text-xs text-blue-600">{Math.round(rec.confidence * 100)}%</span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">{rec.reason}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>          {/* Chart Type Section */}
           <div>
             <button
               onClick={() => toggleSection('chartType')}
@@ -259,6 +552,7 @@ const ChartSidebar = ({
               <div className="mt-3 space-y-2">
                 {chartTypes.map(type => {
                   const Icon = type.icon;
+                  const isRecommended = autoConfig && autoConfig.recommendedType === type.value;
                   return (
                     <button
                       key={type.value}
@@ -267,6 +561,10 @@ const ChartSidebar = ({
                         config.type === type.value
                           ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
                           : 'border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600'
+                      } ${
+                        isRecommended 
+                          ? 'ring-2 ring-blue-300 border-blue-400' 
+                          : ''
                       }`}
                     >
                       <div className="flex items-center space-x-3 mb-1">
@@ -280,9 +578,20 @@ const ChartSidebar = ({
                         }`}>
                           {type.label}
                         </span>
+                        {isRecommended && (
+                          <div className="flex items-center gap-1 ml-auto">
+                            <CheckCircle className="w-3 h-3 text-blue-500" />
+                            <span className="text-xs text-blue-600 font-medium">Recommended</span>
+                          </div>
+                        )}
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 ml-7">
                         {type.description}
+                        {isRecommended && (
+                          <span className="block text-blue-600 font-medium mt-1">
+                            Confidence: {Math.round(autoConfig.confidence * 100)}%
+                          </span>
+                        )}
                       </p>
                     </button>
                   );
@@ -309,10 +618,21 @@ const ChartSidebar = ({
                 {/* X-Axis */}
                 {!['radar'].includes(config.type) && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      X-Axis {['histogram', 'box'].includes(config.type) ? '(Data Column)' : '(Categories)'}
-                      <span className="text-red-500 ml-1">*</span>
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        X-Axis {['histogram', 'box'].includes(config.type) ? '(Data Column)' : '(Categories)'}
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      {autoConfig && autoConfig.recommendedXAxis && (
+                        <button
+                          onClick={() => updateConfig('xAxis', autoConfig.recommendedXAxis)}
+                          className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 transition-colors"
+                        >
+                          <Wand2 size={12} />
+                          Use Recommended
+                        </button>
+                      )}
+                    </div>
                     <select
                       value={config.xAxis}
                       onChange={(e) => updateConfig('xAxis', e.target.value)}
@@ -320,19 +640,42 @@ const ChartSidebar = ({
                     >
                       <option value="">Select column</option>
                       {(['histogram', 'box'].includes(config.type) ? getNumericColumns() : getColumns()).map(col => (
-                        <option key={col} value={col}>{col}</option>
+                        <option 
+                          key={col} 
+                          value={col}
+                          className={autoConfig && autoConfig.recommendedXAxis === col ? 'bg-blue-50 font-medium' : ''}
+                        >
+                          {col}
+                          {autoConfig && autoConfig.recommendedXAxis === col ? ' (Recommended)' : ''}
+                        </option>
                       ))}
                     </select>
+                    {autoConfig && autoConfig.recommendedXAxis && config.xAxis !== autoConfig.recommendedXAxis && (
+                      <p className="text-xs text-blue-600 mt-1">
+                        💡 Recommended: {autoConfig.recommendedXAxis}
+                      </p>
+                    )}
                   </div>
                 )}
 
                 {/* Y-Axis */}
                 {!['histogram', 'box', 'radar'].includes(config.type) && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Y-Axis (Values)
-                      <span className="text-red-500 ml-1">*</span>
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Y-Axis (Values)
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      {autoConfig && autoConfig.recommendedYAxis && (
+                        <button
+                          onClick={() => updateConfig('yAxis', autoConfig.recommendedYAxis)}
+                          className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 transition-colors"
+                        >
+                          <Wand2 size={12} />
+                          Use Recommended
+                        </button>
+                      )}
+                    </div>
                     <select
                       value={config.yAxis}
                       onChange={(e) => updateConfig('yAxis', e.target.value)}
@@ -340,18 +683,41 @@ const ChartSidebar = ({
                     >
                       <option value="">Select column</option>
                       {getNumericColumns().map(col => (
-                        <option key={col} value={col}>{col}</option>
+                        <option 
+                          key={col} 
+                          value={col}
+                          className={autoConfig && autoConfig.recommendedYAxis === col ? 'bg-blue-50 font-medium' : ''}
+                        >
+                          {col}
+                          {autoConfig && autoConfig.recommendedYAxis === col ? ' (Recommended)' : ''}
+                        </option>
                       ))}
                     </select>
+                    {autoConfig && autoConfig.recommendedYAxis && config.yAxis !== autoConfig.recommendedYAxis && (
+                      <p className="text-xs text-blue-600 mt-1">
+                        💡 Recommended: {autoConfig.recommendedYAxis}
+                      </p>
+                    )}
                   </div>
                 )}
 
                 {/* Series */}
                 {['bar', 'line', 'area', 'scatter'].includes(config.type) && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Series (Optional)
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Series (Optional)
+                      </label>
+                      {autoConfig && autoConfig.recommendedSeries && (
+                        <button
+                          onClick={() => updateConfig('series', autoConfig.recommendedSeries)}
+                          className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 transition-colors"
+                        >
+                          <Wand2 size={12} />
+                          Use Recommended
+                        </button>
+                      )}
+                    </div>
                     <select
                       value={config.series}
                       onChange={(e) => updateConfig('series', e.target.value)}
@@ -359,9 +725,21 @@ const ChartSidebar = ({
                     >
                       <option value="">None (single series)</option>
                       {getCategoricalColumns().map(col => (
-                        <option key={col} value={col}>{col}</option>
+                        <option 
+                          key={col} 
+                          value={col}
+                          className={autoConfig && autoConfig.recommendedSeries === col ? 'bg-blue-50 font-medium' : ''}
+                        >
+                          {col}
+                          {autoConfig && autoConfig.recommendedSeries === col ? ' (Recommended)' : ''}
+                        </option>
                       ))}
                     </select>
+                    {autoConfig && autoConfig.recommendedSeries && config.series !== autoConfig.recommendedSeries && (
+                      <p className="text-xs text-blue-600 mt-1">
+                        💡 Recommended: {autoConfig.recommendedSeries}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -462,32 +840,245 @@ const ChartSidebar = ({
               <div className="flex items-center space-x-2">
                 <Filter className="w-5 h-5 text-emerald-600" />
                 <span className="font-medium text-gray-900 dark:text-white">Data Filters</span>
+                {(Object.keys(activeFilters).length > 0 || Object.keys(config.numericFilters || {}).length > 0) && (
+                  <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full">
+                    {Object.keys(activeFilters).length + Object.keys(config.numericFilters || {}).length} active
+                  </span>
+                )}
               </div>
               <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${expandedSections.filters ? 'rotate-180' : ''}`} />
             </button>
             
             {expandedSections.filters && (
-              <div className="mt-3 space-y-3">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Apply filters to limit the data shown in your chart
-                </p>
-                
-                {getCategoricalColumns().slice(0, 3).map(column => (
-                  <div key={column}>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {column}
-                    </label>
-                    <select
-                      multiple
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white text-sm"
-                      style={{ height: '80px' }}
-                    >
-                      {getUniqueValues(column).map(value => (
-                        <option key={value} value={value}>{value}</option>
-                      ))}
-                    </select>
+              <div className="mt-3 space-y-4">
+                {/* Filter Summary */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-blue-900 dark:text-blue-300">
+                      Data Summary
+                    </span>
+                    {(Object.keys(activeFilters).length > 0 || Object.keys(config.numericFilters || {}).length > 0) && (
+                      <button
+                        onClick={clearAllFilters}
+                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Clear All
+                      </button>
+                    )}
                   </div>
-                ))}
+                  <div className="text-sm text-blue-700 dark:text-blue-300">
+                    Showing {getFilteredDataCount().filtered} of {getFilteredDataCount().total} rows 
+                    ({getFilteredDataCount().percentage}%)
+                  </div>
+                </div>
+
+                {/* Categorical Filters */}
+                <div>
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Categorical Filters
+                  </h5>
+                  <div className="space-y-3">
+                    {getCategoricalColumns().slice(0, 5).map(column => {
+                      const uniqueValues = getUniqueValues(column);
+                      if (uniqueValues.length <= 1) return null;
+                      
+                      return (
+                        <div key={column} className="border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                              {column} ({uniqueValues.length} options)
+                            </label>
+                            {activeFilters[column] && activeFilters[column].length > 0 && (
+                              <button
+                                onClick={() => updateFilter(column, [])}
+                                className="text-xs text-red-600 hover:text-red-800 underline"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                          
+                          {/* Checkbox-based selection for better UX */}
+                          <div className="max-h-32 overflow-y-auto space-y-1">
+                            {uniqueValues.map(value => (
+                              <label key={value} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-1 rounded">
+                                <input
+                                  type="checkbox"
+                                  checked={activeFilters[column]?.includes(value) || false}
+                                  onChange={(e) => {
+                                    const currentValues = activeFilters[column] || [];
+                                    let newValues;
+                                    if (e.target.checked) {
+                                      newValues = [...currentValues, value];
+                                    } else {
+                                      newValues = currentValues.filter(v => v !== value);
+                                    }
+                                    updateFilter(column, newValues);
+                                  }}
+                                  className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                                  {value || '(Empty)'}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                          
+                          {activeFilters[column] && activeFilters[column].length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {activeFilters[column].map(value => (
+                                <span key={value} className="inline-flex items-center px-2 py-1 bg-emerald-100 text-emerald-800 text-xs rounded-full">
+                                  {value}
+                                  <button
+                                    onClick={() => {
+                                      const newValues = activeFilters[column].filter(v => v !== value);
+                                      updateFilter(column, newValues);
+                                    }}
+                                    className="ml-1 text-emerald-600 hover:text-emerald-800"
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Numeric Range Filters */}
+                <div>
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Numeric Range Filters
+                  </h5>
+                  <div className="space-y-3">
+                    {getNumericColumns().slice(0, 3).map(column => {
+                      const values = data.map(row => parseFloat(row[column])).filter(v => !isNaN(v));
+                      if (values.length === 0) return null;
+                      
+                      const min = Math.min(...values);
+                      const max = Math.max(...values);
+                      const currentFilter = config.numericFilters?.[column] || {};
+                      const hasFilter = currentFilter.min !== undefined || currentFilter.max !== undefined;
+                      
+                      return (
+                        <div key={column} className="border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                              {column} (Range: {min.toFixed(2)} - {max.toFixed(2)})
+                            </label>
+                            {hasFilter && (
+                              <button
+                                onClick={() => updateNumericFilter(column, {})}
+                                className="text-xs text-red-600 hover:text-red-800 underline"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-xs text-gray-500">Min</label>
+                              <input
+                                type="number"
+                                placeholder={min.toString()}
+                                value={currentFilter.min || ''}
+                                onChange={(e) => {
+                                  const value = e.target.value ? parseFloat(e.target.value) : undefined;
+                                  updateNumericFilter(column, {
+                                    ...currentFilter,
+                                    min: value
+                                  });
+                                }}
+                                className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm focus:ring-1 focus:ring-emerald-500 dark:bg-gray-700 dark:text-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500">Max</label>
+                              <input
+                                type="number"
+                                placeholder={max.toString()}
+                                value={currentFilter.max || ''}
+                                onChange={(e) => {
+                                  const value = e.target.value ? parseFloat(e.target.value) : undefined;
+                                  updateNumericFilter(column, {
+                                    ...currentFilter,
+                                    max: value
+                                  });
+                                }}
+                                className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm focus:ring-1 focus:ring-emerald-500 dark:bg-gray-700 dark:text-white"
+                              />
+                            </div>
+                          </div>
+                          {hasFilter && (
+                            <div className="mt-2 text-xs text-blue-600">
+                              Active: {currentFilter.min !== undefined ? `≥${currentFilter.min}` : ''} 
+                              {currentFilter.min !== undefined && currentFilter.max !== undefined ? ' and ' : ''}
+                              {currentFilter.max !== undefined ? `≤${currentFilter.max}` : ''}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Quick Filter Presets */}
+                <div>
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Quick Actions
+                  </h5>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => {
+                        // Filter to show only top 10% of data by first numeric column
+                        const numericCol = getNumericColumns()[0];
+                        if (numericCol) {
+                          const values = data.map(row => parseFloat(row[numericCol])).filter(v => !isNaN(v));
+                          const threshold = values.sort((a, b) => b - a)[Math.floor(values.length * 0.1)];
+                          updateNumericFilter(numericCol, { min: threshold });
+                        }
+                      }}
+                      className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs hover:bg-emerald-200 transition-colors"
+                    >
+                      Top 10%
+                    </button>
+                    <button
+                      onClick={() => {
+                        // Filter to show only top 50% of data by first numeric column
+                        const numericCol = getNumericColumns()[0];
+                        if (numericCol) {
+                          const values = data.map(row => parseFloat(row[numericCol])).filter(v => !isNaN(v));
+                          const median = values.sort((a, b) => a - b)[Math.floor(values.length * 0.5)];
+                          updateNumericFilter(numericCol, { min: median });
+                        }
+                      }}
+                      className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-xs hover:bg-blue-200 transition-colors"
+                    >
+                      Above Median
+                    </button>
+                    <button
+                      onClick={clearAllFilters}
+                      className="px-3 py-1 bg-red-100 text-red-700 rounded-md text-xs hover:bg-red-200 transition-colors font-medium"
+                    >
+                      ✕ Clear All Filters
+                    </button>
+                    <button
+                      onClick={() => {
+                        // Sample 1000 random rows
+                        const sampleSize = Math.min(1000, data.length);
+                        const shuffled = [...data].sort(() => 0.5 - Math.random());
+                        const sample = shuffled.slice(0, sampleSize);
+                        setFilteredData(sample);
+                      }}
+                      className="px-3 py-1 bg-purple-100 text-purple-700 rounded-md text-xs hover:bg-purple-200 transition-colors"
+                    >
+                      Random Sample
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -502,6 +1093,13 @@ const ChartSidebar = ({
                 Please fill in all required fields marked with *
               </p>
             )}
+            {filteredData.length !== data.length && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-2 mb-2">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  🔍 Filters applied: Using {filteredData.length} of {data.length} rows
+                </p>
+              </div>
+            )}
           </div>
           <div className="flex space-x-3">
             <button
@@ -512,10 +1110,10 @@ const ChartSidebar = ({
             </button>
             <button
               onClick={handleApply}
-              disabled={!isConfigValid()}
+              disabled={!isConfigValid() || filteredData.length === 0}
               className="flex-1 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              Apply Chart
+              {filteredData.length === 0 ? 'No Data' : 'Apply Chart'}
             </button>
           </div>
         </div>

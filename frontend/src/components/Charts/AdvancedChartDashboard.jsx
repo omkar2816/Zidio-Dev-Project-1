@@ -1,14 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdvancedChart from './SimpleChart';
 import ChartSidebar from './ChartSidebar';
+import ProgressiveChartLoader from '../UI/ProgressiveChartLoader';
 import { Plus, BarChart3, Trash2, Edit3, Grid3X3, LayoutGrid, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
+import axios from '../../config/axios';
 
 const AdvancedChartDashboard = ({ data = [], className = '' }) => {
   const [charts, setCharts] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [editingChart, setEditingChart] = useState(null);
   const [layoutMode, setLayoutMode] = useState('grid'); // 'grid', 'list'
+  const [loadingCharts, setLoadingCharts] = useState(new Set()); // Track loading charts
+  const [pendingChart, setPendingChart] = useState(null); // Chart waiting to be rendered
+  const [smartRecommendations, setSmartRecommendations] = useState([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+
+  // Fetch smart recommendations when data changes
+  useEffect(() => {
+    if (data && data.length > 0) {
+      fetchSmartRecommendations();
+    }
+  }, [data]);
+
+  const fetchSmartRecommendations = async () => {
+    if (!data || data.length === 0) return;
+
+    try {
+      setLoadingRecommendations(true);
+      
+      // Use the enhanced analytics route for smart recommendations
+      const response = await axios.post('/api/analytics/analyze-enhanced', {
+        data: data.slice(0, 100), // Send sample of data for analysis
+        options: {
+          includeSmartRecommendations: true,
+          includeDataPreprocessing: false, // Just for recommendations
+          generateCharts: false
+        }
+      });
+
+      if (response.data && response.data.smartRecommendations) {
+        setSmartRecommendations(response.data.smartRecommendations);
+      }
+    } catch (error) {
+      console.error('Error fetching smart recommendations:', error);
+      // Don't show error toast for this, as it's optional functionality
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
 
   const handleAddChart = () => {
     if (!data || data.length === 0) {
@@ -25,24 +65,75 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
   };
 
   const handleApplyConfig = (config) => {
+    const chartId = editingChart?.id || Date.now();
+    
+    // Use filtered data from config if available, otherwise use original data
+    const chartData = config.data || data;
+    const isFiltered = config.data && config.data.length !== data.length;
+    
+    // Create chart data with filter information
+    const simulatedChartData = {
+      id: chartId,
+      ...config,
+      data: chartData, // Use filtered data
+      originalData: data, // Keep reference to original data
+      totalDataRows: chartData.length,
+      originalDataRows: data.length,
+      isFiltered: isFiltered,
+      filterInfo: isFiltered ? {
+        activeFilters: config.activeFilters || {},
+        numericFilters: config.numericFilters || {},
+        filteredCount: config.filteredDataCount,
+        originalCount: config.originalDataCount
+      } : null,
+      performanceMode: chartData.length > 1000,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Set pending chart to show loader
+    setPendingChart(simulatedChartData);
+    setLoadingCharts(prev => new Set([...prev, chartId]));
+    setIsSidebarOpen(false);
+  };
+  
+  const handleChartLoadComplete = (chartData) => {
     if (editingChart) {
       // Update existing chart
       setCharts(prev => prev.map(chart => 
         chart.id === editingChart.id 
-          ? { ...chart, ...config }
+          ? { ...chart, ...chartData }
           : chart
       ));
       toast.success('Chart updated successfully!');
     } else {
       // Create new chart
-      const newChart = {
-        id: Date.now(),
-        ...config,
-        createdAt: new Date().toISOString()
-      };
-      setCharts(prev => [...prev, newChart]);
+      setCharts(prev => [...prev, chartData]);
       toast.success('Chart created successfully!');
     }
+    
+    // Clean up loading state
+    setLoadingCharts(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(chartData.id);
+      return newSet;
+    });
+    setPendingChart(null);
+    setEditingChart(null);
+  };
+  
+  const handleChartLoadError = (error) => {
+    console.error('Chart loading error:', error);
+    toast.error('Failed to create chart: ' + error.message);
+    
+    // Clean up loading state
+    if (pendingChart) {
+      setLoadingCharts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(pendingChart.id);
+        return newSet;
+      });
+    }
+    setPendingChart(null);
     setEditingChart(null);
   };
 
@@ -196,13 +287,32 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
       </div>
 
       {/* Charts Grid */}
-      {charts.length > 0 ? (
-        <div className={getLayoutClasses()}>
-          {charts.map(chart => (
+      <div className={getLayoutClasses()}>
+        {/* Show progressive loader for pending chart */}
+        {pendingChart && (
+          <ProgressiveChartLoader
+            chartData={pendingChart}
+            onComplete={handleChartLoadComplete}
+            onError={handleChartLoadError}
+            className="min-h-64"
+          />
+        )}
+        
+        {/* Render existing charts */}
+        {charts.map(chart => (
+          <div key={chart.id} className="relative">
+            {/* Filter Indicator */}
+            {chart.isFiltered && chart.filterInfo && (
+              <div className="absolute top-2 right-2 z-10">
+                <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-medium shadow-lg border border-blue-200">
+                  🔍 Filtered: {chart.filterInfo.filteredCount}/{chart.filterInfo.originalCount} rows
+                </div>
+              </div>
+            )}
             <AdvancedChart 
               key={chart.id}
               id={chart.id}
-              data={data} 
+              data={chart.data || data} // Use chart's filtered data if available
               type={chart.type}
               title={chart.title}
               xAxis={chart.xAxis}
@@ -214,10 +324,19 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
               onDuplicate={() => handleDuplicateChart(chart)}
               onRemove={() => handleRemoveChart(chart.id)}
               onColorSchemeChange={(newScheme) => handleColorSchemeChange(chart.id, newScheme)}
+              performanceMode={chart.performanceMode}
+              totalDataRows={chart.totalDataRows}
+              displayedRows={chart.displayedRows}
+              isFiltered={chart.isFiltered}
+              filterInfo={chart.filterInfo}
+              samplingInfo={chart.samplingInfo}
             />
-          ))}
-        </div>
-      ) : (
+          </div>
+        ))}
+      </div>
+      
+      {/* Empty state */}
+      {charts.length === 0 && !pendingChart && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg p-12">
           <div className="text-center">
             <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
@@ -263,6 +382,7 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
         data={data}
         onApplyConfig={handleApplyConfig}
         initialConfig={editingChart || {}}
+        smartRecommendations={smartRecommendations}
       />
     </div>
   );

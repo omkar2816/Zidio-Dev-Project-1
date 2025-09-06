@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { uploadExcelFile, fetchUploadedFiles, deleteUploadedFile, analyzeData } from '../../store/slices/analyticsSlice';
 import AdvancedChartDashboard from '../../components/Charts/AdvancedChartDashboard';
+import VirtualTable from '../../components/UI/VirtualTable';
+import PerformanceMonitor from '../../components/UI/PerformanceMonitor';
 import { 
   Upload, 
   FileSpreadsheet, 
@@ -29,6 +31,7 @@ const Analytics = () => {
   const [editableData, setEditableData] = useState([]);
   const [editingCell, setEditingCell] = useState(null);
   const [showAllRows, setShowAllRows] = useState(false);
+  const [performanceData, setPerformanceData] = useState(null);
   const tableRef = useRef(null);
 
   useEffect(() => {
@@ -62,7 +65,20 @@ const Analytics = () => {
         toast.loading('Uploading file...');
         const result = await dispatch(uploadExcelFile(file)).unwrap();
         toast.dismiss();
+        
+        // Show success message
         toast.success('File uploaded successfully!');
+        
+        // Show dataset warnings if present
+        if (result.data && result.data.datasetWarnings) {
+          result.data.datasetWarnings.forEach(warning => {
+            const toastType = warning.severity === 'high' ? 'error' : 'warn';
+            toast[toastType](warning.message, {
+              duration: 6000,
+              position: 'top-center'
+            });
+          });
+        }
         
         // Refresh the files list
         dispatch(fetchUploadedFiles());
@@ -90,6 +106,7 @@ const Analytics = () => {
 
   const handleAnalyzeFile = async (file) => {
     try {
+      const startTime = Date.now(); // Track request start time
       console.log('Analyzing file:', file); // Debug log
       
       if (!file || !file.id) {
@@ -105,6 +122,17 @@ const Analytics = () => {
         fileId: file.id,
         analysisType: 'comprehensive' 
       })).unwrap();
+      
+      const endTime = Date.now();
+      const responseTime = endTime - startTime;
+      
+      // Store performance data
+      setPerformanceData({
+        responseTime,
+        dataSize: analysisResult.data?.summary?.totalRows || 0,
+        performanceMode: analysisResult.data?.performance?.optimized || false,
+        processingTime: analysisResult.data?.performance?.processingTime || responseTime
+      });
       
       const analysisResultData = {
         ...analysisResult,
@@ -465,6 +493,85 @@ const Analytics = () => {
                   />
                 </div>
 
+                {/* Performance Summary */}
+                {analysisData && analysisData.statistics && (
+                  <div className="mb-8">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6">
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-4">
+                        <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
+                        Dataset Performance Summary
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {analysisData.statistics.totalRows?.toLocaleString() || 0}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">Total Rows</div>
+                        </div>
+                        
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {analysisData.statistics.totalColumns?.toLocaleString() || 0}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">Total Columns</div>
+                        </div>
+                        
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center">
+                            <div className="flex-1">
+                              <div className={`text-2xl font-bold ${
+                                analysisData.statistics.totalRows > 1000 
+                                  ? 'text-orange-600 dark:text-orange-400' 
+                                  : 'text-green-600 dark:text-green-400'
+                              }`}>
+                                {analysisData.statistics.totalRows > 1000 ? 'Large' : 'Normal'}
+                              </div>
+                              <div className="text-sm text-gray-600 dark:text-gray-400">Dataset Size</div>
+                            </div>
+                            {analysisData.statistics.totalRows > 1000 && (
+                              <div className="ml-2">
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                                  Performance Mode Enabled
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {analysisData.statistics.totalRows > 1000 && (
+                        <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-700 rounded-lg">
+                          <div className="flex items-start space-x-3">
+                            <TrendingUp className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <h5 className="font-medium text-orange-900 dark:text-orange-200 mb-1">
+                                Performance Mode Active
+                              </h5>
+                              <p className="text-sm text-orange-700 dark:text-orange-300">
+                                Large dataset detected ({analysisData.statistics.totalRows.toLocaleString()} rows). 
+                                Charts automatically use intelligent sampling to maintain optimal performance. 
+                                Data distribution and patterns are preserved using systematic sampling techniques.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Performance Monitor */}
+                {performanceData && (
+                  <div className="mb-6">
+                    <PerformanceMonitor
+                      responseTime={performanceData.responseTime}
+                      dataSize={performanceData.dataSize}
+                      performanceMode={performanceData.performanceMode}
+                    />
+                  </div>
+                )}
+
                 {/* Enhanced Data Table */}
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-4">
@@ -499,102 +606,115 @@ const Analytics = () => {
             </div>
           </div>
                   
-                  <div 
-                    ref={tableRef}
-                    className="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden enhanced-table-scroll"
-                    style={{ 
-                      maxHeight: showAllRows ? '80vh' : '400px',
-                      overflowY: 'auto',
-                      overflowX: 'auto'
-                    }}
-                    onWheel={(e) => {
-                      // Enable mouse wheel scrolling
-                      e.stopPropagation();
-                    }}
-                  >
-                    {editableData && editableData.length > 0 ? (
-                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead className="bg-gray-100 dark:bg-gray-700 sticky top-0 z-10">
-                          <tr>
-                            <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
-                              #
-                            </th>
-                            {Object.keys(editableData[0]).map((header) => (
-                              <th key={header} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-32">
-                                {header}
+                  {/* Use VirtualTable for large datasets when showing all rows */}
+                  {showAllRows && editableData.length > 1000 ? (
+                    <VirtualTable
+                      data={editableData}
+                      onDataChange={setEditableData}
+                      editingCell={editingCell}
+                      onCellClick={handleCellClick}
+                      onCellChange={handleCellChange}
+                      onCellSave={handleCellSave}
+                      onCellCancel={handleCellCancel}
+                    />
+                  ) : (
+                    <div 
+                      ref={tableRef}
+                      className="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden enhanced-table-scroll"
+                      style={{ 
+                        maxHeight: showAllRows ? '80vh' : '400px',
+                        overflowY: 'auto',
+                        overflowX: 'auto'
+                      }}
+                      onWheel={(e) => {
+                        // Enable mouse wheel scrolling
+                        e.stopPropagation();
+                      }}
+                    >
+                      {editableData && editableData.length > 0 ? (
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                          <thead className="bg-gray-100 dark:bg-gray-700 sticky top-0 z-10">
+                            <tr>
+                              <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                                #
                               </th>
-                            ))}
-                            <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
-                              Actions
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                          {(showAllRows ? editableData : editableData.slice(0, 20)).map((row, rowIndex) => (
-                            <tr key={rowIndex} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                              <td className="px-2 py-2 text-xs text-gray-500 dark:text-gray-400 font-mono">
-                                {rowIndex + 1}
-                              </td>
-                              {Object.entries(row).map(([columnKey, value], cellIndex) => (
-                                <td key={cellIndex} className="px-4 py-2 relative group">
-                                  {editingCell?.rowIndex === rowIndex && editingCell?.columnKey === columnKey ? (
-                                    <div className="flex items-center space-x-1">
-                                      <input
-                                        type="text"
-                                        defaultValue={String(value)}
-                                        className="w-full px-2 py-1 text-sm border border-blue-300 dark:border-blue-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter') {
+                              {Object.keys(editableData[0]).map((header) => (
+                                <th key={header} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-32">
+                                  {header}
+                                </th>
+                              ))}
+                              <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                                Actions
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            {(showAllRows ? editableData : editableData.slice(0, 20)).map((row, rowIndex) => (
+                              <tr key={rowIndex} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group">
+                                <td className="px-2 py-2 text-xs text-gray-500 dark:text-gray-400 font-mono">
+                                  {rowIndex + 1}
+                                </td>
+                                {Object.entries(row).map(([columnKey, value], cellIndex) => (
+                                  <td key={cellIndex} className="px-4 py-2 relative group">
+                                    {editingCell?.rowIndex === rowIndex && editingCell?.columnKey === columnKey ? (
+                                      <div className="flex items-center space-x-1">
+                                        <input
+                                          type="text"
+                                          defaultValue={String(value)}
+                                          className="w-full px-2 py-1 text-sm border border-blue-300 dark:border-blue-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              handleCellChange(rowIndex, columnKey, e.target.value);
+                                              handleCellSave();
+                                            } else if (e.key === 'Escape') {
+                                              handleCellCancel();
+                                            }
+                                          }}
+                                          onBlur={(e) => {
                                             handleCellChange(rowIndex, columnKey, e.target.value);
                                             handleCellSave();
-                                          } else if (e.key === 'Escape') {
-                                            handleCellCancel();
-                                          }
-                                        }}
-                                        onBlur={(e) => {
-                                          handleCellChange(rowIndex, columnKey, e.target.value);
-                                          handleCellSave();
-                                        }}
-                                        autoFocus
-                                      />
-                                    </div>
-                                  ) : (
-                                    <div
-                                      className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded transition-colors min-h-6 flex items-center"
-                                      onClick={() => handleCellClick(rowIndex, columnKey)}
-                                      title="Click to edit"
+                                          }}
+                                          autoFocus
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div
+                                        className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded transition-colors min-h-6 flex items-center"
+                                        onClick={() => handleCellClick(rowIndex, columnKey)}
+                                        title="Click to edit"
+                                      >
+                                        {String(value)}
+                                        <Edit3 className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-50 transition-opacity" />
+          </div>
+        )}
+                                  </td>
+                                ))}
+                                <td className="px-2 py-2">
+                                  <div className="flex items-center space-x-1">
+                                    <button
+                                      onClick={() => {
+                                        const newData = editableData.filter((_, i) => i !== rowIndex);
+                                        setEditableData(newData);
+                                        toast.success('Row deleted');
+                                      }}
+                                      className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      title="Delete row"
                                     >
-                                      {String(value)}
-                                      <Edit3 className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-50 transition-opacity" />
-        </div>
-      )}
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </div>
                                 </td>
-                              ))}
-                              <td className="px-2 py-2">
-                                <div className="flex items-center space-x-1">
-                                  <button
-                                    onClick={() => {
-                                      const newData = editableData.filter((_, i) => i !== rowIndex);
-                                      setEditableData(newData);
-                                      toast.success('Row deleted');
-                                    }}
-                                    className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    title="Delete row"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <div className="p-8 text-center">
-                        <p className="text-gray-500 dark:text-gray-400">No data available</p>
-                      </div>
-                    )}
-                  </div>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="p-8 text-center">
+                          <p className="text-gray-500 dark:text-gray-400">No data available</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   
                   {!showAllRows && editableData.length > 20 && (
                     <div className="mt-3 text-center">
@@ -604,7 +724,7 @@ const Analytics = () => {
                           onClick={() => setShowAllRows(true)}
                           className="ml-1 text-blue-600 dark:text-blue-400 hover:underline"
                         >
-                          Show all rows
+                          Show all rows {editableData.length > 1000 ? '(Virtual Scrolling)' : ''}
                         </button>
                 </p>
               </div>

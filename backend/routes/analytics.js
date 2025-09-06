@@ -6,6 +6,8 @@ import UploadedFile from '../models/UploadedFile.js';
 import UserActivity from '../models/UserActivity.js';
 import User from '../models/User.js';
 import NotificationService from '../services/NotificationService.js';
+import DataPreprocessor from '../services/DataPreprocessor.js';
+import SmartChartConfigurator from '../services/SmartChartConfigurator.js';
 
 const router = express.Router();
 
@@ -158,12 +160,57 @@ const generateSpecificChart = (data, config) => {
   try {
     let chartData = [];
     
+    // Determine if we need performance mode
+    const dataSize = data.length;
+    const isLargeDataset = dataSize > 1000;
+    const performanceMode = isLargeDataset;
+    
+    // Calculate appropriate limits based on chart type and data size
+    const getDataLimit = (chartType, totalRows) => {
+      if (!performanceMode) return totalRows; // Use all data for small datasets
+      
+      switch (chartType) {
+        case 'line':
+        case 'area':
+          return Math.min(500, totalRows); // Lines can handle more points
+        case 'scatter':
+          return Math.min(300, totalRows); // Scatter plots need fewer points
+        case 'scatter3d':
+          return Math.min(200, totalRows); // 3D plots are more intensive
+        case 'bar':
+        case 'pie':
+          return Math.min(50, totalRows); // Categorical charts limited by categories
+        default:
+          return Math.min(250, totalRows);
+      }
+    };
+    
+    const dataLimit = getDataLimit(type, dataSize);
+    
+    // Smart sampling for large datasets
+    const getSampledData = (fullData, limit) => {
+      if (fullData.length <= limit) return fullData;
+      
+      // Use systematic sampling to maintain data distribution
+      const step = Math.floor(fullData.length / limit);
+      const sampledData = [];
+      
+      for (let i = 0; i < fullData.length; i += step) {
+        sampledData.push(fullData[i]);
+        if (sampledData.length >= limit) break;
+      }
+      
+      return sampledData;
+    };
+    
     switch (type) {
       case 'bar':
       case 'pie':
         if (groupBy) {
           const grouped = {};
-          data.forEach(row => {
+          const workingData = getSampledData(data, dataLimit);
+          
+          workingData.forEach(row => {
             const category = row[groupBy];
             const value = parseFloat(row[yAxis]) || 0;
             
@@ -187,21 +234,24 @@ const generateSpecificChart = (data, config) => {
         
       case 'line':
       case 'area':
-        chartData = data.slice(0, 100).map((row, index) => ({
+        const lineData = getSampledData(data, dataLimit);
+        chartData = lineData.map((row, index) => ({
           x: row[xAxis] || index,
           y: parseFloat(row[yAxis]) || 0
         }));
         break;
         
       case 'scatter':
-        chartData = data.slice(0, 200).map(row => ({
+        const scatterData = getSampledData(data, dataLimit);
+        chartData = scatterData.map(row => ({
           x: parseFloat(row[xAxis]) || 0,
           y: parseFloat(row[yAxis]) || 0
         }));
         break;
         
       case 'scatter3d':
-        chartData = data.slice(0, 150).map(row => ({
+        const scatter3dData = getSampledData(data, dataLimit);
+        chartData = scatter3dData.map(row => ({
           x: parseFloat(row[xAxis]) || 0,
           y: parseFloat(row[yAxis]) || 0,
           z: parseFloat(row[zAxis]) || 0
@@ -216,7 +266,16 @@ const generateSpecificChart = (data, config) => {
       data: chartData,
       config,
       library: ['scatter3d', 'surface3d', 'box', 'bubble', 'radar'].includes(type) ? 'plotly' : 'echarts',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      performanceMode,
+      totalDataRows: dataSize,
+      displayedRows: chartData.length,
+      samplingInfo: performanceMode ? {
+        enabled: true,
+        originalRows: dataSize,
+        displayedRows: chartData.length,
+        samplingRatio: (chartData.length / dataSize * 100).toFixed(1) + '%'
+      } : null
     };
   } catch (error) {
     console.error('Error generating chart:', error);
@@ -229,7 +288,8 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
+    fileSize: 100 * 1024 * 1024, // Increased to 100MB limit as requested
+    fieldSize: 50 * 1024 * 1024, // 50MB for individual fields
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
@@ -237,7 +297,7 @@ const upload = multer({
         file.mimetype === 'text/csv') {
       cb(null, true);
     } else {
-      cb(new Error('Only Excel and CSV files are allowed'), false);
+      cb(new Error('Only Excel and CSV files are allowed. Maximum file size is 100MB.'), false);
     }
   }
 });
@@ -298,6 +358,28 @@ router.post('/upload', protect, upload.single('file'), async (req, res) => {
       };
     });
 
+    // Check for extremely large datasets and add warnings
+    const maxRows = Math.max(...Object.values(sheets).map(sheet => sheet.totalRows));
+    let datasetWarnings = [];
+    
+    if (maxRows > 10000) {
+      datasetWarnings.push({
+        type: 'large_dataset',
+        severity: 'warning',
+        message: `Large dataset detected (${maxRows.toLocaleString()} rows). Performance mode will be automatically enabled for charts.`,
+        recommendation: 'Consider filtering data or using data aggregation for better performance.'
+      });
+    }
+    
+    if (maxRows > 50000) {
+      datasetWarnings.push({
+        type: 'very_large_dataset',
+        severity: 'high',
+        message: `Very large dataset detected (${maxRows.toLocaleString()} rows). Some operations may be slower.`,
+        recommendation: 'For optimal performance, consider splitting the dataset or using summary data.'
+      });
+    }
+
     // Generate unique filename
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const sanitized = req.file.originalname.replace(/[^a-zA-Z0-9_.-]/g, '_');
@@ -314,7 +396,8 @@ router.post('/upload', protect, upload.single('file'), async (req, res) => {
       parsedData: {
         sheets: sheets,
         sheetNames: sheetNames,
-        totalSheets: sheetNames.length
+        totalSheets: sheetNames.length,
+        datasetWarnings: datasetWarnings
       }
     });
 
@@ -349,7 +432,8 @@ router.post('/upload', protect, upload.single('file'), async (req, res) => {
         fileName: req.file.originalname,
         fileSize: req.file.size,
         sheets,
-        sheetNames
+        sheetNames,
+        datasetWarnings: datasetWarnings.length > 0 ? datasetWarnings : null
       }
     });
   } catch (error) {
@@ -458,6 +542,7 @@ router.get('/activities', protect, async (req, res) => {
 // Generate comprehensive analytics and charts from Excel data
 router.post('/analyze', protect, async (req, res) => {
   try {
+    const processingStartTime = Date.now(); // Track processing time
     console.log('Analyze endpoint called with body:', JSON.stringify(req.body, null, 2)); // Debug log
     
     const { sheetData, analysisType, chartConfigs } = req.body;
@@ -677,7 +762,23 @@ router.post('/analyze', protect, async (req, res) => {
       chartsGenerated: generatedCharts.length
     });
 
-    res.json({
+    // Set performance headers for large datasets
+    const responseSize = data.length;
+    if (responseSize > 1000) {
+      res.set({
+        'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
+        'X-Performance-Mode': 'enabled',
+        'X-Data-Size': responseSize.toString(),
+        'X-Processing-Time': Date.now() - processingStartTime + 'ms'
+      });
+    }
+
+    // Add compression hint for large responses
+    if (responseSize > 5000) {
+      res.set('Content-Encoding', 'gzip');
+    }
+
+    const responseData = {
       success: true,
       message: 'Comprehensive data analysis completed',
       data: {
@@ -699,9 +800,16 @@ router.post('/analyze', protect, async (req, res) => {
           dateColumns: dateColumns.length,
           completeness: dataQuality.completeness,
           chartsGenerated: generatedCharts.length
+        },
+        performance: {
+          processingTime: Date.now() - processingStartTime,
+          dataSize: data.length,
+          optimized: data.length > 1000
         }
       }
-    });
+    };
+
+    res.json(responseData);
   } catch (error) {
     console.error('Data analysis error:', error);
     res.status(500).json({
