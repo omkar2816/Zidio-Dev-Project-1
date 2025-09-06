@@ -163,25 +163,30 @@ const generateSpecificChart = (data, config) => {
     // Determine if we need performance mode
     const dataSize = data.length;
     const isLargeDataset = dataSize > 1000;
-    const performanceMode = isLargeDataset;
+    
+    // Check if user explicitly requested full dataset rendering
+    const forceFullData = req.body.fullDataset === true;
+    const performanceMode = isLargeDataset && !forceFullData;
     
     // Calculate appropriate limits based on chart type and data size
     const getDataLimit = (chartType, totalRows) => {
-      if (!performanceMode) return totalRows; // Use all data for small datasets
+      if (!performanceMode || forceFullData) return totalRows; // Use all data when requested or for small datasets
       
+      // Enhanced limits for better performance balance
       switch (chartType) {
         case 'line':
         case 'area':
-          return Math.min(500, totalRows); // Lines can handle more points
+          return Math.min(2000, totalRows); // Lines can handle more points
         case 'scatter':
-          return Math.min(300, totalRows); // Scatter plots need fewer points
+          return Math.min(1000, totalRows); // Scatter plots need fewer points  
         case 'scatter3d':
-          return Math.min(200, totalRows); // 3D plots are more intensive
+          return Math.min(500, totalRows); // 3D plots are more intensive
         case 'bar':
+          return Math.min(100, totalRows); // Categorical charts limited by categories
         case 'pie':
-          return Math.min(50, totalRows); // Categorical charts limited by categories
+          return Math.min(20, totalRows); // Pie charts work best with fewer slices
         default:
-          return Math.min(250, totalRows);
+          return Math.min(1000, totalRows);
       }
     };
     

@@ -215,8 +215,8 @@ const AdvancedChart = ({
         }))
       };
     } else {
-      // Single series
-      const values = data.map(row => parseFloat(row[yAxis]) || 0).slice(0, 20);
+      // Single series - remove slice limit to use full data
+      const values = data.map(row => parseFloat(row[yAxis]) || 0);
       return {
         categories,
         series: [{
@@ -240,7 +240,8 @@ const AdvancedChart = ({
   const processScatterData = () => {
     if (!yAxis) return null;
     
-    const scatterData = data.slice(0, 100).map(row => [
+    // Remove slice limit to use full scatter data
+    const scatterData = data.map(row => [
       parseFloat(row[xAxis]) || 0,
       parseFloat(row[yAxis]) || 0
     ]).filter(point => !isNaN(point[0]) && !isNaN(point[1]));

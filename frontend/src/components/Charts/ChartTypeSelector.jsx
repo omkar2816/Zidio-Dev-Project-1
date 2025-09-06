@@ -222,7 +222,8 @@ const ChartTypeSelector = ({
         break;
 
       case 'bubble':
-        chartData = data.slice(0, 50).map(row => ({
+        // Remove slice limit to use full bubble data
+        chartData = data.map(row => ({
           x: parseFloat(row[chartOptions.xAxis]) || 0,
           y: parseFloat(row[chartOptions.yAxis]) || 0,
           size: parseFloat(row[chartOptions.sizeBy]) || 10
@@ -230,8 +231,8 @@ const ChartTypeSelector = ({
         break;
 
       case 'radar':
-        // Take first 10 rows for radar chart
-        chartData = data.slice(0, 10).map(row => ({
+        // Use more data for radar chart but still keep it reasonable
+        chartData = data.slice(0, 25).map(row => ({
           category: row[chartOptions.xAxis],
           value: parseFloat(row[chartOptions.yAxis]) || 0
         }));

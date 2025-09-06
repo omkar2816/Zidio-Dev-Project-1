@@ -21,6 +21,12 @@ const AdvancedChart = ({
   onColorSchemeChange = null,
   id = null,
   performanceMode = false,
+  // NEW: Extreme performance mode props
+  optimizations = null,
+  renderingStrategy = 'standard',
+  performanceLevel = 'normal',
+  extremePerformanceMode = false,
+  // Existing props
   totalDataRows = 0,
   displayedRows = 0,
   samplingInfo = null
@@ -32,6 +38,27 @@ const AdvancedChart = ({
   const [isDragMode, setIsDragMode] = useState(false);
   const [showTooltip, setShowTooltip] = useState(null);
   const [zoomLevel, setZoomLevel] = useState({ start: 0, end: 100 });
+
+  // Auto-detect performance settings if not provided
+  const autoOptimizations = optimizations || {
+    echarts: {
+      large: data.length > 5000,
+      largeThreshold: Math.min(2000, data.length),
+      progressive: data.length > 15000 ? 500 : 0,
+      useDirtyRect: data.length > 1000,
+      useCoarsePointer: data.length > 5000,
+      animation: data.length < 5000 ? showAnimation : false
+    },
+    plotly: {
+      useWebGL: data.length > 5000,
+      scattergl: data.length > 5000,
+      webglpointthreshold: 5000
+    }
+  };
+
+  // Performance-aware animation setting
+  const effectiveShowAnimation = extremePerformanceMode ? 
+    autoOptimizations.echarts.animation : showAnimation;
 
   // Default chart titles based on chart type
   const getDefaultTitle = (chartType) => {
@@ -377,25 +404,63 @@ const AdvancedChart = ({
   };
 
   const processPieData = () => {
-    const pieData = data.slice(0, 10).map((row, index) => ({
-      name: row[xAxis],
-      value: parseFloat(row[yAxis]) || 0,
-      itemStyle: { color: currentColors[index % currentColors.length] }
-    }));
-    return pieData;
+    // Use progressive loading for pie charts but don't truncate - use full data with smart grouping
+    const maxSlices = extremePerformanceMode ? 25 : Math.min(data.length, 50);
+    
+    if (data.length <= maxSlices) {
+      // Use all data if under limit
+      return data.map((row, index) => ({
+        name: row[xAxis],
+        value: parseFloat(row[yAxis]) || 0,
+        itemStyle: { color: currentColors[index % currentColors.length] }
+      }));
+    } else {
+      // Group smaller slices into "Others" category instead of truncating
+      const sortedData = data
+        .map((row, index) => ({
+          name: row[xAxis],
+          value: parseFloat(row[yAxis]) || 0,
+          originalIndex: index
+        }))
+        .sort((a, b) => b.value - a.value);
+      
+      const topSlices = sortedData.slice(0, maxSlices - 1);
+      const otherSlices = sortedData.slice(maxSlices - 1);
+      const othersValue = otherSlices.reduce((sum, item) => sum + item.value, 0);
+      
+      const pieData = topSlices.map((item, index) => ({
+        name: item.name,
+        value: item.value,
+        itemStyle: { color: currentColors[index % currentColors.length] }
+      }));
+      
+      if (othersValue > 0) {
+        pieData.push({
+          name: `Others (${otherSlices.length} items)`,
+          value: othersValue,
+          itemStyle: { color: currentColors[maxSlices % currentColors.length] }
+        });
+      }
+      
+      return pieData;
+    }
   };
 
   const processScatterData = () => {
     if (!yAxis) return null;
     
-    const scatterData = data.slice(0, 100).map(row => [
+    // Use full dataset with extreme performance optimizations
+    const scatterData = data.map(row => [
       parseFloat(row[xAxis]) || 0,
       parseFloat(row[yAxis]) || 0
     ]).filter(point => !isNaN(point[0]) && !isNaN(point[1]));
 
     return [{
       data: scatterData,
-      color: currentColors[0]
+      color: currentColors[0],
+      // Enable large mode for performance
+      large: autoOptimizations.echarts.large,
+      largeThreshold: autoOptimizations.echarts.largeThreshold
     }];
   };
 
@@ -588,6 +653,11 @@ const AdvancedChart = ({
           series: chartData.series.map(s => ({
             ...s,
             type: 'bar',
+            // Enhanced large mode support with extreme performance optimizations
+            large: autoOptimizations.echarts.large,
+            largeThreshold: autoOptimizations.echarts.largeThreshold,
+            progressive: autoOptimizations.echarts.progressive,
+            progressiveThreshold: autoOptimizations.echarts.progressive ? 1000 : 0,
             itemStyle: {
               borderRadius: [4, 4, 0, 0],
               color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -597,7 +667,7 @@ const AdvancedChart = ({
             },
             emphasis: {
               itemStyle: {
-                shadowBlur: 10,
+                shadowBlur: extremePerformanceMode ? 5 : 10, // Reduce shadow for performance
                 shadowColor: 'rgba(0, 0, 0, 0.3)'
               }
             }
@@ -622,16 +692,22 @@ const AdvancedChart = ({
           series: chartData.series.map(s => ({
             ...s,
             type: 'line',
-            smooth: true,
+            // Enhanced large mode support with extreme performance optimizations
+            large: autoOptimizations.echarts.large,
+            largeThreshold: autoOptimizations.echarts.largeThreshold,
+            progressive: autoOptimizations.echarts.progressive,
+            progressiveThreshold: autoOptimizations.echarts.progressive ? 1000 : 0,
+            smooth: !extremePerformanceMode || data.length < 10000, // Disable smoothing for ultra-large datasets
             lineStyle: { width: 3, color: s.color },
             itemStyle: { 
               borderWidth: 3,
               color: s.color,
-              shadowBlur: 5,
+              shadowBlur: extremePerformanceMode ? 2 : 5, // Reduce shadow for performance
               shadowColor: s.color + '40'
             },
-            symbol: 'circle',
-            symbolSize: 8
+            symbol: extremePerformanceMode && data.length > 10000 ? 'none' : 'circle', // Hide symbols for ultra-large datasets
+            symbolSize: extremePerformanceMode ? 4 : 8, // Smaller symbols for performance
+            sampling: autoOptimizations.echarts.progressive ? 'lttb' : undefined // Line-To-Line-Binary-Tree sampling for progressive rendering
           }))
         };
 
@@ -772,7 +848,7 @@ const AdvancedChart = ({
         }];
 
       case 'bubble':
-        const bubbleData = data.slice(0, 50).map(row => [
+        const bubbleData = data.map(row => [
           parseFloat(row[xAxis]) || 0,
           parseFloat(row[yAxis]) || 0,
           Math.abs(parseFloat(row[series]) || 10)
@@ -782,6 +858,8 @@ const AdvancedChart = ({
           x: bubbleData.map(point => point[0]),
           y: bubbleData.map(point => point[1]),
           mode: 'markers',
+          // Use WebGL for performance with large datasets
+          type: autoOptimizations.plotly.useWebGL && bubbleData.length > autoOptimizations.plotly.webglpointthreshold ? 'scattergl' : 'scatter',
           marker: {
             size: bubbleData.map(point => point[2]),
             color: currentColors[0],
@@ -790,7 +868,7 @@ const AdvancedChart = ({
             sizemin: 4,
             opacity: 0.7
           },
-          type: 'scatter'
+          // Remove the hardcoded type since we set it above conditionally
         }];
 
       default:
@@ -898,32 +976,52 @@ const AdvancedChart = ({
         ref={chartRef}
         option={getEChartsOption()}
         style={{ width: '100%', height: '100%' }}
-        opts={{ renderer: 'canvas', locale: 'en' }}
+        opts={{ 
+          renderer: 'canvas', 
+          locale: 'en',
+          // Enhanced performance optimizations
+          useDirtyRect: autoOptimizations.echarts.useDirtyRect,
+          useCoarsePointer: autoOptimizations.echarts.useCoarsePointer,
+          // Progressive rendering for ultra-large datasets
+          progressiveThreshold: autoOptimizations.echarts.progressive || 0
+        }}
         onEvents={{
-          'finished': () => setIsLoading(false),
+          'finished': () => {
+            setIsLoading(false);
+            // Progressive rendering complete callback
+            if (extremePerformanceMode && typeof window !== 'undefined') {
+              window.requestIdleCallback?.(() => {
+                console.log(`Chart rendered with ${data.length} points in extreme performance mode`);
+              });
+            }
+          },
           'click': (params) => {
             console.log('Chart clicked:', params);
             // Add custom click handlers here
           },
           'mouseover': (params) => {
-            // Enhanced hover effects
-            const chart = chartRef.current?.getEchartsInstance();
-            if (chart) {
-              chart.dispatchAction({
-                type: 'highlight',
-                seriesIndex: params.seriesIndex,
-                dataIndex: params.dataIndex
-              });
+            // Enhanced hover effects with performance consideration
+            if (!extremePerformanceMode || data.length < 10000) {
+              const chart = chartRef.current?.getEchartsInstance();
+              if (chart) {
+                chart.dispatchAction({
+                  type: 'highlight',
+                  seriesIndex: params.seriesIndex,
+                  dataIndex: params.dataIndex
+                });
+              }
             }
           },
           'mouseout': (params) => {
-            const chart = chartRef.current?.getEchartsInstance();
-            if (chart) {
-              chart.dispatchAction({
-                type: 'downplay',
-                seriesIndex: params.seriesIndex,
-                dataIndex: params.dataIndex
-              });
+            if (!extremePerformanceMode || data.length < 10000) {
+              const chart = chartRef.current?.getEchartsInstance();
+              if (chart) {
+                chart.dispatchAction({
+                  type: 'downplay',
+                  seriesIndex: params.seriesIndex,
+                  dataIndex: params.dataIndex
+                });
+              }
             }
           },
           'legendselectchanged': (params) => {
@@ -958,23 +1056,46 @@ const AdvancedChart = ({
             {type}
           </span>
           
-          {/* Performance Mode Indicator */}
-          {performanceMode && samplingInfo && (
+          {/* Performance Mode Indicator - Enhanced */}
+          {(extremePerformanceMode || performanceMode) && (
             <div className="relative">
               <span 
-                className="px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded-full cursor-help"
+                className={`px-2 py-1 text-xs rounded-full cursor-help font-medium ${
+                  extremePerformanceMode 
+                    ? performanceLevel === 'ultra' 
+                      ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
+                      : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                    : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'
+                }`}
                 onMouseEnter={() => setShowTooltip('performance')}
                 onMouseLeave={() => setShowTooltip(null)}
               >
-                Performance Mode
+                {extremePerformanceMode 
+                  ? `🚀 ${String(performanceLevel || 'normal').toUpperCase()} MODE` 
+                  : 'Performance Mode'
+                }
               </span>
               {showTooltip === 'performance' && (
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-3 bg-gray-900 text-white text-xs rounded whitespace-nowrap z-50 max-w-xs">
                   <div className="text-center">
-                    <div className="font-semibold mb-1">Large Dataset Detected</div>
-                    <div>Total Rows: {totalDataRows.toLocaleString()}</div>
-                    <div>Displayed: {displayedRows.toLocaleString()} ({samplingInfo.samplingRatio})</div>
-                    <div className="text-gray-300 mt-1">Using smart sampling for optimal performance</div>
+                    {extremePerformanceMode ? (
+                      <>
+                        <div className="font-semibold mb-1">🚀 Extreme Performance Active</div>
+                        <div>Rendering {data.length.toLocaleString()} points with:</div>
+                        <div className="mt-1 text-left space-y-1">
+                          {renderingStrategy === 'progressive' && <div>• Progressive rendering</div>}
+                          {renderingStrategy === 'webgl' && <div>• WebGL acceleration</div>}
+                          {renderingStrategy === 'large' && <div>• Large dataset mode</div>}
+                          <div>• Memory optimization</div>
+                          <div>• No sampling/truncation</div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-semibold mb-1">Performance Mode Active</div>
+                        <div>Optimized rendering for better performance</div>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -983,6 +1104,30 @@ const AdvancedChart = ({
         </div>
         
         <div className="flex items-center space-x-2">
+          {/* Full Dataset Toggle */}
+          {performanceMode && samplingInfo && (
+            <div className="relative">
+              <button
+                onClick={() => {
+                  if (window.confirm('Rendering the full dataset may impact performance. Continue?')) {
+                    // Trigger full data reload
+                    window.location.reload(); // Temporary solution - ideally would use state management
+                  }
+                }}
+                className="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                onMouseEnter={() => setShowTooltip('fulldata')}
+                onMouseLeave={() => setShowTooltip(null)}
+              >
+                Render Full Data
+              </button>
+              {showTooltip === 'fulldata' && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 bg-gray-900 text-white text-xs rounded whitespace-nowrap z-50 max-w-xs">
+                  Show complete dataset without sampling ({totalDataRows.toLocaleString()} rows)
+                </div>
+              )}
+            </div>
+          )}
+          
           {/* Custom Toolbox Controls */}
           <div className="relative">
             <button

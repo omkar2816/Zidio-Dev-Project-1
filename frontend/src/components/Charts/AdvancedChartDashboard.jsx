@@ -29,18 +29,17 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
     try {
       setLoadingRecommendations(true);
       
-      // Use the enhanced analytics route for smart recommendations
-      const response = await axios.post('/api/analytics/analyze-enhanced', {
-        data: data.slice(0, 100), // Send sample of data for analysis
-        options: {
-          includeSmartRecommendations: true,
-          includeDataPreprocessing: false, // Just for recommendations
-          generateCharts: false
-        }
+      // Use the analyze route for smart recommendations
+      const response = await axios.post('/api/analytics/analyze', {
+        sheetData: {
+          headers: Object.keys(data[0] || {}),
+          data: data.slice(0, 100) // Send sample of data for analysis
+        },
+        analysisType: 'comprehensive'
       });
 
-      if (response.data && response.data.smartRecommendations) {
-        setSmartRecommendations(response.data.smartRecommendations);
+      if (response.data && response.data.analysis && response.data.analysis.chartSuggestions) {
+        setSmartRecommendations(response.data.analysis.chartSuggestions);
       }
     } catch (error) {
       console.error('Error fetching smart recommendations:', error);
@@ -71,6 +70,9 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
     const chartData = config.data || data;
     const isFiltered = config.data && config.data.length !== data.length;
     
+    // Check if full dataset rendering was requested
+    const fullDataset = config.fullDataset === true;
+    
     // Create chart data with filter information
     const simulatedChartData = {
       id: chartId,
@@ -80,13 +82,14 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
       totalDataRows: chartData.length,
       originalDataRows: data.length,
       isFiltered: isFiltered,
+      fullDataset: fullDataset, // Pass through full dataset flag
       filterInfo: isFiltered ? {
         activeFilters: config.activeFilters || {},
         numericFilters: config.numericFilters || {},
         filteredCount: config.filteredDataCount,
         originalCount: config.originalDataCount
       } : null,
-      performanceMode: chartData.length > 1000,
+      performanceMode: chartData.length > 1000 && !fullDataset, // Disable performance mode if full dataset requested
       createdAt: new Date().toISOString()
     };
     
@@ -94,6 +97,11 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
     setPendingChart(simulatedChartData);
     setLoadingCharts(prev => new Set([...prev, chartId]));
     setIsSidebarOpen(false);
+    
+    // Simulate chart creation with a delay to show the loading state
+    setTimeout(() => {
+      handleChartLoadComplete(simulatedChartData);
+    }, 1000);
   };
   
   const handleChartLoadComplete = (chartData) => {
@@ -324,12 +332,19 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
               onDuplicate={() => handleDuplicateChart(chart)}
               onRemove={() => handleRemoveChart(chart.id)}
               onColorSchemeChange={(newScheme) => handleColorSchemeChange(chart.id, newScheme)}
+              // Enhanced performance props
               performanceMode={chart.performanceMode}
+              extremePerformanceMode={chart.extremePerformanceMode}
+              optimizations={chart.optimizations}
+              renderingStrategy={chart.renderingStrategy}
+              performanceLevel={chart.dataSize?.level || 'normal'}
               totalDataRows={chart.totalDataRows}
               displayedRows={chart.displayedRows}
               isFiltered={chart.isFiltered}
               filterInfo={chart.filterInfo}
               samplingInfo={chart.samplingInfo}
+              // Pass data size information
+              dataSize={chart.dataSize}
             />
           </div>
         ))}

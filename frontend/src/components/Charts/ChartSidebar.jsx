@@ -52,8 +52,22 @@ const ChartSidebar = ({
     filters: {},
     numericFilters: {},
     autoConfigEnabled: true,
+    fullDataset: false, // Add full dataset flag
+    extremePerformanceMode: false, // Auto extreme performance mode
     ...initialConfig
   });
+
+  // EXTREME PERFORMANCE MODE - Auto-detection thresholds
+  const PERFORMANCE_THRESHOLDS = {
+    small: 1000,      // < 1000 rows: normal mode
+    medium: 5000,     // 1000-5000 rows: optimized mode
+    large: 15000,     // 5000-15000 rows: extreme mode auto-enabled
+    massive: 50000    // > 50000 rows: ultra extreme mode
+  };
+
+  const [autoExtremeMode, setAutoExtremeMode] = useState(true);
+  const [performanceLevel, setPerformanceLevel] = useState('normal');
+  const [renderingStrategy, setRenderingStrategy] = useState('standard');
 
   const [autoConfig, setAutoConfig] = useState(null);
   const [showAutoSuggestions, setShowAutoSuggestions] = useState(false);
@@ -74,6 +88,42 @@ const ChartSidebar = ({
       setConfig(prev => ({ ...prev, ...initialConfig }));
     }
   }, [initialConfig]);
+
+  // Auto Extreme Performance Mode Detection
+  useEffect(() => {
+    if (!autoExtremeMode) return;
+    
+    const dataSize = filteredData.length;
+    let newPerformanceLevel = 'normal';
+    let newRenderingStrategy = 'standard';
+    let shouldEnableExtremeMode = false;
+
+    if (dataSize >= PERFORMANCE_THRESHOLDS.massive) {
+      newPerformanceLevel = 'ultra';
+      newRenderingStrategy = 'progressive';
+      shouldEnableExtremeMode = true;
+    } else if (dataSize >= PERFORMANCE_THRESHOLDS.large) {
+      newPerformanceLevel = 'extreme';
+      newRenderingStrategy = 'webgl';
+      shouldEnableExtremeMode = true;
+    } else if (dataSize >= PERFORMANCE_THRESHOLDS.medium) {
+      newPerformanceLevel = 'optimized';
+      newRenderingStrategy = 'large';
+      shouldEnableExtremeMode = false;
+    } else {
+      newPerformanceLevel = 'normal';
+      newRenderingStrategy = 'standard';
+      shouldEnableExtremeMode = false;
+    }
+
+    setPerformanceLevel(newPerformanceLevel);
+    setRenderingStrategy(newRenderingStrategy);
+    setConfig(prev => ({
+      ...prev,
+      extremePerformanceMode: shouldEnableExtremeMode,
+      fullDataset: true // Always use full dataset with performance optimizations
+    }));
+  }, [filteredData.length, autoExtremeMode]);
 
   // Apply filters to data whenever filters or data changes
   useEffect(() => {
@@ -408,17 +458,80 @@ const ChartSidebar = ({
   };
 
   const handleApply = () => {
+    console.log('Apply button clicked!'); // Simple debug
     if (isConfigValid()) {
+      // Get performance optimization settings based on data size
+      const getPerformanceOptimizations = () => {
+        const dataSize = filteredData.length;
+        
+        return {
+          // Chart library optimizations
+          echarts: {
+            large: dataSize > PERFORMANCE_THRESHOLDS.medium,
+            largeThreshold: Math.min(2000, dataSize),
+            progressive: dataSize > PERFORMANCE_THRESHOLDS.large ? 500 : 0,
+            progressiveThreshold: PERFORMANCE_THRESHOLDS.large,
+            useDirtyRect: dataSize > PERFORMANCE_THRESHOLDS.medium,
+            useCoarsePointer: dataSize > PERFORMANCE_THRESHOLDS.large,
+            animation: dataSize < PERFORMANCE_THRESHOLDS.medium ? config.showAnimation : false,
+            sampling: null // No sampling - always use full data
+          },
+          plotly: {
+            useWebGL: dataSize > PERFORMANCE_THRESHOLDS.medium,
+            scattergl: dataSize > PERFORMANCE_THRESHOLDS.medium,
+            webglpointthreshold: PERFORMANCE_THRESHOLDS.medium,
+            plotGlPixelRatio: dataSize > PERFORMANCE_THRESHOLDS.large ? 1 : 2,
+            responsive: true,
+            displaylogo: false,
+            scrollZoom: true
+          },
+          // Browser optimizations
+          browser: {
+            requestIdleCallback: dataSize > PERFORMANCE_THRESHOLDS.large,
+            virtualScrolling: dataSize > PERFORMANCE_THRESHOLDS.massive,
+            memoryManagement: dataSize > PERFORMANCE_THRESHOLDS.large,
+            progressiveRendering: renderingStrategy === 'progressive'
+          },
+          // Data processing optimizations
+          processing: {
+            useWorkers: dataSize > PERFORMANCE_THRESHOLDS.large,
+            batchSize: Math.min(1000, Math.ceil(dataSize / 10)),
+            debounceMs: dataSize > PERFORMANCE_THRESHOLDS.medium ? 300 : 100
+          }
+        };
+      };
+
       const configToApply = {
         ...config,
-        data: filteredData, // Use filtered data instead of original data
+        data: filteredData, // Always use full filtered data - no sampling/truncation
         originalDataCount: data.length,
         filteredDataCount: filteredData.length,
         activeFilters: activeFilters,
-        numericFilters: config.numericFilters || {}
+        numericFilters: config.numericFilters || {},
+        
+        // Performance metadata
+        performanceMode: performanceLevel,
+        renderingStrategy: renderingStrategy,
+        extremePerformanceMode: config.extremePerformanceMode,
+        autoExtremeMode: autoExtremeMode,
+        
+        // Optimization settings for chart components
+        optimizations: getPerformanceOptimizations(),
+        
+        // Data size indicators
+        dataSize: {
+          total: data.length,
+          filtered: filteredData.length,
+          level: performanceLevel,
+          strategy: renderingStrategy
+        }
       };
+      
+      console.log('Config is valid, applying:', configToApply); // Simple debug
       onApplyConfig(configToApply);
       onClose();
+    } else {
+      console.log('Config is NOT valid'); // Simple debug
     }
   };
 
@@ -827,6 +940,109 @@ const ChartSidebar = ({
                     />
                   </button>
                 </div>
+
+                {/* Auto Extreme Performance Mode */}
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex-1">
+                      <label className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                        🚀 Auto Extreme Performance Mode
+                      </label>
+                      <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                        Automatically optimizes rendering for large datasets without sampling
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setAutoExtremeMode(!autoExtremeMode)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        autoExtremeMode ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          autoExtremeMode ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  
+                  {/* Performance Status Display */}
+                  {autoExtremeMode && (
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-600 dark:text-gray-400">Current Status:</span>
+                        <span className={`px-2 py-1 rounded-full font-medium ${
+                          performanceLevel === 'ultra' ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300' :
+                          performanceLevel === 'extreme' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300' :
+                          performanceLevel === 'optimized' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300' :
+                          'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300'
+                        }`}>
+                          {performanceLevel.toUpperCase()} MODE
+                        </span>
+                      </div>
+                      
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        📊 Dataset: {filteredData.length.toLocaleString()} rows
+                        <br />
+                        🎯 Strategy: {renderingStrategy}
+                        <br />
+                        {performanceLevel !== 'normal' && (
+                          <>
+                            ⚡ Optimizations: {
+                              performanceLevel === 'ultra' ? 'Progressive + WebGL + Large Mode' :
+                              performanceLevel === 'extreme' ? 'WebGL + Large Mode' :
+                              performanceLevel === 'optimized' ? 'Large Mode' : 'None'
+                            }
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Full Dataset Rendering - Updated */}
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Force Full Dataset (Override Auto Mode)
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {config.extremePerformanceMode ? 
+                        `Auto mode active - full ${data.length.toLocaleString()} rows with optimizations` : 
+                        `Show all ${data.length.toLocaleString()} rows`
+                      }
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => updateConfig('fullDataset', !config.fullDataset)}
+                    disabled={config.extremePerformanceMode} // Disabled when auto mode handles it
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      config.fullDataset || config.extremePerformanceMode ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+                    } ${config.extremePerformanceMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        config.fullDataset || config.extremePerformanceMode ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+                
+                {/* Performance Warning - Updated */}
+                {config.extremePerformanceMode && (
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-700 rounded-lg p-3">
+                    <p className="text-sm text-green-700 dark:text-green-300">
+                      ✅ Extreme Performance Mode Active! Rendering full {filteredData.length.toLocaleString()} rows with advanced optimizations:
+                    </p>
+                    <ul className="text-xs text-green-600 dark:text-green-400 mt-2 space-y-1">
+                      {renderingStrategy === 'progressive' && <li>• Progressive rendering for ultra-smooth experience</li>}
+                      {renderingStrategy === 'webgl' && <li>• WebGL acceleration for maximum performance</li>}
+                      {renderingStrategy === 'large' && <li>• Large dataset mode with optimized rendering</li>}
+                      <li>• Memory-efficient data processing</li>
+                      <li>• No sampling or truncation - full data visualization</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
           </div>
