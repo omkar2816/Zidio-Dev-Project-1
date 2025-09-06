@@ -4,6 +4,7 @@ import * as echarts from 'echarts';
 import Plot from 'react-plotly.js';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import toast from 'react-hot-toast';
 import { BarChart3, LineChart, PieChart, ScatterChart, Activity, TrendingUp, Settings, Download, FileImage, FileText, Edit3, Copy, Trash2, Palette, Move, Check, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 const AdvancedChart = ({ 
@@ -252,6 +253,7 @@ const AdvancedChart = ({
       
       if (!chartElement) {
         console.error('Chart element not found');
+        toast.error('Chart element not found for export');
         return;
       }
 
@@ -259,18 +261,23 @@ const AdvancedChart = ({
         case 'png':
         case 'jpg':
           await exportAsImage(chartElement, format);
+          toast.success(`Chart exported as ${format.toUpperCase()}`);
           break;
         case 'pdf':
           await exportAsPDF(chartElement);
+          toast.success('Chart exported as PDF');
           break;
         case 'svg':
           await exportAsSVG();
+          toast.success('Chart exported as SVG');
           break;
         default:
           console.error('Unsupported export format');
+          toast.error('Unsupported export format');
       }
     } catch (error) {
       console.error('Export failed:', error);
+      toast.error(`Export failed: ${error.message}`);
     } finally {
       setIsLoading(false);
       setShowExportMenu(false);

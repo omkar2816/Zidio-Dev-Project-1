@@ -64,7 +64,14 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
   };
 
   const handleApplyConfig = (config) => {
-    const chartId = editingChart?.id || Date.now();
+    // Generate a unique ID using timestamp + random number to prevent collisions
+    const chartId = editingChart?.id || `chart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Prevent multiple chart creation attempts
+    if (!editingChart && pendingChart) {
+      toast.error('Please wait for the current chart to finish loading');
+      return;
+    }
     
     // Use filtered data from config if available, otherwise use original data
     const chartData = config.data || data;
@@ -105,6 +112,14 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
   };
   
   const handleChartLoadComplete = (chartData) => {
+    // Clear pending chart state first
+    setPendingChart(null);
+    setLoadingCharts(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(chartData.id);
+      return newSet;
+    });
+    
     if (editingChart) {
       // Update existing chart
       setCharts(prev => prev.map(chart => 
@@ -112,21 +127,21 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
           ? { ...chart, ...chartData }
           : chart
       ));
+      setEditingChart(null);
       toast.success('Chart updated successfully!');
     } else {
-      // Create new chart
-      setCharts(prev => [...prev, chartData]);
+      // Create new chart - check if chart with this ID already exists to prevent duplicates
+      setCharts(prev => {
+        const existingChart = prev.find(chart => chart.id === chartData.id);
+        if (existingChart) {
+          // Chart already exists, don't add duplicate
+          console.warn('Chart with ID already exists, skipping duplicate creation');
+          return prev;
+        }
+        return [...prev, chartData];
+      });
       toast.success('Chart created successfully!');
     }
-    
-    // Clean up loading state
-    setLoadingCharts(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(chartData.id);
-      return newSet;
-    });
-    setPendingChart(null);
-    setEditingChart(null);
   };
   
   const handleChartLoadError = (error) => {
@@ -146,14 +161,37 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
   };
 
   const handleRemoveChart = (id) => {
-    setCharts(prev => prev.filter(chart => chart.id !== id));
+    // Ensure we have a valid ID
+    if (!id) {
+      console.error('Invalid chart ID for removal');
+      toast.error('Invalid chart ID');
+      return;
+    }
+    
+    // Remove only the chart with the specific ID
+    setCharts(prev => {
+      const filteredCharts = prev.filter(chart => chart.id !== id);
+      console.log(`Removing chart with ID: ${id}, before: ${prev.length}, after: ${filteredCharts.length}`);
+      return filteredCharts;
+    });
+    
+    // Also clear from loading state if present
+    setLoadingCharts(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
+    });
+    
     toast.success('Chart removed');
   };
 
   const handleDuplicateChart = (chart) => {
+    // Generate a unique ID to prevent collisions
+    const uniqueId = `chart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     const duplicatedChart = {
       ...chart,
-      id: Date.now(),
+      id: uniqueId,
       title: `${chart.title} (Copy)`,
       createdAt: new Date().toISOString()
     };
@@ -245,8 +283,13 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
         {data.length > 0 && (
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-lg p-4 border border-emerald-200 dark:border-emerald-700">
-              <div className="text-emerald-600 dark:text-emerald-400 text-sm font-medium">
+              <div className="text-emerald-600 dark:text-emerald-400 text-sm font-medium flex items-center gap-1">
                 Total Charts
+                {charts.length > 0 && (
+                  <span className="text-xs bg-emerald-200 dark:bg-emerald-700 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300">
+                    newest first ↓
+                  </span>
+                )}
               </div>
               <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
                 {charts.length}
@@ -307,7 +350,9 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
         )}
         
         {/* Render existing charts */}
-        {charts.map(chart => (
+        {charts
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // Sort by creation date (newest first)
+          .map(chart => (
           <div key={chart.id} className="relative">
             {/* Filter Indicator */}
             {chart.isFiltered && chart.filterInfo && (
