@@ -34,8 +34,8 @@ axios.interceptors.response.use(
       if (!window.location.pathname.includes('/login') && 
           !window.location.pathname.includes('/register') && 
           window.location.pathname !== '/') {
-        window.location.href = '/';
-      }
+      window.location.href = '/';
+    }
     }
     return Promise.reject(error);
   }

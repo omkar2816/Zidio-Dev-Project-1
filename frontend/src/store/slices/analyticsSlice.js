@@ -393,7 +393,7 @@ const analyticsSlice = createSlice({
           );
         }
         if (newCharts.length > 0) {
-          state.chartHistory = [...newCharts, ...state.chartHistory].slice(0, 50);
+        state.chartHistory = [...newCharts, ...state.chartHistory].slice(0, 50);
         }
       })
       .addCase(analyzeData.rejected, (state, action) => {

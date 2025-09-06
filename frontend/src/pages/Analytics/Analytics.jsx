@@ -10,7 +10,7 @@ import {
   Grid3X3, 
   BarChart3, 
   Eye, 
-  TrendingUp, 
+  TrendingUp,
   PieChart,
   FileText,
   X,
@@ -94,9 +94,9 @@ const Analytics = () => {
       
       if (!file || !file.id) {
         toast.error('Invalid file selected');
-        return;
-      }
-      
+      return;
+    }
+
       setAnalyzingFileId(file.id);
       toast.loading('Analyzing file...');
       
@@ -204,15 +204,15 @@ const Analytics = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/30 shadow-xl p-8">
-        <div className="flex items-center justify-between">
-          <div>
+      <div className="flex items-center justify-between">
+        <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
               Analytics Dashboard
-            </h1>
+          </h1>
             <p className="text-gray-600 dark:text-gray-400 text-lg">
               Upload, analyze, and visualize your Excel data with advanced charts
-            </p>
-          </div>
+          </p>
+        </div>
           <div className="flex items-center space-x-4">
             <div className="p-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full shadow-lg">
               <BarChart3 className="w-8 h-8 text-white" />
@@ -231,12 +231,12 @@ const Analytics = () => {
                 activeTab === 'upload'
                   ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
-            >
+          }`}
+        >
               <div className="flex items-center space-x-2">
                 <Upload className="w-5 h-5" />
                 <span>Upload Files</span>
-              </div>
+          </div>
             </button>
             <button
               onClick={() => setActiveTab('recent')}
@@ -268,9 +268,9 @@ const Analytics = () => {
                 <div className="flex items-center space-x-2">
                   <TrendingUp className="w-5 h-5" />
                   <span>Analysis Results</span>
-                </div>
+            </div>
               </button>
-            )}
+          )}
           </nav>
         </div>
 
@@ -304,9 +304,9 @@ const Analytics = () => {
                   </label>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
                     Supports .xlsx and .xls files up to 10MB
-                  </p>
-                </div>
+                </p>
               </div>
+            </div>
 
               {/* Recent Upload Stats */}
               {recentFiles && recentFiles.length > 0 && (
@@ -315,11 +315,11 @@ const Analytics = () => {
                     <div className="flex items-center">
                       <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
                         <FileSpreadsheet className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-                      </div>
+          </div>
                       <div className="ml-4">
                         <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Total Files</p>
                         <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{recentFiles.length}</p>
-                      </div>
+      </div>
                     </div>
                   </div>
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200/50 dark:border-blue-800/50">
@@ -352,7 +352,7 @@ const Analytics = () => {
           )}
 
           {activeTab === 'recent' && (
-            <div>
+              <div>
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Files</h3>
                 {recentFiles && recentFiles.length > 0 && (
@@ -361,7 +361,7 @@ const Analytics = () => {
                   </p>
                 )}
               </div>
-              
+
               {isLoading ? (
                 <div className="text-center py-12">
                   <div className="animate-spin w-8 h-8 border-4 border-emerald-200 dark:border-emerald-800 border-t-emerald-600 dark:border-t-emerald-400 rounded-full mx-auto mb-4"></div>
@@ -378,8 +378,8 @@ const Analytics = () => {
                         <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
                           {formatDate(file.uploadedAt)}
                         </span>
-                      </div>
-                      
+              </div>
+
                       {/* File Name - Made more prominent */}
                       <div className="mb-3">
                         <h4 className="font-bold text-lg text-gray-900 dark:text-white mb-1 leading-tight">
@@ -392,24 +392,24 @@ const Analytics = () => {
                       
                       {/* Action Buttons */}
                       <div className="flex space-x-2 mt-4">
-                        <button 
+                <button
                           onClick={() => handleAnalyzeFile(file)}
                           disabled={analyzingFileId === file.id}
                           className="flex-1 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 text-sm flex items-center justify-center font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
+                >
                           {analyzingFileId === file.id ? (
                             <>
                               <div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full mr-2"></div>
                               Analyzing...
                             </>
-                          ) : (
+                  ) : (
                             <>
                               <Eye className="w-4 h-4 mr-1" />
                               Analyze
                             </>
-                          )}
-                        </button>
-                        <button 
+                  )}
+                </button>
+                <button
                           onClick={() => handleDeleteFile(file.id)}
                           className="px-4 py-2 border border-red-300 dark:border-red-600 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm"
                         >
@@ -427,11 +427,11 @@ const Analytics = () => {
                   <button 
                     onClick={() => setActiveTab('upload')}
                     className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 font-medium"
-                  >
+                >
                     <Upload className="w-4 h-4 mr-2" />
                     Upload File
-                  </button>
-                </div>
+                </button>
+              </div>
               )}
             </div>
           )}
@@ -451,7 +451,7 @@ const Analytics = () => {
                   >
                     <X className="w-5 h-5" />
                   </button>
-                </div>
+          </div>
 
                 {/* Interactive Chart Dashboard - Moved to Top */}
                 <div className="mb-8">
@@ -476,13 +476,13 @@ const Analytics = () => {
                       </span>
                     </h4>
                     <div className="flex items-center space-x-2">
-                      <button
+              <button
                         onClick={() => setShowAllRows(!showAllRows)}
                         className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                      >
+              >
                         {showAllRows ? 'Show Less' : `Show All (${editableData.length})`}
-                      </button>
-                      <button
+              </button>
+              <button
                         onClick={addNewRow}
                         className="px-3 py-1 text-sm bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors flex items-center"
                       >
@@ -492,12 +492,12 @@ const Analytics = () => {
                       <button
                         onClick={exportEditedData}
                         className="px-3 py-1 text-sm bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-800 transition-colors flex items-center"
-                      >
+              >
                         <Download className="w-3 h-3 mr-1" />
                         Export
-                      </button>
-                    </div>
-                  </div>
+              </button>
+            </div>
+          </div>
                   
                   <div 
                     ref={tableRef}
@@ -566,8 +566,8 @@ const Analytics = () => {
                                     >
                                       {String(value)}
                                       <Edit3 className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-50 transition-opacity" />
-                                    </div>
-                                  )}
+        </div>
+      )}
                                 </td>
                               ))}
                               <td className="px-2 py-2">
@@ -606,10 +606,10 @@ const Analytics = () => {
                         >
                           Show all rows
                         </button>
-                      </p>
-                    </div>
+                </p>
+              </div>
                   )}
-                </div>
+          </div>
 
                 {/* Statistics */}
                 {analysisData.statistics && (
@@ -635,16 +635,16 @@ const Analytics = () => {
                         <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">Numeric Columns</p>
                         <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
                           {analysisData.statistics.numericColumns || 0}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
               </div>
             </div>
           )}
         </div>
-      </div>
+                </div>
 
       {/* Error Display */}
       {error && (

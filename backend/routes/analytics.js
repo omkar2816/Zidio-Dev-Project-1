@@ -477,7 +477,7 @@ router.post('/analyze', protect, async (req, res) => {
 
     const { headers, data } = sheetData;
     console.log('Processing data:', { headersCount: headers.length, dataRows: data.length }); // Debug log
-    
+
     // Return simple mock analysis for now to test the flow
     const mockAnalysis = {
       success: true,
@@ -486,10 +486,10 @@ router.post('/analyze', protect, async (req, res) => {
           totalRows: data.length,
           totalColumns: headers.length,
           numericColumns: headers.filter(header => {
-            return data.some(row => {
-              const value = row[header];
+      return data.some(row => {
+        const value = row[header];
               return !isNaN(parseFloat(value)) && value !== '' && value !== null;
-            });
+      });
           }).length,
           categoricalColumns: headers.length - headers.filter(header => {
             return data.some(row => {
@@ -562,7 +562,7 @@ router.post('/analyze', protect, async (req, res) => {
         const median = sorted.length % 2 === 0 
           ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
           : sorted[Math.floor(sorted.length / 2)];
-        
+
         // Calculate standard deviation
         const variance = values.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / values.length;
         const stdDev = Math.sqrt(variance);
@@ -630,8 +630,8 @@ router.post('/analyze', protect, async (req, res) => {
         const chart = generateSpecificChart(data, config);
         if (chart) {
           generatedCharts.push(chart);
-        }
-      });
+      }
+    });
     }
 
     // Correlation analysis for numeric columns
