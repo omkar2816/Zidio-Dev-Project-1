@@ -293,19 +293,68 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 100 * 1024 * 1024, // Increased to 100MB limit as requested
+    fileSize: 100 * 1024 * 1024, // 100MB limit
     fieldSize: 50 * 1024 * 1024, // 50MB for individual fields
+    files: 1, // Only allow 1 file at a time
+    fields: 10 // Limit form fields
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-        file.mimetype === 'application/vnd.ms-excel' ||
-        file.mimetype === 'text/csv') {
+    // Validate file type
+    const allowedMimeTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel', // .xls
+      'text/csv' // .csv
+    ];
+    
+    if (allowedMimeTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only Excel and CSV files are allowed. Maximum file size is 100MB.'), false);
+      const error = new Error('Invalid file type. Only Excel (.xlsx, .xls) and CSV (.csv) files are allowed.');
+      error.code = 'INVALID_FILE_TYPE';
+      cb(error, false);
     }
   }
 });
+
+// Multer error handler middleware
+const handleMulterError = (error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    switch (error.code) {
+      case 'LIMIT_FILE_SIZE':
+        return res.status(413).json({
+          error: 'File too large',
+          message: 'File size exceeds the maximum limit of 100MB. Please upload a smaller file.',
+          maxSize: '100MB',
+          uploadedSize: req.file ? `${(req.file.size / 1024 / 1024).toFixed(2)}MB` : 'Unknown'
+        });
+      case 'LIMIT_FILE_COUNT':
+        return res.status(400).json({
+          error: 'Too many files',
+          message: 'Only one file can be uploaded at a time.'
+        });
+      case 'LIMIT_UNEXPECTED_FILE':
+        return res.status(400).json({
+          error: 'Unexpected file field',
+          message: 'Unexpected file field. Please use the correct upload form.'
+        });
+      default:
+        return res.status(400).json({
+          error: 'Upload error',
+          message: error.message || 'An error occurred during file upload.'
+        });
+    }
+  } else if (error.code === 'INVALID_FILE_TYPE') {
+    return res.status(400).json({
+      error: 'Invalid file type',
+      message: error.message,
+      supportedFormats: ['Excel (.xlsx, .xls)', 'CSV (.csv)'],
+      maxSize: '100MB'
+    });
+  }
+  
+  // Pass other errors to next middleware
+  next(error);
+};
 
 // Helper function to log activity
 const logActivity = async (userId, activityType, description, fileId = null, fileName = null, metadata = {}) => {
@@ -325,47 +374,143 @@ const logActivity = async (userId, activityType, description, fileId = null, fil
   }
 };
 
-// Upload and parse Excel file
-router.post('/upload', protect, upload.single('file'), async (req, res) => {
+// Upload and parse Excel file with enhanced error handling
+router.post('/upload', protect, (req, res, next) => {
+  // Set request timeout for large files
+  req.setTimeout(5 * 60 * 1000); // 5 minutes timeout for large uploads
+  
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      return handleMulterError(err, req, res, next);
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
+    // Validate file presence
     if (!req.file) {
       return res.status(400).json({
         error: 'No file uploaded',
-        message: 'Please upload an Excel or CSV file'
+        message: 'Please select and upload an Excel (.xlsx, .xls) or CSV (.csv) file.',
+        supportedFormats: ['Excel (.xlsx, .xls)', 'CSV (.csv)'],
+        maxSize: '100MB'
       });
     }
 
-    // Parse Excel data from buffer
-    const workbook = xlsx.read(req.file.buffer);
-    const sheetNames = workbook.SheetNames;
-    const sheets = {};
-
-    // Parse each sheet
-    sheetNames.forEach(sheetName => {
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
-      
-      // Convert to proper format
-      const headers = jsonData[0];
-      const rows = jsonData.slice(1).map(row => {
-        const obj = {};
-        headers.forEach((header, index) => {
-          obj[header] = row[index] || '';
-        });
-        return obj;
+    // Additional file size validation (double-check)
+    const maxSize = 100 * 1024 * 1024; // 100MB
+    if (req.file.size > maxSize) {
+      return res.status(413).json({
+        error: 'File too large',
+        message: `File size (${(req.file.size / 1024 / 1024).toFixed(2)}MB) exceeds the maximum limit of 100MB.`,
+        uploadedSize: `${(req.file.size / 1024 / 1024).toFixed(2)}MB`,
+        maxSize: '100MB'
       });
+    }
 
-      sheets[sheetName] = {
-        headers,
-        data: rows,
-        totalRows: rows.length,
-        totalColumns: headers.length
-      };
+    // Validate file buffer
+    if (!req.file.buffer || req.file.buffer.length === 0) {
+      return res.status(400).json({
+        error: 'Invalid file',
+        message: 'The uploaded file appears to be empty or corrupted. Please try uploading a different file.'
+      });
+    }
+
+    // Parse Excel data from buffer with error handling
+    let workbook;
+    try {
+      workbook = xlsx.read(req.file.buffer, { 
+        type: 'buffer',
+        cellDates: true,
+        cellNF: false,
+        cellText: false
+      });
+    } catch (parseError) {
+      console.error('File parsing error:', parseError);
+      return res.status(400).json({
+        error: 'File parsing failed',
+        message: 'The uploaded file could not be parsed. Please ensure it is a valid Excel or CSV file and is not corrupted.',
+        supportedFormats: ['Excel (.xlsx, .xls)', 'CSV (.csv)']
+      });
+    }
+
+    const sheetNames = workbook.SheetNames;
+    if (!sheetNames || sheetNames.length === 0) {
+      return res.status(400).json({
+        error: 'No sheets found',
+        message: 'The uploaded file does not contain any data sheets. Please upload a file with data.'
+      });
+    }
+
+    const sheets = {};
+    const datasetWarnings = [];
+    let totalRows = 0;
+
+    // Parse each sheet with enhanced error handling
+    sheetNames.forEach(sheetName => {
+      try {
+        const worksheet = workbook.Sheets[sheetName];
+        if (!worksheet) {
+          console.warn(`Sheet "${sheetName}" is empty or could not be read`);
+          return;
+        }
+
+        const jsonData = xlsx.utils.sheet_to_json(worksheet, { 
+          header: 1,
+          defval: '',
+          raw: false
+        });
+        
+        if (!jsonData || jsonData.length === 0) {
+          console.warn(`Sheet "${sheetName}" contains no data`);
+          return;
+        }
+
+        // Convert to proper format
+        const headers = jsonData[0] || [];
+        if (headers.length === 0) {
+          console.warn(`Sheet "${sheetName}" has no headers`);
+          return;
+        }
+
+        const rows = jsonData.slice(1).map(row => {
+          const obj = {};
+          headers.forEach((header, index) => {
+            obj[header] = row[index] || '';
+          });
+          return obj;
+        });
+
+        sheets[sheetName] = {
+          headers,
+          data: rows,
+          totalRows: rows.length,
+          totalColumns: headers.length
+        };
+
+        totalRows += rows.length;
+      } catch (sheetError) {
+        console.error(`Error parsing sheet "${sheetName}":`, sheetError);
+        datasetWarnings.push({
+          type: 'sheet_parsing_error',
+          severity: 'warning',
+          message: `Could not parse sheet "${sheetName}". This sheet will be skipped.`,
+          recommendation: 'Check if the sheet contains valid data and is not corrupted.'
+        });
+      }
     });
+
+    // Validate that we have at least one successfully parsed sheet
+    if (Object.keys(sheets).length === 0) {
+      return res.status(400).json({
+        error: 'No valid data found',
+        message: 'No sheets could be successfully parsed. Please ensure your file contains valid data.',
+        supportedFormats: ['Excel (.xlsx, .xls)', 'CSV (.csv)']
+      });
+    }
 
     // Check for extremely large datasets and add warnings
     const maxRows = Math.max(...Object.values(sheets).map(sheet => sheet.totalRows));
-    let datasetWarnings = [];
     
     if (maxRows > 10000) {
       datasetWarnings.push({
@@ -390,7 +535,7 @@ router.post('/upload', protect, upload.single('file'), async (req, res) => {
     const sanitized = req.file.originalname.replace(/[^a-zA-Z0-9_.-]/g, '_');
     const storedName = uniqueSuffix + '-' + sanitized;
 
-    // Store file data in MongoDB
+    // Store file data in MongoDB with performance optimizations
     const savedFile = await UploadedFile.create({
       user: req.user._id,
       originalName: req.file.originalname,
@@ -443,9 +588,28 @@ router.post('/upload', protect, upload.single('file'), async (req, res) => {
     });
   } catch (error) {
     console.error('File upload error:', error);
+    
+    // Provide detailed error messages based on error type
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        error: 'File validation failed',
+        message: 'The uploaded file contains invalid data.',
+        details: error.message
+      });
+    }
+    
+    if (error.code === 11000) {
+      return res.status(409).json({
+        error: 'Duplicate file',
+        message: 'A file with this name has already been uploaded.'
+      });
+    }
+    
     res.status(500).json({
       error: 'File upload failed',
-      message: 'Failed to process the uploaded file'
+      message: 'An internal server error occurred while processing your file. Please try again.',
+      supportedFormats: ['Excel (.xlsx, .xls)', 'CSV (.csv)'],
+      maxSize: '100MB'
     });
   }
 });

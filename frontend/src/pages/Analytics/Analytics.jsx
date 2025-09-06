@@ -60,36 +60,100 @@ const Analytics = () => {
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
-    if (file) {
-      try {
-        toast.loading('Uploading file...');
-        const result = await dispatch(uploadExcelFile(file)).unwrap();
-        toast.dismiss();
-        
-        // Show success message
-        toast.success('File uploaded successfully!');
-        
-        // Show dataset warnings if present
-        if (result.data && result.data.datasetWarnings) {
-          result.data.datasetWarnings.forEach(warning => {
-            const toastType = warning.severity === 'high' ? 'error' : 'warn';
-            toast[toastType](warning.message, {
-              duration: 6000,
-              position: 'top-center'
-            });
-          });
-        }
-        
-        // Refresh the files list
-        dispatch(fetchUploadedFiles());
-        
-        // Switch to recent files tab to show the uploaded file
-        setActiveTab('recent');
-      } catch (error) {
-        toast.dismiss();
-        toast.error('Upload failed: ' + (error.message || 'Unknown error'));
-        console.error('Upload failed:', error);
+    if (!file) return;
+
+    try {
+      // Client-side validation
+      const maxSize = 100 * 1024 * 1024; // 100MB
+      const allowedTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+        'application/vnd.ms-excel', // .xls  
+        'text/csv' // .csv
+      ];
+      const allowedExtensions = ['.xlsx', '.xls', '.csv'];
+
+      // Check file size
+      if (file.size > maxSize) {
+        toast.error(`File size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds the maximum limit of 100MB. Please upload a smaller file.`, {
+          duration: 8000
+        });
+        event.target.value = ''; // Clear the input
+        return;
       }
+
+      // Check file type
+      const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+      if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+        toast.error('Invalid file type. Only Excel (.xlsx, .xls) and CSV (.csv) files are allowed.', {
+          duration: 6000
+        });
+        event.target.value = ''; // Clear the input
+        return;
+      }
+
+      // Check if file is empty
+      if (file.size === 0) {
+        toast.error('The selected file is empty. Please choose a file with data.');
+        event.target.value = ''; // Clear the input
+        return;
+      }
+
+      // Show upload progress
+      toast.loading(`Uploading ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)...`);
+      
+      const result = await dispatch(uploadExcelFile(file)).unwrap();
+      toast.dismiss();
+      
+      // Show success message
+      toast.success(`File "${file.name}" uploaded successfully!`, {
+        duration: 4000
+      });
+      
+      // Show dataset warnings if present
+      if (result.data && result.data.datasetWarnings) {
+        result.data.datasetWarnings.forEach(warning => {
+          const toastType = warning.severity === 'high' ? 'error' : 'warn';
+          toast[toastType](warning.message, {
+            duration: warning.severity === 'high' ? 10000 : 6000,
+            position: 'top-center'
+          });
+        });
+      }
+        
+      // Refresh the files list
+      dispatch(fetchUploadedFiles());
+      
+      // Switch to recent files tab to show the uploaded file
+      setActiveTab('recent');
+      
+      // Clear the input for next upload
+      event.target.value = '';
+    } catch (error) {
+      toast.dismiss();
+      
+      // Enhanced error handling with specific messages
+      let errorMessage = 'Upload failed: ';
+      
+      if (error.error === 'File too large') {
+        errorMessage = `File too large: ${error.message}`;
+      } else if (error.error === 'Invalid file type') {
+        errorMessage = `Invalid file type: ${error.message}`;
+      } else if (error.error === 'File parsing failed') {
+        errorMessage = `File parsing failed: ${error.message}`;
+      } else if (error.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'Unknown error occurred';
+      }
+      
+      toast.error(errorMessage, {
+        duration: 8000
+      });
+      
+      console.error('Upload failed:', error);
+      
+      // Clear the input on error
+      event.target.value = '';
     }
   };
 
@@ -313,15 +377,15 @@ const Analytics = () => {
                     <Upload className="h-8 w-8 text-white" />
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                    Upload Excel File
+                    Upload Excel or CSV File
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-6">
-                    Choose an Excel file (.xlsx, .xls) to analyze and create charts
+                    Choose a file to analyze and create interactive charts with advanced performance optimization
                   </p>
                   <label className="cursor-pointer">
                     <input
                       type="file"
-                      accept=".xlsx,.xls"
+                      accept=".xlsx,.xls,.csv"
                       onChange={handleFileUpload}
                       className="hidden"
                     />
@@ -330,11 +394,28 @@ const Analytics = () => {
                       Choose File
                     </div>
                   </label>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
-                    Supports .xlsx and .xls files up to 10MB
-                </p>
+                  
+                  {/* Enhanced file info with better styling */}
+                  <div className="mt-6 space-y-2">
+                    <div className="flex items-center justify-center space-x-4 text-sm">
+                      <div className="flex items-center text-green-600 dark:text-green-400">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        Excel (.xlsx, .xls)
+                      </div>
+                      <div className="flex items-center text-blue-600 dark:text-blue-400">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                        CSV (.csv)
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <span className="font-medium">Maximum file size:</span> 100MB
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      Files are processed with automatic performance optimization for large datasets
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
 
               {/* Recent Upload Stats */}
               {recentFiles && recentFiles.length > 0 && (

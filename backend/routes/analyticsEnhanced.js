@@ -17,19 +17,68 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB limit as requested
+    fileSize: 100 * 1024 * 1024, // 100MB limit
     fieldSize: 50 * 1024 * 1024, // 50MB for individual fields
+    files: 1, // Only allow 1 file at a time
+    fields: 10 // Limit form fields
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-        file.mimetype === 'application/vnd.ms-excel' ||
-        file.mimetype === 'text/csv') {
+    // Validate file type
+    const allowedMimeTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel', // .xls
+      'text/csv' // .csv
+    ];
+    
+    if (allowedMimeTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only Excel and CSV files are allowed. Maximum file size is 100MB.'), false);
+      const error = new Error('Invalid file type. Only Excel (.xlsx, .xls) and CSV (.csv) files are allowed.');
+      error.code = 'INVALID_FILE_TYPE';
+      cb(error, false);
     }
   }
 });
+
+// Multer error handler middleware (reused from analytics.js)
+const handleMulterError = (error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    switch (error.code) {
+      case 'LIMIT_FILE_SIZE':
+        return res.status(413).json({
+          error: 'File too large',
+          message: 'File size exceeds the maximum limit of 100MB. Please upload a smaller file.',
+          maxSize: '100MB',
+          uploadedSize: req.file ? `${(req.file.size / 1024 / 1024).toFixed(2)}MB` : 'Unknown'
+        });
+      case 'LIMIT_FILE_COUNT':
+        return res.status(400).json({
+          error: 'Too many files',
+          message: 'Only one file can be uploaded at a time.'
+        });
+      case 'LIMIT_UNEXPECTED_FILE':
+        return res.status(400).json({
+          error: 'Unexpected file field',
+          message: 'Unexpected file field. Please use the correct upload form.'
+        });
+      default:
+        return res.status(400).json({
+          error: 'Upload error',
+          message: error.message || 'An error occurred during file upload.'
+        });
+    }
+  } else if (error.code === 'INVALID_FILE_TYPE') {
+    return res.status(400).json({
+      error: 'Invalid file type',
+      message: error.message,
+      supportedFormats: ['Excel (.xlsx, .xls)', 'CSV (.csv)'],
+      maxSize: '100MB'
+    });
+  }
+  
+  // Pass other errors to next middleware
+  next(error);
+};
 
 // Enhanced analyze route with preprocessing and smart configuration
 router.post('/analyze-enhanced', protect, async (req, res) => {
