@@ -155,6 +155,126 @@ export const exportData = createAsyncThunk(
   }
 );
 
+// Chart History thunks
+export const fetchChartHistory = createAsyncThunk(
+  'analytics/fetchChartHistory',
+  async ({ page = 1, limit = 20, search = '', type = 'all', sortBy = 'createdAt', sortOrder = 'desc' } = {}, { rejectWithValue, getState }) => {
+    try {
+      const token = getState().auth.token;
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(search && { search }),
+        ...(type !== 'all' && { type }),
+        sortBy,
+        sortOrder
+      });
+
+      const response = await axios.get(`/api/history/charts?${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: 'Failed to fetch chart history' });
+    }
+  }
+);
+
+export const saveChartToHistory = createAsyncThunk(
+  'analytics/saveChartToHistory',
+  async ({ chart, fileId = null }, { rejectWithValue, getState }) => {
+    try {
+      console.log('📊 SAVE CHART TO HISTORY - Starting save process:', {
+        chartId: chart?.id,
+        chartTitle: chart?.title,
+        chartType: chart?.type,
+        fileId,
+        chartDataLength: chart?.data?.length,
+        chartKeys: chart ? Object.keys(chart) : []
+      });
+
+      const state = getState();
+      const token = state.auth.token;
+      
+      console.log('🔍 Auth state check:', {
+        hasAuthState: !!state.auth,
+        hasToken: !!token,
+        tokenLength: token ? token.length : 0
+      });
+      
+      if (!token) {
+        console.error('❌ No authentication token available for chart save');
+        throw new Error('Authentication required');
+      }
+
+      console.log('🚀 Making API call to /api/analytics/save-chart');
+      console.log('📦 Payload being sent:', { chart, fileId });
+      
+      const response = await axios.post('/api/analytics/save-chart', {
+        chart,
+        fileId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      console.log('✅ Chart save API response:', response.data);
+      return { chart, response: response.data };
+    } catch (error) {
+      console.error('💥 Chart save error:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+        stack: error.stack
+      });
+
+      // Handle specific error cases
+      if (error.response?.status === 401) {
+        console.error('🔐 Authentication failed - user needs to log in again');
+        return rejectWithValue({ 
+          message: 'Authentication failed. Please log in again.', 
+          code: 'AUTH_FAILED',
+          status: 401 
+        });
+      }
+
+      if (error.response?.status === 403) {
+        console.error('🚫 Access forbidden - insufficient permissions');
+        return rejectWithValue({ 
+          message: 'Access denied. Insufficient permissions.', 
+          code: 'ACCESS_DENIED',
+          status: 403 
+        });
+      }
+
+      if (error.code === 'NETWORK_ERROR' || !error.response) {
+        console.error('🌐 Network error - server may be unreachable');
+        return rejectWithValue({ 
+          message: 'Network error. Please check your connection and try again.', 
+          code: 'NETWORK_ERROR' 
+        });
+      }
+
+      return rejectWithValue(error.response?.data || { message: 'Failed to save chart' });
+    }
+  }
+);
+
+export const deleteChartFromHistory = createAsyncThunk(
+  'analytics/deleteChartFromHistory',
+  async (chartId, { rejectWithValue, getState }) => {
+    try {
+      const token = getState().auth.token;
+      await axios.delete(`/api/history/charts/${chartId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return { chartId };
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: 'Failed to delete chart' });
+    }
+  }
+);
+
 const initialState = {
   uploadedFile: null,
   recentFiles: [],
@@ -168,6 +288,15 @@ const initialState = {
     charts3D: []
   },
   chartHistory: [],
+  chartHistoryPagination: {
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    hasNext: false,
+    hasPrev: false
+  },
+  chartHistoryLoading: false,
+  chartHistoryError: null,
   isLoading: false,
   error: null,
   summary: null,
@@ -435,6 +564,64 @@ const analyticsSlice = createSlice({
       .addCase(exportData.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload?.message || 'Export failed';
+      })
+      
+      // Chart History
+      .addCase(fetchChartHistory.pending, (state) => {
+        state.chartHistoryLoading = true;
+        state.chartHistoryError = null;
+      })
+      .addCase(fetchChartHistory.fulfilled, (state, action) => {
+        state.chartHistoryLoading = false;
+        console.log('📊 Redux: Chart history fetched successfully:', action.payload);
+        
+        // Handle the backend response structure: { success: true, data: { charts, pagination } }
+        const responseData = action.payload.data || action.payload;
+        const charts = responseData.charts || [];
+        const pagination = responseData.pagination || {};
+        
+        state.chartHistory = charts;
+        state.chartHistoryPagination = {
+          page: pagination.page || 1,
+          pages: pagination.pages || 1,
+          total: pagination.total || 0,
+          limit: pagination.limit || 20
+        };
+      })
+      .addCase(fetchChartHistory.rejected, (state, action) => {
+        state.chartHistoryLoading = false;
+        state.chartHistoryError = action.payload?.message || 'Failed to fetch chart history';
+      })
+      
+      // Save Chart to History
+      .addCase(saveChartToHistory.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(saveChartToHistory.fulfilled, (state, action) => {
+        state.isLoading = false;
+        console.log('📊 Redux: Chart saved successfully, triggering refresh...');
+        // Note: We'll trigger a fetchChartHistory refresh from the component
+        // This ensures the chart list is always up-to-date after saving
+      })
+      .addCase(saveChartToHistory.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload?.message || 'Failed to save chart';
+      })
+      
+      // Delete Chart from History
+      .addCase(deleteChartFromHistory.fulfilled, (state, action) => {
+        console.log('🗑️ Redux: Chart deleted successfully:', action.payload.chartId);
+        // Remove the chart from the local state
+        state.chartHistory = state.chartHistory.filter(chart => 
+          chart.chartId !== action.payload.chartId && chart._id !== action.payload.chartId
+        );
+        // Update pagination count
+        if (state.chartHistoryPagination.total > 0) {
+          state.chartHistoryPagination.total -= 1;
+        }
+      })
+      .addCase(deleteChartFromHistory.rejected, (state, action) => {
+        state.chartHistoryError = action.payload?.message || 'Failed to delete chart';
       });
   },
 });

@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import AdvancedChart from './SimpleChart';
 import ChartSidebar from './ChartSidebar';
 import ProgressiveChartLoader from '../UI/ProgressiveChartLoader';
 import { Plus, BarChart3, Trash2, Edit3, Grid3X3, LayoutGrid, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from '../../config/axios';
+import { saveChartToHistory } from '../../store/slices/analyticsSlice';
 
 const AdvancedChartDashboard = ({ data = [], className = '' }) => {
+  const dispatch = useDispatch();
+  const { uploadedFile } = useSelector((state) => state.analytics);
+  const authState = useSelector((state) => state.auth);
   const [charts, setCharts] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [editingChart, setEditingChart] = useState(null);
@@ -15,6 +20,42 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
   const [pendingChart, setPendingChart] = useState(null); // Chart waiting to be rendered
   const [smartRecommendations, setSmartRecommendations] = useState([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  
+  // Notification management to prevent duplicates
+  const [recentNotifications, setRecentNotifications] = useState(new Set());
+  const [savingCharts, setSavingCharts] = useState(new Set()); // Track which charts are being saved
+
+  // Helper function to show notifications without duplicates
+  const showNotification = (type, message, chartId = null) => {
+    const notificationKey = `${type}-${message}-${chartId}`;
+    
+    // Check if this notification was recently shown
+    if (recentNotifications.has(notificationKey)) {
+      console.log('🔕 Duplicate notification prevented:', notificationKey);
+      return;
+    }
+    
+    // Add to recent notifications
+    setRecentNotifications(prev => new Set([...prev, notificationKey]));
+    
+    // Show the notification
+    if (type === 'success') {
+      toast.success(message, { duration: 4000 });
+    } else if (type === 'error') {
+      toast.error(message, { duration: 5000 });
+    } else if (type === 'info') {
+      toast(message, { duration: 3000 });
+    }
+    
+    // Clean up notification key after some time
+    setTimeout(() => {
+      setRecentNotifications(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(notificationKey);
+        return newSet;
+      });
+    }, 10000); // Clear after 10 seconds
+  };
 
   // Fetch smart recommendations when data changes
   useEffect(() => {
@@ -83,6 +124,8 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
     // Create chart data with filter information
     const simulatedChartData = {
       id: chartId,
+      title: config.title || `Chart ${chartId}`, // Ensure title is set
+      type: config.type || 'bar', // Ensure type is set
       ...config,
       data: chartData, // Use filtered data
       originalData: data, // Keep reference to original data
@@ -97,7 +140,20 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
         originalCount: config.originalDataCount
       } : null,
       performanceMode: chartData.length > 1000 && !fullDataset, // Disable performance mode if full dataset requested
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      // Add additional fields expected by backend
+      xAxis: config.xAxis,
+      yAxis: config.yAxis,
+      series: config.series,
+      colorScheme: config.colorScheme,
+      dataColumns: config.xAxis && config.yAxis ? [config.xAxis, config.yAxis] : [],
+      categories: [], // Will be populated by chart component
+      values: [], // Will be populated by chart component
+      options: {
+        showAnimation: config.showAnimation,
+        colorScheme: config.colorScheme,
+        fullDataset: fullDataset
+      }
     };
     
     // Set pending chart to show loader
@@ -128,7 +184,7 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
           : chart
       ));
       setEditingChart(null);
-      toast.success('Chart updated successfully!');
+      showNotification('success', 'Chart updated successfully!', chartData.id);
     } else {
       // Create new chart - check if chart with this ID already exists to prevent duplicates
       setCharts(prev => {
@@ -140,7 +196,130 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
         }
         return [...prev, chartData];
       });
-      toast.success('Chart created successfully!');
+      showNotification('success', 'Chart created successfully!', chartData.id);
+    }
+    
+    // Automatically save chart to MongoDB history
+    try {
+      console.log('💾 CHART DASHBOARD - Initiating chart save to history:', {
+        chartId: chartData.id,
+        chartTitle: chartData.title,
+        chartType: chartData.type,
+        uploadedFileId: uploadedFile?._id,
+        chartDataLength: chartData.data?.length,
+        hasTitle: !!chartData.title,
+        hasType: !!chartData.type,
+        hasData: !!chartData.data,
+        authToken: !!authState?.token
+      });
+
+      // Check if this chart is already being saved
+      if (savingCharts.has(chartData.id)) {
+        console.log('⏳ Chart save already in progress for:', chartData.id);
+        return;
+      }
+
+      // Verify we have required data for saving
+      if (!chartData.title || !chartData.type) {
+        console.error('❌ Missing required chart data for save:', {
+          title: chartData.title,
+          type: chartData.type
+        });
+        showNotification('error', 'Chart created but missing title or type for save', chartData.id);
+        return;
+      }
+
+      // Check authentication
+      if (!authState?.token) {
+        console.error('❌ No authentication token available for chart save');
+        console.error('🔍 Auth state:', {
+          hasAuthState: !!authState,
+          hasToken: !!authState?.token,
+          isLoggedIn: !!authState?.isLoggedIn,
+          user: authState?.user?.email
+        });
+        showNotification('error', 'Please log in to save charts', chartData.id);
+        return;
+      }
+
+      console.log('🔑 Authentication check passed, proceeding with save');
+
+      // Mark chart as being saved
+      setSavingCharts(prev => new Set([...prev, chartData.id]));
+
+      const fileId = uploadedFile?._id || null;
+      console.log('💾 Dispatching saveChartToHistory action with:', {
+        chartId: chartData.id,
+        chartTitle: chartData.title,
+        chartType: chartData.type,
+        fileId,
+        hasData: !!chartData.data,
+        dataLength: chartData.data?.length
+      });
+
+      const saveAction = dispatch(saveChartToHistory({ 
+        chart: chartData, 
+        fileId 
+      }));
+      
+      // Handle the save result
+      saveAction.then((result) => {
+        console.log('📋 Chart save action result:', result);
+        
+        // Remove from saving set
+        setSavingCharts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(chartData.id);
+          return newSet;
+        });
+        
+        if (result.type === 'analytics/saveChartToHistory/fulfilled') {
+          console.log('✅ Chart successfully saved to history');
+          showNotification('success', 'Chart created and saved to history!', chartData.id);
+          
+          // Emit event to trigger chart history refresh
+          window.dispatchEvent(new CustomEvent('chartSaved', { 
+            detail: { chartId: chartData.id, chartTitle: chartData.title } 
+          }));
+          
+          // Also set localStorage for cross-tab communication
+          localStorage.setItem('chartSaved', JSON.stringify({
+            chartId: chartData.id,
+            timestamp: Date.now()
+          }));
+          
+        } else if (result.type === 'analytics/saveChartToHistory/rejected') {
+          console.error('❌ Failed to save chart to history:', result.error);
+          const errorPayload = result.payload;
+          
+          // Handle specific error cases
+          if (errorPayload?.code === 'AUTH_FAILED' || errorPayload?.status === 401) {
+            showNotification('error', 'Please log in to save charts to history', chartData.id);
+          } else if (errorPayload?.code === 'NETWORK_ERROR') {
+            showNotification('error', 'Network error - chart saved locally only', chartData.id);
+          } else {
+            showNotification('error', 'Chart created but failed to save to history', chartData.id);
+          }
+        }
+      }).catch((error) => {
+        console.error('💥 Error in save chain:', error);
+        // Remove from saving set on error
+        setSavingCharts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(chartData.id);
+          return newSet;
+        });
+        showNotification('error', 'Chart save failed', chartData.id);
+      });
+    } catch (error) {
+      console.error('💥 Error saving chart to history:', error);
+      // Remove from saving set on error
+      setSavingCharts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(chartData.id);
+        return newSet;
+      });
+      showNotification('error', 'Chart created but history save failed', chartData.id);
     }
   };
   
@@ -336,6 +515,32 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
           </div>
         )}
       </div>
+
+      {/* Authentication Warning */}
+      {!authState?.token && (
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Charts will be created but not saved
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>
+                  You're not logged in. Charts can be created and viewed, but won't be saved to your history. 
+                  <a href="/login" className="font-medium underline hover:text-yellow-600 ml-1">
+                    Log in to save charts
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Charts Grid */}
       <div className={getLayoutClasses()}>

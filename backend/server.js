@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import analyticsRoutes from './routes/analytics.js';
 import analyticsEnhancedRoutes from './routes/analyticsEnhanced.js';
+import historyRoutes from './routes/history.js';
 import notificationRoutes from './routes/notifications.js';
 import tabNotificationRoutes from './routes/tabNotifications.js';
 import { getTransporter } from './utils/mailer.js';
@@ -51,6 +52,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/analytics-enhanced', analyticsEnhancedRoutes);
+app.use('/api/history', historyRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/tab-notifications', tabNotificationRoutes);
 

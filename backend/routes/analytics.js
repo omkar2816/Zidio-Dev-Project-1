@@ -3,6 +3,8 @@ import multer from 'multer';
 import xlsx from 'xlsx';
 import { protect, requireAdmin } from '../middleware/auth.js';
 import UploadedFile from '../models/UploadedFile.js';
+import ChartHistory from '../models/ChartHistory.js';
+import DatasetProcessingHistory from '../models/DatasetProcessingHistory.js';
 import UserActivity from '../models/UserActivity.js';
 import User from '../models/User.js';
 import NotificationService from '../services/NotificationService.js';
@@ -357,7 +359,7 @@ const handleMulterError = (error, req, res, next) => {
 };
 
 // Helper function to log activity
-const logActivity = async (userId, activityType, description, fileId = null, fileName = null, metadata = {}) => {
+const logActivity = async (userId, activityType, description, fileId = null, fileName = null, metadata = {}, req = null) => {
   try {
     await UserActivity.logActivity({
       user: userId,
@@ -564,6 +566,57 @@ router.post('/upload', protect, (req, res, next) => {
         totalRows: Object.values(sheets).reduce((sum, sheet) => sum + sheet.totalRows, 0)
       }
     );
+
+    // Create dataset processing history record
+    const processingHistory = new DatasetProcessingHistory({
+      user: req.user._id,
+      file: savedFile._id,
+      sessionId: `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      processingSteps: [
+        {
+          step: 'file_upload',
+          operation: 'File Upload and Parsing',
+          status: 'completed',
+          startTime: new Date(),
+          endTime: new Date(),
+          input: {
+            fileName: req.file.originalname,
+            fileSize: req.file.size,
+            mimeType: req.file.mimetype
+          },
+          output: {
+            sheets: sheetNames,
+            totalSheets: sheetNames.length,
+            totalRows: Object.values(sheets).reduce((sum, sheet) => sum + sheet.totalRows, 0),
+            dataTypes: Object.keys(sheets).reduce((types, sheetName) => {
+              types[sheetName] = sheets[sheetName].columnTypes || {};
+              return types;
+            }, {}),
+            warnings: datasetWarnings
+          },
+          performanceMetrics: {
+            processingTime: 0, // Will be updated by client if needed
+            memoryUsage: process.memoryUsage().heapUsed,
+            rowsProcessed: Object.values(sheets).reduce((sum, sheet) => sum + sheet.totalRows, 0)
+          }
+        }
+      ],
+      qualityAssessment: {
+        completeness: datasetWarnings.filter(w => w.type === 'missing_data').length === 0 ? 1.0 : 0.8,
+        consistency: 1.0, // Will be updated during preprocessing
+        accuracy: 1.0, // Will be updated during preprocessing
+        issues: datasetWarnings.map(w => ({ type: w.type, severity: 'warning', description: w.message }))
+      },
+      metadata: {
+        originalFileName: req.file.originalname,
+        fileSize: req.file.size,
+        sheetCount: sheetNames.length,
+        columnCount: Object.values(sheets).reduce((sum, sheet) => sum + (sheet.columns ? sheet.columns.length : 0), 0),
+        rowCount: Object.values(sheets).reduce((sum, sheet) => sum + sheet.totalRows, 0)
+      }
+    });
+
+    await processingHistory.save();
 
     // Notify superadmins about file upload (for monitoring purposes)
     await NotificationService.notifyFileUpload(req.user, req.file.originalname);
@@ -1023,6 +1076,41 @@ router.post('/generate-chart', protect, async (req, res) => {
       }
     );
 
+    // Create chart history record
+    const chartHistory = new ChartHistory({
+      user: req.user._id,
+      chartId: chart.id,
+      title: chart.title,
+      type: chart.type,
+      configuration: {
+        chartType: chart.type,
+        dataColumns: chartConfig.dataColumns || [],
+        categories: chartConfig.categories || [],
+        values: chartConfig.values || [],
+        colorScheme: chartConfig.colorScheme || 'default',
+        customSettings: chartConfig.customSettings || {}
+      },
+      dataSource: {
+        type: 'generated',
+        rowCount: chart.data.length,
+        columnCount: Object.keys(chart.data[0] || {}).length,
+        dataTypes: sheetData.columnTypes || {}
+      },
+      metadata: {
+        generatedAt: new Date(),
+        generationMethod: 'manual_configuration',
+        dataPreview: chart.data.slice(0, 5), // Store first 5 rows for preview
+        chartOptions: chart.options || {}
+      },
+      performanceMetrics: {
+        generationTime: 0, // Will be updated by client if needed
+        dataPoints: chart.data.length,
+        renderTime: 0 // Will be updated by client
+      }
+    });
+
+    await chartHistory.save();
+
     res.json({
       success: true,
       message: 'Chart generated successfully',
@@ -1039,15 +1127,34 @@ router.post('/generate-chart', protect, async (req, res) => {
 
 // Save chart to user's history
 router.post('/save-chart', protect, async (req, res) => {
+  console.log('🔥 SAVE CHART ENDPOINT HIT! 🔥');
+  console.log('🔥 Request method:', req.method);
+  console.log('🔥 Request path:', req.path);
+  console.log('🔥 User authenticated:', !!req.user);
+  
   try {
+    console.log('📊 BACKEND - Save chart endpoint hit');
+    console.log('📊 User:', req.user?.email);
+    console.log('📊 Request body keys:', Object.keys(req.body));
+    console.log('📊 Full request body:', JSON.stringify(req.body, null, 2));
+    
     const { chart, fileId } = req.body;
 
     if (!chart) {
+      console.error('❌ No chart data provided');
       return res.status(400).json({
         error: 'Invalid data',
         message: 'Please provide chart data'
       });
     }
+
+    console.log('📊 Chart save details:', {
+      chartId: chart.id,
+      chartTitle: chart.title,
+      chartType: chart.type,
+      fileId,
+      chartDataLength: chart.data?.length
+    });
 
     // Store chart in user activity for history
     await logActivity(
@@ -1060,18 +1167,155 @@ router.post('/save-chart', protect, async (req, res) => {
         chartType: chart.type,
         chartId: chart.id,
         chartData: chart
-      }
+      },
+      req
     );
 
+    console.log('📊 Activity logged, now checking for existing chart history...');
+
+    // Update or create chart history record
+    let chartHistory = await ChartHistory.findOne({
+      user: req.user._id,
+      chartId: chart.id
+    });
+
+    if (chartHistory) {
+      console.log('📊 Updating existing chart history record');
+      
+      // Validate color scheme against enum values
+      const validColorSchemes = ['default', 'blue', 'green', 'emerald', 'purple', 'orange', 'red', 'teal', 'pink', 'indigo', 'gray', 'cyan', 'yellow', 'lime', 'rose', 'violet', 'amber', 'sky'];
+      const colorScheme = validColorSchemes.includes(chart.colorScheme) ? chart.colorScheme : (chartHistory.configuration.colorScheme || 'default');
+      
+      // Update existing chart history
+      await chartHistory.updateAccess();
+      chartHistory.isSaved = true;
+      chartHistory.lastModified = new Date();
+      chartHistory.configuration = {
+        chartType: chart.type,
+        dataColumns: chart.dataColumns || chartHistory.configuration.dataColumns,
+        categories: chart.categories || chartHistory.configuration.categories,
+        values: chart.values || chartHistory.configuration.values,
+        colorScheme: colorScheme,
+        customSettings: chart.customSettings || chartHistory.configuration.customSettings
+      };
+      await chartHistory.save();
+      console.log('📊 Chart history updated successfully');
+    } else {
+      console.log('📊 Creating new chart history record');
+      
+      // Validate color scheme against enum values
+      const validColorSchemes = ['default', 'blue', 'green', 'emerald', 'purple', 'orange', 'red', 'teal', 'pink', 'indigo', 'gray', 'cyan', 'yellow', 'lime', 'rose', 'violet', 'amber', 'sky'];
+      const colorScheme = validColorSchemes.includes(chart.colorScheme) ? chart.colorScheme : 'default';
+      
+      console.log(`Using color scheme: ${colorScheme} (original: ${chart.colorScheme})`);
+      
+      // Create new chart history record
+      chartHistory = new ChartHistory({
+        user: req.user._id,
+        chartId: chart.id,
+        chartTitle: chart.title,
+        chartType: chart.type,
+        sourceFile: fileId, // Can be null for generated charts
+        sourceFileName: fileId ? 'File-based Chart' : 'Generated Chart',
+        sourceSheet: fileId ? 'Default' : 'Generated',
+        configuration: {
+          xAxis: chart.xAxis || 'Generated',
+          yAxis: chart.yAxis || 'Generated',
+          series: chart.series || {},
+          chartType: chart.type,
+          dataColumns: chart.dataColumns || [],
+          categories: chart.categories || [],
+          values: chart.values || [],
+          colorScheme: colorScheme,
+          customSettings: chart.customSettings || {}
+        },
+        dataInfo: {
+          totalRows: chart.data ? chart.data.length : 0,
+          totalColumns: chart.data && chart.data[0] ? Object.keys(chart.data[0]).length : 0,
+          dataTypes: chart.dataTypes || {},
+          sampleData: chart.data ? chart.data.slice(0, 3) : []
+        },
+        performanceInfo: {
+          generationTime: chart.generationTime || 0,
+          renderTime: chart.renderTime || 0,
+          dataSize: chart.data ? JSON.stringify(chart.data).length : 0
+        },
+        metadata: {
+          createdAt: new Date(),
+          generationMethod: 'dashboard_save',
+          chartOptions: chart.options || {},
+          description: `${chart.type} chart: ${chart.title}`
+        },
+        isSaved: true,
+        status: 'active'
+      });
+      await chartHistory.save();
+      console.log('📊 New chart history created successfully');
+    }
+
+    console.log('✅ Chart save operation completed successfully');
     res.json({
       success: true,
-      message: 'Chart saved to history'
+      message: 'Chart saved to history',
+      chartId: chart.id,
+      savedAt: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Save chart error:', error);
+    console.error('💥 Save chart error:', error);
     res.status(500).json({
       error: 'Save failed',
-      message: 'Failed to save chart'
+      message: 'Failed to save chart to history',
+      details: error.message
+    });
+  }
+});
+
+// Test endpoint for chart save functionality
+router.post('/test-chart-save', protect, async (req, res) => {
+  try {
+    console.log('🧪 TEST CHART SAVE ENDPOINT HIT');
+    console.log('🧪 User:', req.user?.email);
+    console.log('🧪 User ID:', req.user?._id);
+    
+    // Create a simple test chart
+    const testChart = {
+      user: req.user._id,
+      chartId: `test-chart-${Date.now()}`,
+      chartTitle: 'Test Chart',
+      chartType: 'bar',
+      sourceFileName: 'Test Generated Chart',
+      sourceSheet: 'Generated',
+      configuration: {
+        xAxis: 'category',
+        yAxis: 'value',
+        chartType: 'bar',
+        colorScheme: 'blue'
+      },
+      dataInfo: {
+        totalRows: 3,
+        totalColumns: 2
+      },
+      isSaved: true,
+      status: 'active'
+    };
+
+    const chartHistory = new ChartHistory(testChart);
+    await chartHistory.save();
+    
+    res.json({
+      success: true,
+      message: 'Test chart saved successfully',
+      chart: {
+        id: chartHistory.chartId,
+        title: chartHistory.chartTitle,
+        type: chartHistory.chartType
+      }
+    });
+  } catch (error) {
+    console.error('💥 Test chart save error:', error);
+    res.status(500).json({
+      error: 'Test failed',
+      message: error.message
     });
   }
 });

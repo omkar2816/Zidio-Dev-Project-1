@@ -8,6 +8,7 @@ import {
   Users, 
   Settings, 
   FileSpreadsheet,
+  Clock,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -67,13 +68,13 @@ const Sidebar = () => {
       current: false,
     },
     {
-      name: 'Charts',
+      name: 'Charts History',
       href: '/charts',
       icon: PieChart,
       current: false,
     },
     {
-      name: 'Excel Files',
+      name: 'Upload History',
       href: '/files',
       icon: FileSpreadsheet,
       current: false,
@@ -164,14 +165,14 @@ const Sidebar = () => {
                           targetRoles={['user']}
                         />
                       )}
-                      {item.name === 'Charts' && (
+                      {item.name === 'Charts History' && (
                         <TabNotificationBadge 
                           tabId="charts"
                           category="charts_tab"
                           targetRoles={['user', 'admin', 'superadmin']}
                         />
                       )}
-                      {item.name === 'Excel Files' && (
+                      {item.name === 'Upload History' && (
                         <TabNotificationBadge 
                           tabId="files"
                           category="files_tab"
