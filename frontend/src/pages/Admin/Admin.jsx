@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
-import { Users, Trash2, AlertTriangle, Shield, UserCog } from 'lucide-react';
+import { Users, Trash2, AlertTriangle, Shield, UserCog, BarChart3, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminRequests from '../../components/Admin/AdminRequests';
+import AdminDashboard from '../../components/Admin/AdminDashboard';
 import TabNotificationBadge from '../../components/Layout/TabNotificationBadge';
 
 const Admin = () => {
@@ -13,7 +14,7 @@ const Admin = () => {
   const [error, setError] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [activeTab, setActiveTab] = useState('users');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   // Check if user is superadmin
   const isSuperAdmin = user?.role === 'superadmin';
@@ -94,26 +95,37 @@ const Admin = () => {
         </div>
       </div>
 
-      {/* Tabs - Only show for superadmin */}
-      {isSuperAdmin && (
-        <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
-                activeTab === 'users'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-            >
-              <Users className="w-5 h-5 inline mr-2" />
-              User Management
-              <TabNotificationBadge 
-                tabId="admin-users"
-                category="admin_users_tab"
-                targetRoles={['admin', 'superadmin']}
-              />
-            </button>
+      {/* Tabs - Show for all admins */}
+      <div className="border-b border-gray-200 dark:border-gray-700">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
+              activeTab === 'dashboard'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            <BarChart3 className="w-5 h-5 inline mr-2" />
+            Analytics Dashboard
+          </button>
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
+              activeTab === 'users'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            <Users className="w-5 h-5 inline mr-2" />
+            User Management
+            <TabNotificationBadge 
+              tabId="admin-users"
+              category="admin_users_tab"
+              targetRoles={['admin', 'superadmin']}
+            />
+          </button>
+          {isSuperAdmin && (
             <button
               onClick={() => setActiveTab('requests')}
               className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
@@ -130,12 +142,16 @@ const Admin = () => {
                 targetRoles={['superadmin']}
               />
             </button>
-          </nav>
-        </div>
-      )}
+          )}
+        </nav>
+      </div>
 
       {/* Tab Content */}
-      {(activeTab === 'users' || !isSuperAdmin) && (
+      {activeTab === 'dashboard' && (
+        <AdminDashboard />
+      )}
+
+      {activeTab === 'users' && (
         <>
           {/* Role-based stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

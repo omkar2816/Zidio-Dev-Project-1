@@ -650,13 +650,16 @@ const analyticsSlice = createSlice({
       // Delete Chart from History
       .addCase(deleteChartFromHistory.fulfilled, (state, action) => {
         console.log('🗑️ Redux: Chart deleted successfully:', action.payload.chartId);
-        // Remove the chart from the local state
-        state.chartHistory = state.chartHistory.filter(chart => 
+        // Remove the chart from the local state - fix the state structure
+        state.chartHistory.charts = state.chartHistory.charts.filter(chart => 
           chart.chartId !== action.payload.chartId && chart._id !== action.payload.chartId
         );
-        // Update pagination count
-        if (state.chartHistoryPagination.total > 0) {
-          state.chartHistoryPagination.total -= 1;
+        // Update pagination counts
+        if (state.chartHistory.total > 0) {
+          state.chartHistory.total -= 1;
+        }
+        if (state.chartHistoryPagination.totalCount > 0) {
+          state.chartHistoryPagination.totalCount -= 1;
         }
       })
       .addCase(deleteChartFromHistory.rejected, (state, action) => {

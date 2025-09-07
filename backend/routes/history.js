@@ -153,10 +153,12 @@ router.get('/charts', protect, async (req, res) => {
       user: req.user._id, 
       isActive: true,
       status: { $ne: 'deleted' },
-      // Exclude test events
-      chartTitle: { $not: { $regex: '^test', $options: 'i' } },
-      chartId: { $not: { $regex: '^test-', $options: 'i' } },
-      sourceFileName: { $not: { $regex: 'test', $options: 'i' } }
+      // Exclude test events - be more specific to avoid removing legitimate charts
+      $and: [
+        { chartTitle: { $not: { $regex: '^test[\\s-]', $options: 'i' } } },
+        { chartId: { $not: { $regex: '^test-', $options: 'i' } } },
+        { sourceFileName: { $not: { $regex: '^test[\\s-]|test\\.', $options: 'i' } } }
+      ]
     };
 
     if (chartType) query.chartType = chartType;
@@ -186,6 +188,24 @@ router.get('/charts', protect, async (req, res) => {
       .lean();
 
     const total = await ChartHistory.countDocuments(query);
+
+    // Debug: Log what we're sending to frontend
+    console.log(`📊 API: Returning ${charts.length} charts to frontend`);
+    if (charts.length > 0) {
+      console.log('📋 Sample chart data structure:', {
+        title: charts[0].chartTitle,
+        hasChartData: !!charts[0].chartData,
+        chartDataType: typeof charts[0].chartData,
+        chartDataLength: Array.isArray(charts[0].chartData) ? charts[0].chartData.length : 'not array',
+        hasConfiguration: !!charts[0].configuration,
+        configKeys: charts[0].configuration ? Object.keys(charts[0].configuration) : [],
+        valuesLength: charts[0].configuration?.values?.length || 0,
+        categoriesLength: charts[0].configuration?.categories?.length || 0,
+        hasDataInfo: !!charts[0].dataInfo,
+        dataInfoKeys: charts[0].dataInfo ? Object.keys(charts[0].dataInfo) : [],
+        totalRows: charts[0].dataInfo?.totalRows || 0
+      });
+    }
 
     res.json({
       success: true,
@@ -326,13 +346,21 @@ router.patch('/charts/:chartId/archive', protect, async (req, res) => {
 // Delete chart
 router.delete('/charts/:chartId', protect, async (req, res) => {
   try {
+    const chartId = req.params.chartId;
+    console.log('🗑️ Delete request received for chartId:', chartId);
+    console.log('🔍 User ID:', req.user._id);
+    
     const chart = await ChartHistory.findOne({
-      chartId: req.params.chartId,
-      user: req.user._id,
-      isActive: true
+      $or: [
+        { chartId: chartId, user: req.user._id, isActive: true },
+        { _id: chartId, user: req.user._id, isActive: true }
+      ]
     });
 
+    console.log('📊 Found chart:', chart ? `"${chart.chartTitle}"` : 'Not found');
+
     if (!chart) {
+      console.log('❌ Chart not found or access denied');
       return res.status(404).json({
         error: 'Chart not found',
         message: 'Chart not found or access denied'
@@ -340,6 +368,7 @@ router.delete('/charts/:chartId', protect, async (req, res) => {
     }
 
     await chart.softDelete();
+    console.log('✅ Chart soft deleted successfully');
 
     await logActivity(
       req.user._id,
@@ -351,14 +380,16 @@ router.delete('/charts/:chartId', protect, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Chart deleted successfully'
+      message: 'Chart deleted successfully',
+      deletedChartId: chartId
     });
 
   } catch (error) {
-    console.error('Delete chart error:', error);
+    console.error('❌ Delete chart error:', error);
     res.status(500).json({
       error: 'Failed to delete chart',
-      message: 'Internal server error'
+      message: 'Internal server error',
+      details: error.message
     });
   }
 });
