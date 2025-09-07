@@ -1076,12 +1076,14 @@ router.post('/generate-chart', protect, async (req, res) => {
       }
     );
 
-    // Create chart history record
+    // Create chart history record with correct field names
     const chartHistory = new ChartHistory({
       user: req.user._id,
       chartId: chart.id,
-      title: chart.title,
-      type: chart.type,
+      chartTitle: chart.title,
+      chartType: chart.type,
+      sourceFileName: 'Generated Chart',
+      sourceSheet: 'Default',
       configuration: {
         chartType: chart.type,
         dataColumns: chartConfig.dataColumns || [],
@@ -1090,23 +1092,23 @@ router.post('/generate-chart', protect, async (req, res) => {
         colorScheme: chartConfig.colorScheme || 'default',
         customSettings: chartConfig.customSettings || {}
       },
-      dataSource: {
-        type: 'generated',
-        rowCount: chart.data.length,
-        columnCount: Object.keys(chart.data[0] || {}).length,
-        dataTypes: sheetData.columnTypes || {}
+      chartData: chart.data || chart,
+      dataInfo: {
+        totalRows: chart.data ? chart.data.length : 0,
+        displayedRows: chart.data ? chart.data.length : 0,
+        isFiltered: false
       },
       metadata: {
-        generatedAt: new Date(),
-        generationMethod: 'manual_configuration',
-        dataPreview: chart.data.slice(0, 5), // Store first 5 rows for preview
-        chartOptions: chart.options || {}
+        description: `${chart.type} chart: ${chart.title}`,
+        version: '1.0',
+        isFavorite: false
       },
-      performanceMetrics: {
-        generationTime: 0, // Will be updated by client if needed
-        dataPoints: chart.data.length,
-        renderTime: 0 // Will be updated by client
-      }
+      accessTracking: {
+        viewCount: 0,
+        lastViewed: new Date()
+      },
+      status: 'active',
+      isActive: true
     });
 
     await chartHistory.save();
@@ -1128,16 +1130,10 @@ router.post('/generate-chart', protect, async (req, res) => {
 // Save chart to user's history
 router.post('/save-chart', protect, async (req, res) => {
   console.log('🔥 SAVE CHART ENDPOINT HIT! 🔥');
-  console.log('🔥 Request method:', req.method);
-  console.log('🔥 Request path:', req.path);
-  console.log('🔥 User authenticated:', !!req.user);
+  console.log('📊 User:', req.user?.email);
+  console.log('📊 Request body:', JSON.stringify(req.body, null, 2));
   
   try {
-    console.log('📊 BACKEND - Save chart endpoint hit');
-    console.log('📊 User:', req.user?.email);
-    console.log('📊 Request body keys:', Object.keys(req.body));
-    console.log('📊 Full request body:', JSON.stringify(req.body, null, 2));
-    
     const { chart, fileId } = req.body;
 
     if (!chart) {
@@ -1156,7 +1152,7 @@ router.post('/save-chart', protect, async (req, res) => {
       chartDataLength: chart.data?.length
     });
 
-    // Store chart in user activity for history
+    // Store chart in user activity for backward compatibility
     await logActivity(
       req.user._id,
       'chart_save',
@@ -1171,105 +1167,96 @@ router.post('/save-chart', protect, async (req, res) => {
       req
     );
 
-    console.log('📊 Activity logged, now checking for existing chart history...');
-
-    // Update or create chart history record
-    let chartHistory = await ChartHistory.findOne({
-      user: req.user._id,
-      chartId: chart.id
-    });
-
-    if (chartHistory) {
-      console.log('📊 Updating existing chart history record');
-      
-      // Validate color scheme against enum values
-      const validColorSchemes = ['default', 'blue', 'green', 'emerald', 'purple', 'orange', 'red', 'teal', 'pink', 'indigo', 'gray', 'cyan', 'yellow', 'lime', 'rose', 'violet', 'amber', 'sky'];
-      const colorScheme = validColorSchemes.includes(chart.colorScheme) ? chart.colorScheme : (chartHistory.configuration.colorScheme || 'default');
-      
-      // Update existing chart history
-      await chartHistory.updateAccess();
-      chartHistory.isSaved = true;
-      chartHistory.lastModified = new Date();
-      chartHistory.configuration = {
-        chartType: chart.type,
-        dataColumns: chart.dataColumns || chartHistory.configuration.dataColumns,
-        categories: chart.categories || chartHistory.configuration.categories,
-        values: chart.values || chartHistory.configuration.values,
-        colorScheme: colorScheme,
-        customSettings: chart.customSettings || chartHistory.configuration.customSettings
-      };
-      await chartHistory.save();
-      console.log('📊 Chart history updated successfully');
-    } else {
-      console.log('📊 Creating new chart history record');
-      
-      // Validate color scheme against enum values
-      const validColorSchemes = ['default', 'blue', 'green', 'emerald', 'purple', 'orange', 'red', 'teal', 'pink', 'indigo', 'gray', 'cyan', 'yellow', 'lime', 'rose', 'violet', 'amber', 'sky'];
-      const colorScheme = validColorSchemes.includes(chart.colorScheme) ? chart.colorScheme : 'default';
-      
-      console.log(`Using color scheme: ${colorScheme} (original: ${chart.colorScheme})`);
-      
-      // Create new chart history record
-      chartHistory = new ChartHistory({
+    // Use findOneAndUpdate with upsert to avoid duplicate key errors
+    const chartHistory = await ChartHistory.findOneAndUpdate(
+      {
         user: req.user._id,
-        chartId: chart.id,
-        chartTitle: chart.title,
-        chartType: chart.type,
-        sourceFile: fileId, // Can be null for generated charts
-        sourceFileName: fileId ? 'File-based Chart' : 'Generated Chart',
-        sourceSheet: fileId ? 'Default' : 'Generated',
-        configuration: {
-          xAxis: chart.xAxis || 'Generated',
-          yAxis: chart.yAxis || 'Generated',
-          series: chart.series || {},
+        chartId: chart.id
+      },
+      {
+        $set: {
+          chartTitle: chart.title,
           chartType: chart.type,
-          dataColumns: chart.dataColumns || [],
-          categories: chart.categories || [],
-          values: chart.values || [],
-          colorScheme: colorScheme,
-          customSettings: chart.customSettings || {}
+          chartData: chart.data || chart,
+          lastModified: new Date(),
+          status: 'active',
+          isActive: true,
+          configuration: {
+            chartType: chart.type,
+            dataColumns: chart.dataColumns || [],
+            categories: chart.categories || [],
+            values: chart.values || [],
+            colorScheme: chart.colorScheme || 'emerald', // Default to emerald theme
+            customSettings: chart.customSettings || {}
+          },
+          dataInfo: {
+            totalRows: chart.data ? chart.data.length : 0,
+            totalColumns: chart.data && chart.data[0] ? Object.keys(chart.data[0]).length : 0
+          },
+          metadata: {
+            description: `${chart.type} chart: ${chart.title}`,
+            version: '1.0',
+            isFavorite: false
+          }
         },
-        dataInfo: {
-          totalRows: chart.data ? chart.data.length : 0,
-          totalColumns: chart.data && chart.data[0] ? Object.keys(chart.data[0]).length : 0,
-          dataTypes: chart.dataTypes || {},
-          sampleData: chart.data ? chart.data.slice(0, 3) : []
-        },
-        performanceInfo: {
-          generationTime: chart.generationTime || 0,
-          renderTime: chart.renderTime || 0,
-          dataSize: chart.data ? JSON.stringify(chart.data).length : 0
-        },
-        metadata: {
-          createdAt: new Date(),
-          generationMethod: 'dashboard_save',
-          chartOptions: chart.options || {},
-          description: `${chart.type} chart: ${chart.title}`
-        },
-        isSaved: true,
-        status: 'active'
-      });
-      await chartHistory.save();
-      console.log('📊 New chart history created successfully');
-    }
+        $setOnInsert: {
+          user: req.user._id,
+          chartId: chart.id,
+          sourceFile: fileId || null,
+          sourceFileName: fileId ? 'File-based Chart' : 'Generated Chart',
+          sourceSheet: 'Default',
+          createdAt: new Date()
+        }
+      },
+      {
+        upsert: true, // Create if doesn't exist, update if it does
+        new: true, // Return the updated document
+        runValidators: true
+      }
+    );
 
     console.log('✅ Chart save operation completed successfully');
+    console.log('📊 Saved chart with ID:', chartHistory.chartId);
+
     res.json({
       success: true,
       message: 'Chart saved to history',
       chartId: chart.id,
-      savedAt: new Date().toISOString()
+      historyId: chartHistory._id
     });
+
   } catch (error) {
-    console.error('💥 Save chart error:', error);
+    console.error('💥 Chart save error:', error);
+    
+    // Handle duplicate key errors gracefully
+    if (error.code === 11000) {
+      console.log('📊 Chart already exists, attempting to find existing...');
+      try {
+        const existingChart = await ChartHistory.findOne({
+          user: req.user._id,
+          chartId: req.body.chart.id
+        });
+        
+        if (existingChart) {
+          res.json({
+            success: true,
+            message: 'Chart already exists in history',
+            chartId: req.body.chart.id,
+            historyId: existingChart._id
+          });
+          return;
+        }
+      } catch (updateError) {
+        console.error('Failed to handle duplicate:', updateError);
+      }
+    }
+    
     res.status(500).json({
-      error: 'Save failed',
-      message: 'Failed to save chart to history',
-      details: error.message
+      error: 'Failed to save chart',
+      message: 'Internal server error'
     });
   }
 });
-
 // Test endpoint for chart save functionality
 router.post('/test-chart-save', protect, async (req, res) => {
   try {
@@ -1323,8 +1310,26 @@ router.post('/test-chart-save', protect, async (req, res) => {
 // Get user's chart history
 router.get('/chart-history', protect, async (req, res) => {
   try {
+    console.log('📊 CHART HISTORY ENDPOINT HIT');
+    console.log('📊 User:', req.user?.email);
+    console.log('📊 User ID:', req.user?._id);
+    
     const limit = parseInt(req.query.limit) || 50;
-    const chartHistory = await UserActivity.find({
+    
+    // First get from ChartHistory table
+    const chartHistoryRecords = await ChartHistory.find({
+      user: req.user._id,
+      isActive: true,
+      status: 'active'
+    })
+    .sort({ 'accessTracking.lastViewed': -1, createdAt: -1 })
+    .limit(limit)
+    .select('chartId chartTitle chartType configuration createdAt lastModified accessTracking metadata sourceFile sourceFileName chartData');
+
+    console.log('📊 Found ChartHistory records:', chartHistoryRecords.length);
+
+    // Also get from UserActivity as fallback for older charts
+    const userActivityCharts = await UserActivity.find({
       user: req.user._id,
       activityType: { $in: ['chart_save', 'chart_generation'] }
     })
@@ -1332,21 +1337,58 @@ router.get('/chart-history', protect, async (req, res) => {
     .limit(limit)
     .select('description metadata performedAt activityType');
 
-    const charts = chartHistory.map(activity => ({
-      id: activity.metadata?.chartId || activity._id,
-      type: activity.metadata?.chartType || 'unknown',
-      title: activity.description.replace('Saved chart: ', '').replace('Generated ', '').replace(' chart:', ''),
-      createdAt: activity.performedAt,
-      activityType: activity.activityType,
-      chartData: activity.metadata?.chartData || null
+    console.log('📊 Found UserActivity charts:', userActivityCharts.length);
+
+    // Transform ChartHistory records
+    const historyCharts = chartHistoryRecords.map(record => ({
+      id: record.chartId,
+      type: record.chartType || record.configuration?.chartType || 'unknown',
+      title: record.chartTitle,
+      createdAt: record.createdAt,
+      lastModified: record.lastModified,
+      activityType: 'chart_save',
+      chartData: record.chartData || record.metadata?.chartData,
+      configuration: record.configuration,
+      sourceFile: record.sourceFile,
+      accessCount: record.accessTracking?.viewCount || 0,
+      isFavorite: record.metadata?.isFavorite || false
     }));
+
+    // Transform UserActivity records (for backward compatibility)
+    const activityCharts = userActivityCharts
+      .filter(activity => {
+        // Don't include if already in ChartHistory
+        const chartId = activity.metadata?.chartId;
+        return chartId && !historyCharts.find(h => h.id === chartId);
+      })
+      .map(activity => ({
+        id: activity.metadata?.chartId || activity._id,
+        type: activity.metadata?.chartType || 'unknown',
+        title: activity.description.replace('Saved chart: ', '').replace('Generated ', '').replace(' chart:', ''),
+        createdAt: activity.performedAt,
+        activityType: activity.activityType,
+        chartData: activity.metadata?.chartData || null
+      }));
+
+    // Combine both sources and sort by creation date
+    const allCharts = [...historyCharts, ...activityCharts]
+      .sort((a, b) => new Date(b.lastModified || b.createdAt) - new Date(a.lastModified || a.createdAt))
+      .slice(0, limit);
+
+    console.log('📊 Total charts to return:', allCharts.length);
+    console.log('📊 Chart titles:', allCharts.map(c => c.title));
 
     res.json({
       success: true,
-      data: charts
+      data: allCharts,
+      meta: {
+        total: allCharts.length,
+        fromHistory: historyCharts.length,
+        fromActivity: activityCharts.length
+      }
     });
   } catch (error) {
-    console.error('Get chart history error:', error);
+    console.error('📊 Get chart history error:', error);
     res.status(500).json({
       error: 'Failed to get chart history',
       message: 'Internal server error'

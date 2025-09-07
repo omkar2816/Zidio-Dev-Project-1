@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useEffect, useState, useRef } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { BarChart3, Activity, Upload, Download } from 'lucide-react';
+import { BarChart3, Activity, Upload, Download, FileText, Eye, Trash2, LogIn, LogOut, Users } from 'lucide-react';
+import { fetchChartHistory, fetchUploadedFiles, fetchRecentActivities } from '../../store/slices/analyticsSlice';
 
 const Dashboard = () => {
+  const dispatch = useDispatch();
   const { user, isAdmin, isSuperAdmin } = useSelector((state) => state.auth);
   const { theme } = useSelector((state) => state.ui);
-  const { recentFiles, chartHistory } = useSelector((state) => state.analytics);
+  const { recentFiles, chartHistory, recentActivities } = useSelector((state) => state.analytics);
 
-  // Removed dummy stats and activity data
+  // Ref for the scrollable recent activity container
+  const recentActivityRef = useRef(null);
 
   const quickActions = [
     {
@@ -58,9 +61,97 @@ const Dashboard = () => {
       bg: 'bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/20 dark:to-red-900/20',
       text: 'text-orange-600 dark:text-orange-400',
     },
+    red: {
+      bg: 'bg-gradient-to-r from-red-100 to-pink-100 dark:from-red-900/20 dark:to-pink-900/20',
+      text: 'text-red-600 dark:text-red-400',
+    },
+    gray: {
+      bg: 'bg-gradient-to-r from-gray-100 to-slate-100 dark:from-gray-900/20 dark:to-slate-900/20',
+      text: 'text-gray-600 dark:text-gray-400',
+    },
+  };
+
+  // Helper function to get activity icon and color
+  const getActivityIcon = (activityType) => {
+    switch (activityType) {
+      case 'file_upload':
+        return { icon: Upload, color: 'blue' };
+      case 'chart_generation':
+        return { icon: BarChart3, color: 'purple' };
+      case 'chart_save':
+        return { icon: BarChart3, color: 'green' };
+      case 'data_analysis':
+        return { icon: Activity, color: 'orange' };
+      case 'file_download':
+        return { icon: Download, color: 'blue' };
+      case 'file_delete':
+        return { icon: Trash2, color: 'red' };
+      case 'data_export':
+        return { icon: Download, color: 'green' };
+      case 'login':
+        return { icon: LogIn, color: 'green' };
+      case 'logout':
+        return { icon: LogOut, color: 'orange' };
+      case 'user_management':
+        return { icon: Users, color: 'purple' };
+      default:
+        return { icon: Activity, color: 'gray' };
+    }
   };
 
   const [selectedRange, setSelectedRange] = useState('7d');
+
+  // Fetch dashboard data when component mounts
+  useEffect(() => {
+    if (user) {
+      // Fetch recent files
+      dispatch(fetchUploadedFiles()).catch(console.error);
+      
+      // Fetch recent chart history
+      dispatch(fetchChartHistory({ 
+        page: 1, 
+        limit: 10, 
+        sortBy: 'createdAt', 
+        sortOrder: 'desc' 
+      })).catch(console.error);
+
+      // Fetch recent activities
+      dispatch(fetchRecentActivities({ limit: 10 })).catch(console.error);
+    }
+  }, [dispatch, user]);
+
+  // Add mouse wheel event handling for recent activity section
+  useEffect(() => {
+    const recentActivityContainer = recentActivityRef.current;
+    
+    if (!recentActivityContainer) return;
+
+    const handleWheel = (e) => {
+      // Check if the scroll is happening within the recent activity container
+      if (recentActivityContainer.contains(e.target)) {
+        e.preventDefault();
+        
+        // Calculate scroll amount (adjust multiplier for scroll speed)
+        const scrollAmount = e.deltaY * 0.5;
+        
+        // Apply smooth scrolling
+        recentActivityContainer.scrollBy({
+          top: scrollAmount,
+          behavior: 'smooth'
+        });
+      }
+    };
+
+    // Add event listener to the container
+    recentActivityContainer.addEventListener('wheel', handleWheel, { passive: false });
+
+    // Cleanup event listener on component unmount
+    return () => {
+      if (recentActivityContainer) {
+        recentActivityContainer.removeEventListener('wheel', handleWheel);
+      }
+    };
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -98,9 +189,9 @@ const Dashboard = () => {
       {/* Stats Grid removed (no dummy data) */}
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Quick Actions */}
-        <div className="xl:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {/* Quick Actions - Takes 2 columns on XL screens, full width on smaller */}
+        <div className="lg:col-span-1 xl:col-span-2">
           <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/30 shadow-xl">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
               <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg mr-2"></div>
@@ -135,55 +226,48 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="xl:col-span-1">
-          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/30 shadow-xl">
+        {/* Recent Activity - Fixed height with scrollable content */}
+        <div className="lg:col-span-1 xl:col-span-1">
+          <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/30 shadow-xl h-full">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
               <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg mr-2"></div>
               Recent Activity
             </h2>
-            <div className="space-y-4 text-sm text-gray-500 dark:text-gray-400">
-              {recentFiles && recentFiles.length > 0 ? (
-                recentFiles.slice(0, 5).map((f) => (
-                  <div key={f.uploadedAt} className="flex items-center justify-between p-3 bg-white/50 dark:bg-gray-900/50 rounded-lg backdrop-blur-sm border border-white/30 dark:border-gray-700/30 hover:bg-white/70 dark:hover:bg-gray-900/70 transition-all duration-200">
-                    <div className="flex items-center space-x-2 min-w-0 flex-1">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                        <Upload className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                      </div>
-                      <span className="text-gray-900 dark:text-gray-100 truncate font-medium">{f.name}</span>
-                    </div>
-                    <span className="text-xs flex-shrink-0 ml-2 hidden sm:inline text-gray-500 dark:text-gray-400">{new Date(f.uploadedAt).toLocaleString()}</span>
-                    <span className="text-xs flex-shrink-0 ml-2 sm:hidden text-gray-500 dark:text-gray-400">{new Date(f.uploadedAt).toLocaleDateString()}</span>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Upload className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <p className="text-gray-500 dark:text-gray-400">No recent uploads.</p>
-                </div>
-              )}
-
-              {chartHistory && chartHistory.length > 0 && (
-                <div className="pt-4 border-t border-white/20 dark:border-gray-700/30">
-                  <p className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                    <div className="w-4 h-4 bg-gradient-to-r from-purple-500 to-pink-600 rounded mr-2"></div>
-                    Recent Charts
-                  </p>
-                  {chartHistory.slice(0, 5).map((c) => (
-                    <div key={c.id} className="flex items-center justify-between p-3 bg-white/50 dark:bg-gray-900/50 rounded-lg backdrop-blur-sm border border-white/30 dark:border-gray-700/30 hover:bg-white/70 dark:hover:bg-gray-900/70 transition-all duration-200 mb-2">
-                      <div className="flex items-center space-x-2 min-w-0">
-                        <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                          <BarChart3 className="h-4 w-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+            {/* Scrollable container with fixed height */}
+            <div ref={recentActivityRef} className="h-80 overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-4">
+                {recentActivities && recentActivities.length > 0 ? (
+                  recentActivities.slice(0, 15).map((activity) => {
+                    const { icon: Icon, color } = getActivityIcon(activity.activityType);
+                    const colorStyle = colorStyles[color] || colorStyles.gray;
+                    
+                    return (
+                      <div key={activity._id} className="flex items-center justify-between p-3 bg-white/50 dark:bg-gray-900/50 rounded-lg backdrop-blur-sm border border-white/30 dark:border-gray-700/30 hover:bg-white/70 dark:hover:bg-gray-900/70 transition-all duration-200">
+                        <div className="flex items-center space-x-2 min-w-0 flex-1">
+                          <div className={`p-2 ${colorStyle.bg} rounded-lg flex-shrink-0`}>
+                            <Icon className={`h-4 w-4 ${colorStyle.text}`} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-gray-900 dark:text-gray-100 truncate font-medium block text-sm">
+                              {activity.description}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {activity.activityType.replace('_', ' ')} • {new Date(activity.performedAt || activity.createdAt).toLocaleString()}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-gray-900 dark:text-gray-100 truncate max-w-[50vw] sm:max-w-[40vw] font-medium">{c.title}</span>
                       </div>
-                      <span className="text-xs flex-shrink-0 ml-2 text-gray-500 dark:text-gray-400">{new Date(c.createdAt).toLocaleString()}</span>
+                    )
+                  })
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Activity className="h-8 w-8 text-gray-400" />
                     </div>
-                  ))}
-                </div>
-              )}
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">No recent activities.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

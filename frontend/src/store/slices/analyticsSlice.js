@@ -180,6 +180,21 @@ export const fetchChartHistory = createAsyncThunk(
   }
 );
 
+export const fetchRecentActivities = createAsyncThunk(
+  'analytics/fetchRecentActivities',
+  async ({ limit = 10 } = {}, { rejectWithValue, getState }) => {
+    try {
+      const token = getState().auth.token;
+      const response = await axios.get(`/api/history/recent-activity?limit=${limit}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: 'Failed to fetch recent activities' });
+    }
+  }
+);
+
 export const saveChartToHistory = createAsyncThunk(
   'analytics/saveChartToHistory',
   async ({ chart, fileId = null }, { rejectWithValue, getState }) => {
@@ -278,6 +293,7 @@ export const deleteChartFromHistory = createAsyncThunk(
 const initialState = {
   uploadedFile: null,
   recentFiles: [],
+  recentActivities: [],
   currentSheet: null,
   sheetData: null,
   analytics: null,
@@ -287,7 +303,11 @@ const initialState = {
     pieCharts: [],
     charts3D: []
   },
-  chartHistory: [],
+  chartHistory: {
+    charts: [],
+    pagination: {},
+    total: 0
+  },
   chartHistoryPagination: {
     currentPage: 1,
     totalPages: 1,
@@ -580,7 +600,13 @@ const analyticsSlice = createSlice({
         const charts = responseData.charts || [];
         const pagination = responseData.pagination || {};
         
-        state.chartHistory = charts;
+        // Store as an object to match component expectations
+        state.chartHistory = {
+          charts: charts,
+          pagination: pagination,
+          total: pagination.total || 0
+        };
+        
         state.chartHistoryPagination = {
           page: pagination.page || 1,
           pages: pagination.pages || 1,
@@ -591,6 +617,19 @@ const analyticsSlice = createSlice({
       .addCase(fetchChartHistory.rejected, (state, action) => {
         state.chartHistoryLoading = false;
         state.chartHistoryError = action.payload?.message || 'Failed to fetch chart history';
+      })
+
+      // Recent Activities
+      .addCase(fetchRecentActivities.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchRecentActivities.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.recentActivities = action.payload?.data || [];
+      })
+      .addCase(fetchRecentActivities.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload?.message || 'Failed to fetch recent activities';
       })
       
       // Save Chart to History

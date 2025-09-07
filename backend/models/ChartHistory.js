@@ -52,7 +52,16 @@ const chartHistorySchema = new mongoose.Schema(
         enum: ['default', 'blue', 'green', 'emerald', 'purple', 'orange', 'red', 'teal', 'pink', 'indigo', 'gray', 'cyan', 'yellow', 'lime', 'rose', 'violet', 'amber', 'sky']
       },
       showAnimation: { type: Boolean, default: true },
-      customSettings: { type: mongoose.Schema.Types.Mixed }
+      customSettings: { type: mongoose.Schema.Types.Mixed },
+      dataColumns: [String],
+      categories: [String],
+      values: [String]
+    },
+    
+    // Chart Data Storage
+    chartData: { 
+      type: mongoose.Schema.Types.Mixed,
+      required: false 
     },
     
     // Data Information

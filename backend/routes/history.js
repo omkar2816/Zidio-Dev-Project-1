@@ -152,7 +152,11 @@ router.get('/charts', protect, async (req, res) => {
     const query = { 
       user: req.user._id, 
       isActive: true,
-      status: { $ne: 'deleted' }
+      status: { $ne: 'deleted' },
+      // Exclude test events
+      chartTitle: { $not: { $regex: '^test', $options: 'i' } },
+      chartId: { $not: { $regex: '^test-', $options: 'i' } },
+      sourceFileName: { $not: { $regex: 'test', $options: 'i' } }
     };
 
     if (chartType) query.chartType = chartType;

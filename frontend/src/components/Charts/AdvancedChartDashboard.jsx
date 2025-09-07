@@ -6,7 +6,7 @@ import ProgressiveChartLoader from '../UI/ProgressiveChartLoader';
 import { Plus, BarChart3, Trash2, Edit3, Grid3X3, LayoutGrid, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from '../../config/axios';
-import { saveChartToHistory } from '../../store/slices/analyticsSlice';
+import { saveChartToHistory, fetchChartHistory } from '../../store/slices/analyticsSlice';
 
 const AdvancedChartDashboard = ({ data = [], className = '' }) => {
   const dispatch = useDispatch();
@@ -277,9 +277,17 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
           console.log('✅ Chart successfully saved to history');
           showNotification('success', 'Chart created and saved to history!', chartData.id);
           
-          // Emit event to trigger chart history refresh
+          // Emit multiple events to trigger chart history refresh
           window.dispatchEvent(new CustomEvent('chartSaved', { 
             detail: { chartId: chartData.id, chartTitle: chartData.title } 
+          }));
+          
+          window.dispatchEvent(new CustomEvent('analyticsChartSaved', { 
+            detail: { chartId: chartData.id, chartTitle: chartData.title, timestamp: Date.now() } 
+          }));
+          
+          window.dispatchEvent(new CustomEvent('customChartSaved', { 
+            detail: { chartId: chartData.id, chartTitle: chartData.title, source: 'analytics' } 
           }));
           
           // Also set localStorage for cross-tab communication
@@ -287,6 +295,11 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
             chartId: chartData.id,
             timestamp: Date.now()
           }));
+          
+          // Force refresh chart history in Redux store
+          setTimeout(() => {
+            dispatch(fetchChartHistory({ _t: Date.now() }));
+          }, 1000);
           
         } else if (result.type === 'analytics/saveChartToHistory/rejected') {
           console.error('❌ Failed to save chart to history:', result.error);

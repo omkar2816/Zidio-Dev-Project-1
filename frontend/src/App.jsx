@@ -21,7 +21,7 @@ import Dashboard from './pages/Dashboard/Dashboard';
 import Analytics from './pages/Analytics/Analytics';
 import Settings from './pages/Settings/Settings';
 import Files from './pages/Files/Files';
-import Charts from './pages/Charts/Charts';
+import Charts from './pages/Charts/ChartHistoryRedesigned';
 import Profile from './pages/Profile/Profile';
 import Admin from './pages/Admin/Admin';
 import NotFound from './pages/NotFound';

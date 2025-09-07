@@ -7,9 +7,9 @@ const Layout = () => {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-900 dark:to-indigo-950">
       <Sidebar />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col lg:ml-64" style={{ minHeight: '100vh' }}>
         <Header />
-        <main className="flex-1 relative">
+        <main className="flex-1 relative overflow-auto">
           {/* Glassmorphism background */}
           <div className="absolute inset-0 bg-white/20 dark:bg-black/20 backdrop-blur-sm"></div>
           <div className="relative z-10">

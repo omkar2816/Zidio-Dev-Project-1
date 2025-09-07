@@ -6,7 +6,7 @@ const userActivitySchema = new mongoose.Schema(
     activityType: { 
       type: String, 
       required: true,
-      enum: ['file_upload', 'file_download', 'file_delete', 'data_analysis', 'chart_generation', 'data_export', 'login', 'logout', 'user_management']
+      enum: ['file_upload', 'file_download', 'file_delete', 'data_analysis', 'chart_generation', 'chart_save', 'chart_deleted', 'data_export', 'login', 'logout', 'user_management']
     },
     description: { type: String, required: true },
     fileId: { type: mongoose.Schema.Types.ObjectId, ref: 'UploadedFile' },
