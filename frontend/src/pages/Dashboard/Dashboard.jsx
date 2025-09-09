@@ -19,7 +19,8 @@ import {
   PieChart,
   LineChart,
   Clock,
-  Target
+  Target,
+  FolderOpen
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -110,6 +111,20 @@ const Dashboard = () => {
       icon: Download,
       color: 'orange',
       href: '/analytics'
+    },
+    {
+      title: 'File Manager',
+      description: 'Manage your uploaded files',
+      icon: FolderOpen,
+      color: 'gold',
+      href: '/analytics'
+    },
+    {
+      title: 'View Reports',
+      description: 'Access detailed reports',
+      icon: Eye,
+      color: 'red',
+      href: '/analytics'
     }
   ];
 
@@ -137,6 +152,10 @@ const Dashboard = () => {
     gray: {
       bg: 'bg-gradient-to-r from-gray-100 to-slate-100 dark:from-gray-900/20 dark:to-slate-900/20',
       text: 'text-gray-600 dark:text-gray-400',
+    },
+    gold: {
+      bg: 'bg-gradient-to-r from-yellow-200 to-yellow-400 dark:from-yellow-700/30 dark:to-yellow-500/30',
+      text: 'text-yellow-500 dark:text-yellow-400',
     },
   };
 
@@ -517,8 +536,8 @@ const Dashboard = () => {
               <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg mr-2"></div>
               Recent Activity
             </h2>
-            {/* Scrollable container with fixed height */}
-            <div ref={recentActivityRef} className="h-80 overflow-y-auto pr-2 custom-scrollbar">
+            {/* Scrollable container with calculated height to match Quick Actions */}
+            <div ref={recentActivityRef} className="h-[260px] overflow-y-auto pr-2 custom-scrollbar">
               <div className="space-y-4">
                 {recentActivities && recentActivities.length > 0 ? (
                   recentActivities.slice(0, 15).map((activity) => {
