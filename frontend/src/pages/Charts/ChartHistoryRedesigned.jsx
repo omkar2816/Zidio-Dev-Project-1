@@ -26,7 +26,8 @@ import {
   Grid,
   List,
   ArrowUpDown,
-  ChevronDown
+  ChevronDown,
+  Box
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { fetchChartHistory, deleteChartFromHistory } from '../../store/slices/analyticsSlice';
@@ -506,6 +507,14 @@ const ChartHistoryRedesigned = () => {
 
               {/* Action buttons */}
               <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate('/charts/3d-demo')}
+                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg shadow-sm text-sm font-medium hover:from-purple-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
+                >
+                  <Box className="w-4 h-4 mr-2" />
+                  3D Demo
+                </button>
+                
                 <button
                   onClick={toggleRealTime}
                   className={`inline-flex items-center px-4 py-2 rounded-lg shadow-sm text-sm font-medium transition-all duration-200 ${

@@ -400,13 +400,23 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
   };
 
   const getLayoutClasses = () => {
+    // Check if there are any 3D charts that need more space
+    const has3DCharts = charts.some(chart => 
+      ['scatter3d', 'surface3d', 'mesh3d', 'bar3d'].includes(chart.type)
+    );
+    
     switch (layoutMode) {
       case 'grid':
-        return 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6';
+        // Use wider layout for 3D charts
+        return has3DCharts 
+          ? 'grid grid-cols-1 xl:grid-cols-2 gap-8' 
+          : 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6';
       case 'list':
         return 'space-y-6';
       default:
-        return 'grid grid-cols-1 lg:grid-cols-2 gap-6';
+        return has3DCharts 
+          ? 'grid grid-cols-1 xl:grid-cols-2 gap-8'
+          : 'grid grid-cols-1 lg:grid-cols-2 gap-6';
     }
   };
 
@@ -419,9 +429,9 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6 w-full max-w-full overflow-hidden ${className}`}>
       {/* Dashboard Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg p-6 w-full max-w-full overflow-hidden">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -556,7 +566,7 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
       )}
 
       {/* Charts Grid */}
-      <div className={getLayoutClasses()}>
+      <div className={`${getLayoutClasses()} w-full overflow-x-auto`}>
         {/* Show progressive loader for pending chart */}
         {pendingChart && (
           <ProgressiveChartLoader

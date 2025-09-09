@@ -106,10 +106,26 @@ const History = () => {
       const response = await axios.get(`/api/history/charts/${chartId}`);
       const chart = response.data.data;
       
-      // Open chart in a new window or modal
-      // This could be enhanced to integrate with the main chart viewer
+      // Check if this is a 3D chart
+      const is3DChart = chart.chartType?.includes('3d') || 
+                       chart.chartType === 'scatter3d' || 
+                       chart.chartType === 'surface3d' || 
+                       chart.chartType === 'mesh3d' ||
+                       chart.configuration?.chart3DConfig?.is3D;
+
+      if (is3DChart) {
+        // For 3D charts, open in a new window/tab with Analytics page and auto-load 3D chart
+        const analyticsUrl = `/analytics?viewChart=${chartId}&chartType=3d`;
+        window.open(analyticsUrl, '_blank');
+        toast.success('Opening 3D chart in new tab');
+      } else {
+        // For 2D charts, open in Analytics page
+        const analyticsUrl = `/analytics?viewChart=${chartId}`;
+        window.open(analyticsUrl, '_blank');
+        toast.success('Opening chart in new tab');
+      }
+      
       console.log('Chart data:', chart);
-      toast.success('Chart details loaded');
     } catch (error) {
       console.error('Error viewing chart:', error);
       toast.error('Failed to load chart details');

@@ -571,49 +571,87 @@ router.post('/upload', protect, (req, res, next) => {
     // Create dataset processing history record
     const processingHistory = new DatasetProcessingHistory({
       user: req.user._id,
-      file: savedFile._id,
+      sourceFile: savedFile._id,
+      sourceFileName: req.file.originalname,
+      sourceSheet: sheetNames[0] || 'Sheet1', // Use first sheet or default
       sessionId: `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      sessionName: `Upload: ${req.file.originalname}`,
+      originalData: {
+        totalRows: Object.values(sheets).reduce((sum, sheet) => sum + sheet.totalRows, 0),
+        totalColumns: Object.values(sheets).reduce((sum, sheet) => sum + (sheet.columns ? sheet.columns.length : 0), 0),
+        headers: sheetNames.length > 0 ? (sheets[sheetNames[0]]?.columns || []) : [],
+        dataTypes: Object.keys(sheets).reduce((types, sheetName) => {
+          const sheetTypes = sheets[sheetName].columnTypes || {};
+          Object.keys(sheetTypes).forEach(col => {
+            types.set(col, sheetTypes[col]);
+          });
+          return types;
+        }, new Map()),
+        sampleData: sheetNames.length > 0 ? (sheets[sheetNames[0]]?.data?.slice(0, 5) || []) : []
+      },
       processingSteps: [
         {
-          step: 'file_upload',
-          operation: 'File Upload and Parsing',
-          status: 'completed',
-          startTime: new Date(),
-          endTime: new Date(),
-          input: {
+          stepId: `step_${Date.now()}_1`,
+          stepType: 'upload',
+          operation: 'file_upload',
+          description: `Uploaded file: ${req.file.originalname}`,
+          inputData: {
+            totalRows: 0,
+            totalColumns: 0,
+            headers: [],
+            sampleData: []
+          },
+          outputData: {
+            totalRows: Object.values(sheets).reduce((sum, sheet) => sum + sheet.totalRows, 0),
+            totalColumns: Object.values(sheets).reduce((sum, sheet) => sum + (sheet.columns ? sheet.columns.length : 0), 0),
+            headers: sheetNames.length > 0 ? (sheets[sheetNames[0]]?.columns || []) : [],
+            sampleData: sheetNames.length > 0 ? (sheets[sheetNames[0]]?.data?.slice(0, 5) || []) : []
+          },
+          parameters: {
             fileName: req.file.originalname,
             fileSize: req.file.size,
-            mimeType: req.file.mimetype
+            mimeType: req.file.mimetype,
+            sheets: sheetNames
           },
-          output: {
-            sheets: sheetNames,
-            totalSheets: sheetNames.length,
-            totalRows: Object.values(sheets).reduce((sum, sheet) => sum + sheet.totalRows, 0),
-            dataTypes: Object.keys(sheets).reduce((types, sheetName) => {
-              types[sheetName] = sheets[sheetName].columnTypes || {};
-              return types;
-            }, {}),
-            warnings: datasetWarnings
-          },
-          performanceMetrics: {
-            processingTime: 0, // Will be updated by client if needed
-            memoryUsage: process.memoryUsage().heapUsed,
-            rowsProcessed: Object.values(sheets).reduce((sum, sheet) => sum + sheet.totalRows, 0)
+          timestamp: new Date(),
+          duration: 0,
+          status: 'completed',
+          metadata: {
+            warnings: datasetWarnings,
+            performanceMetrics: {
+              memoryUsage: process.memoryUsage().heapUsed,
+              rowsProcessed: Object.values(sheets).reduce((sum, sheet) => sum + sheet.totalRows, 0)
+            }
           }
         }
       ],
-      qualityAssessment: {
+      qualityMetrics: {
         completeness: datasetWarnings.filter(w => w.type === 'missing_data').length === 0 ? 1.0 : 0.8,
-        consistency: 1.0, // Will be updated during preprocessing
-        accuracy: 1.0, // Will be updated during preprocessing
-        issues: datasetWarnings.map(w => ({ type: w.type, severity: 'warning', description: w.message }))
+        consistency: 1.0,
+        accuracy: 1.0,
+        validity: 1.0,
+        duplicates: 0,
+        outliers: 0,
+        dataTypeConversions: 0
+      },
+      performanceMetrics: {
+        totalProcessingTime: 0,
+        memoryUsage: process.memoryUsage().heapUsed,
+        cpuUsage: 0,
+        rowsProcessed: Object.values(sheets).reduce((sum, sheet) => sum + sheet.totalRows, 0),
+        dataTransferred: req.file.size
       },
       metadata: {
         originalFileName: req.file.originalname,
         fileSize: req.file.size,
         sheetCount: sheetNames.length,
-        columnCount: Object.values(sheets).reduce((sum, sheet) => sum + (sheet.columns ? sheet.columns.length : 0), 0),
-        rowCount: Object.values(sheets).reduce((sum, sheet) => sum + sheet.totalRows, 0)
+        processingMode: 'standard',
+        datasetWarnings: datasetWarnings.map(w => ({ 
+          type: w.type, 
+          severity: w.severity || 'warning', 
+          description: w.message 
+        })),
+        tags: ['upload', 'initial']
       }
     });
 
@@ -1287,7 +1325,21 @@ router.post('/save-chart', protect, async (req, res) => {
             categories: categories, // Use extracted categories
             values: values, // Use extracted values
             colorScheme: chart.colorScheme || 'emerald', // Default to emerald theme
-            customSettings: chart.customSettings || {}
+            customSettings: chart.customSettings || {},
+            // Add 3D specific configuration if this is a 3D chart
+            ...(chart.type?.includes('3d') || chart.type === 'scatter3d' || chart.type === 'surface3d' || chart.type === 'mesh3d' ? {
+              zAxis: chart.zAxis || chart.configuration?.zAxis || '',
+              chart3DConfig: {
+                is3D: true,
+                perspective: chart.configuration?.chart3DConfig?.perspective || 60,
+                rotationX: chart.configuration?.chart3DConfig?.rotationX || 15,
+                rotationY: chart.configuration?.chart3DConfig?.rotationY || 15,
+                rotationZ: chart.configuration?.chart3DConfig?.rotationZ || 0,
+                autoRotation: chart.configuration?.chart3DConfig?.autoRotation || false,
+                cameraDistance: chart.configuration?.chart3DConfig?.cameraDistance || 1000,
+                lightingIntensity: chart.configuration?.chart3DConfig?.lightingIntensity || 0.8
+              }
+            } : {})
           },
           dataInfo: {
             totalRows: chart.data ? chart.data.length : 0,
@@ -1669,6 +1721,191 @@ router.post('/3d-charts', protect, async (req, res) => {
     res.status(500).json({
       error: '3D chart generation failed',
       message: 'Failed to generate 3D chart data'
+    });
+  }
+});
+
+// Save 3D chart to user's history with enhanced 3D configuration
+router.post('/save-3d-chart', protect, async (req, res) => {
+  console.log('🔥 SAVE 3D CHART ENDPOINT HIT! 🔥');
+  console.log('📊 User:', req.user?.email);
+  console.log('📊 Request body:', JSON.stringify(req.body, null, 2));
+  
+  try {
+    const { chart, fileId, chart3DConfig } = req.body;
+
+    if (!chart) {
+      console.error('❌ No 3D chart data provided');
+      return res.status(400).json({
+        error: 'Invalid data',
+        message: 'Please provide 3D chart data'
+      });
+    }
+
+    console.log('📊 3D Chart save details:', {
+      chartId: chart.id,
+      chartTitle: chart.title,
+      chartType: chart.type,
+      fileId,
+      is3D: chart3DConfig?.is3D || true,
+      chartDataLength: chart.data?.length
+    });
+
+    // Store chart in user activity
+    await logActivity(
+      req.user._id,
+      'chart_save',
+      `Saved 3D chart: ${chart.title}`,
+      fileId,
+      null,
+      {
+        chartType: chart.type,
+        chartId: chart.id,
+        chartData: chart,
+        is3D: true
+      },
+      req
+    );
+
+    // Extract categories and values for 3D charts
+    const extract3DData = (chartData, chartType) => {
+      if (!chartData) return { categories: [], values: [], xValues: [], yValues: [], zValues: [] };
+      
+      let categories = [];
+      let values = [];
+      let xValues = [];
+      let yValues = [];
+      let zValues = [];
+      
+      if (Array.isArray(chartData) && chartData.length > 0 && typeof chartData[0] === 'object') {
+        const firstItem = chartData[0];
+        const keys = Object.keys(firstItem);
+        
+        // Find X, Y, Z axes
+        const xKey = keys.find(key => key.toLowerCase().includes('x')) || keys[0];
+        const yKey = keys.find(key => key.toLowerCase().includes('y')) || keys[1];
+        const zKey = keys.find(key => key.toLowerCase().includes('z')) || keys[2];
+        
+        xValues = chartData.map(item => parseFloat(item[xKey]) || 0);
+        yValues = chartData.map(item => parseFloat(item[yKey]) || 0);
+        zValues = chartData.map(item => parseFloat(item[zKey]) || 0);
+        
+        categories = chartData.map((_, index) => `Point ${index + 1}`);
+        values = zValues; // Use Z values as primary values
+      }
+      
+      return { categories, values, xValues, yValues, zValues };
+    };
+
+    const { categories, values, xValues, yValues, zValues } = extract3DData(chart.data || chart, chart.type);
+
+    // Use findOneAndUpdate with upsert for 3D charts
+    const chartHistory = await ChartHistory.findOneAndUpdate(
+      {
+        user: req.user._id,
+        chartId: chart.id
+      },
+      {
+        $set: {
+          chartTitle: chart.title,
+          chartType: chart.type,
+          chartData: chart.data || chart,
+          lastModified: new Date(),
+          status: 'active',
+          isActive: true,
+          configuration: {
+            chartType: chart.type,
+            xAxis: chart3DConfig?.xAxis || 'X-Axis',
+            yAxis: chart3DConfig?.yAxis || 'Y-Axis',
+            zAxis: chart3DConfig?.zAxis || 'Z-Axis',
+            dataColumns: chart.dataColumns || [],
+            categories: categories,
+            values: values,
+            colorScheme: chart.colorScheme || 'emerald',
+            customSettings: chart.customSettings || {},
+            // Enhanced 3D Configuration
+            chart3DConfig: {
+              is3D: true,
+              perspective: chart3DConfig?.perspective || 60,
+              rotationX: chart3DConfig?.rotationX || 15,
+              rotationY: chart3DConfig?.rotationY || 15,
+              rotationZ: chart3DConfig?.rotationZ || 0,
+              autoRotation: chart3DConfig?.autoRotation || false,
+              cameraDistance: chart3DConfig?.cameraDistance || 1000,
+              lightingIntensity: chart3DConfig?.lightingIntensity || 0.8,
+              xValues: xValues,
+              yValues: yValues,
+              zValues: zValues
+            }
+          },
+          dataInfo: {
+            totalRows: chart.data ? chart.data.length : 0,
+            totalColumns: chart.data && chart.data[0] ? Object.keys(chart.data[0]).length : 0,
+            is3DChart: true
+          },
+          metadata: {
+            description: `3D ${chart.type} chart: ${chart.title}`,
+            version: '1.0',
+            isFavorite: false,
+            category: '3D Visualization'
+          }
+        },
+        $setOnInsert: {
+          user: req.user._id,
+          chartId: chart.id,
+          sourceFile: fileId || null,
+          sourceFileName: fileId ? '3D File-based Chart' : '3D Generated Chart',
+          sourceSheet: 'Default',
+          createdAt: new Date()
+        }
+      },
+      {
+        upsert: true,
+        new: true,
+        runValidators: true
+      }
+    );
+
+    console.log('✅ 3D Chart save operation completed successfully');
+    console.log('📊 Saved 3D chart with ID:', chartHistory.chartId);
+
+    res.json({
+      success: true,
+      message: '3D Chart saved to history',
+      chartId: chart.id,
+      historyId: chartHistory._id,
+      is3D: true
+    });
+
+  } catch (error) {
+    console.error('💥 3D Chart save error:', error);
+    
+    if (error.code === 11000) {
+      console.log('📊 3D Chart already exists, attempting to find existing...');
+      try {
+        const existingChart = await ChartHistory.findOne({
+          user: req.user._id,
+          chartId: req.body.chart.id
+        });
+        
+        if (existingChart) {
+          res.json({
+            success: true,
+            message: '3D Chart already exists in history',
+            chartId: req.body.chart.id,
+            historyId: existingChart._id,
+            is3D: true
+          });
+          return;
+        }
+      } catch (updateError) {
+        console.error('Failed to handle 3D chart duplicate:', updateError);
+      }
+    }
+    
+    res.status(500).json({
+      error: 'Failed to save 3D chart',
+      message: 'Internal server error'
     });
   }
 });

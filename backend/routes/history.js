@@ -153,11 +153,11 @@ router.get('/charts', protect, async (req, res) => {
       user: req.user._id, 
       isActive: true,
       status: { $ne: 'deleted' },
-      // Exclude test events - be more specific to avoid removing legitimate charts
+      // Exclude test events and demo charts - be more specific to avoid removing legitimate charts
       $and: [
-        { chartTitle: { $not: { $regex: '^test[\\s-]', $options: 'i' } } },
-        { chartId: { $not: { $regex: '^test-', $options: 'i' } } },
-        { sourceFileName: { $not: { $regex: '^test[\\s-]|test\\.', $options: 'i' } } }
+        { chartTitle: { $not: { $regex: '^test[\\s-]|3d\\s*demo|demo.*3d', $options: 'i' } } },
+        { chartId: { $not: { $regex: '^test-|demo-3d|3d-demo', $options: 'i' } } },
+        { sourceFileName: { $not: { $regex: '^test[\\s-]|test\\.|demo.*3d|3d.*demo', $options: 'i' } } }
       ]
     };
 

@@ -22,7 +22,7 @@ const chartHistorySchema = new mongoose.Schema(
     chartType: { 
       type: String, 
       required: true,
-      enum: ['bar', 'line', 'pie', 'scatter', 'area', 'column', 'doughnut', 'bubble', 'radar', 'funnel', 'treemap', 'heatmap']
+      enum: ['bar', 'line', 'pie', 'scatter', 'area', 'column', 'doughnut', 'bubble', 'radar', 'funnel', 'treemap', 'heatmap', '3d', 'scatter3d', 'surface3d', 'mesh3d']
     },
     
     // Source Data Reference
@@ -45,6 +45,7 @@ const chartHistorySchema = new mongoose.Schema(
     configuration: {
       xAxis: { type: String, required: false, default: 'Auto' },
       yAxis: { type: String, required: false, default: 'Auto' },
+      zAxis: { type: String, required: false }, // For 3D charts
       series: { type: mongoose.Schema.Types.Mixed },
       colorScheme: { 
         type: String, 
@@ -55,7 +56,18 @@ const chartHistorySchema = new mongoose.Schema(
       customSettings: { type: mongoose.Schema.Types.Mixed },
       dataColumns: [String],
       categories: [String],
-      values: [String]
+      values: [String],
+      // 3D Chart specific configurations
+      chart3DConfig: {
+        is3D: { type: Boolean, default: false },
+        perspective: { type: Number, default: 60 },
+        rotationX: { type: Number, default: 15 },
+        rotationY: { type: Number, default: 15 },
+        rotationZ: { type: Number, default: 0 },
+        autoRotation: { type: Boolean, default: false },
+        cameraDistance: { type: Number, default: 1000 },
+        lightingIntensity: { type: Number, default: 0.8 }
+      }
     },
     
     // Chart Data Storage

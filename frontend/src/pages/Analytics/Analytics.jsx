@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import { uploadExcelFile, fetchUploadedFiles, deleteUploadedFile, analyzeData } from '../../store/slices/analyticsSlice';
 import AdvancedChartDashboard from '../../components/Charts/AdvancedChartDashboard';
 import VirtualTable from '../../components/UI/VirtualTable';
 import PerformanceMonitor from '../../components/UI/PerformanceMonitor';
+import axios from '../../config/axios';
 import { 
   Upload, 
   FileSpreadsheet, 
@@ -24,6 +26,7 @@ import toast from 'react-hot-toast';
 
 const Analytics = () => {
   const dispatch = useDispatch();
+  const location = useLocation();
   const { recentFiles, isLoading, error } = useSelector((state) => state.analytics);
   const [activeTab, setActiveTab] = useState('upload');
   const [analysisData, setAnalysisData] = useState(null);
@@ -32,11 +35,57 @@ const Analytics = () => {
   const [editingCell, setEditingCell] = useState(null);
   const [showAllRows, setShowAllRows] = useState(false);
   const [performanceData, setPerformanceData] = useState(null);
+  const [viewingChart, setViewingChart] = useState(null);
   const tableRef = useRef(null);
 
   useEffect(() => {
     dispatch(fetchUploadedFiles());
   }, [dispatch]);
+
+  // Handle URL parameters for chart viewing
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const viewChartId = searchParams.get('viewChart');
+    const chartType = searchParams.get('chartType');
+    
+    if (viewChartId) {
+      loadChartFromHistory(viewChartId, chartType);
+    }
+  }, [location.search]);
+
+  const loadChartFromHistory = async (chartId, chartType) => {
+    try {
+      const response = await axios.get(`/api/history/charts/${chartId}`);
+      const chart = response.data.data;
+      
+      console.log('📊 Loading chart from history:', chart);
+      
+      // Set the chart data and switch to charts tab
+      setViewingChart(chart);
+      setActiveTab('charts');
+      
+      // If it's a 3D chart, prepare the data for 3D rendering
+      if (chartType === '3d' || chart.chartType?.includes('3d')) {
+        // Switch to the analysis tab first to show the 3D chart properly
+        if (chart.chartData && Array.isArray(chart.chartData)) {
+          setAnalysisData({
+            data: chart.chartData,
+            headers: chart.configuration?.dataColumns || Object.keys(chart.chartData[0] || {}),
+            fileInfo: {
+              name: chart.sourceFileName || 'Chart from History',
+              size: 0,
+              rows: chart.chartData.length
+            }
+          });
+        }
+      }
+      
+      toast.success(`Loaded ${chart.chartType} chart: ${chart.chartTitle}`);
+    } catch (error) {
+      console.error('Error loading chart from history:', error);
+      toast.error('Failed to load chart from history');
+    }
+  };
 
   // Keyboard shortcuts for table interaction
   useEffect(() => {
@@ -293,18 +342,18 @@ const Analytics = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-full overflow-x-hidden space-y-6">
       {/* Header */}
-      <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/30 shadow-xl p-8">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/30 shadow-xl p-8 w-full max-w-full overflow-hidden">
+        <div className="flex items-center justify-between">
+          <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
               Analytics Dashboard
-          </h1>
+            </h1>
             <p className="text-gray-600 dark:text-gray-400 text-lg">
               Upload, analyze, and visualize your Excel data with advanced charts
-          </p>
-        </div>
+            </p>
+          </div>
           <div className="flex items-center space-x-4">
             <div className="p-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full shadow-lg">
               <BarChart3 className="w-8 h-8 text-white" />
@@ -367,12 +416,12 @@ const Analytics = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="p-8">
+        <div className="p-8 w-full max-w-full overflow-x-hidden">
           {activeTab === 'upload' && (
-            <div className="space-y-8">
+            <div className="space-y-8 w-full max-w-full overflow-x-hidden">
               {/* File Upload Section */}
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 bg-gradient-to-br from-gray-50/50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-900/50 backdrop-blur-sm hover:border-emerald-400 dark:hover:border-emerald-500 transition-all duration-300">
-                <div className="text-center">
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 bg-gradient-to-br from-gray-50/50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-900/50 backdrop-blur-sm hover:border-emerald-400 dark:hover:border-emerald-500 transition-all duration-300 w-full max-w-full overflow-hidden">
+                <div className="text-center w-full max-w-full">
                   <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                     <Upload className="h-8 w-8 text-white" />
                   </div>
@@ -547,8 +596,8 @@ const Analytics = () => {
 
           {/* Analysis Results Tab */}
           {activeTab === 'analysis' && analysisData && (
-            <div className="space-y-6">
-              <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 rounded-xl p-6">
+            <div className="w-full max-w-full overflow-x-hidden space-y-6">
+              <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 rounded-xl p-6 w-full max-w-full overflow-hidden">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
                     <TrendingUp className="w-6 h-6 mr-2 text-emerald-600 dark:text-emerald-400" />
@@ -560,18 +609,20 @@ const Analytics = () => {
                   >
                     <X className="w-5 h-5" />
                   </button>
-          </div>
+                </div>
 
                 {/* Interactive Chart Dashboard - Moved to Top */}
-                <div className="mb-8">
+                <div className="mb-8 w-full max-w-full overflow-x-hidden">
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                     <BarChart3 className="w-5 h-5 mr-2" />
                     Interactive Charts & Visualization
                   </h4>
-                  <AdvancedChartDashboard 
-                    data={editableData} 
-                    className="bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-900/80 rounded-xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm"
-                  />
+                  <div className="w-full max-w-full overflow-x-hidden">
+                    <AdvancedChartDashboard 
+                      data={editableData} 
+                      className="bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-900/80 rounded-xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm w-full max-w-full overflow-x-hidden"
+                    />
+                  </div>
                 </div>
 
                 {/* Performance Summary */}

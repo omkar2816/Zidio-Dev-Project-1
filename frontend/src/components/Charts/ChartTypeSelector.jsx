@@ -9,7 +9,12 @@ import {
   Box,
   Radar,
   Settings,
-  Wand2
+  Wand2,
+  Layers,
+  Move3D,
+  Eye,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 
 const ChartTypeSelector = ({ 
@@ -20,6 +25,7 @@ const ChartTypeSelector = ({
   onPreviewChart
 }) => {
   const [selectedChartType, setSelectedChartType] = useState('');
+  const [is3DMode, setIs3DMode] = useState(false);
   const [chartOptions, setChartOptions] = useState({
     xAxis: '',
     yAxis: '',
@@ -29,7 +35,6 @@ const ChartTypeSelector = ({
     sizeBy: ''
   });
 
-  // Get numeric and categorical columns
   const numericColumns = headers.filter(header => {
     return data.some(row => {
       const value = row[header];
@@ -39,7 +44,8 @@ const ChartTypeSelector = ({
 
   const categoricalColumns = headers.filter(header => !numericColumns.includes(header));
 
-  const chartTypes = [
+  // 2D Chart Types
+  const chart2DTypes = [
     {
       type: 'bar',
       name: 'Bar Chart',
@@ -100,7 +106,7 @@ const ChartTypeSelector = ({
       type: 'bubble',
       name: 'Bubble Chart',
       icon: Scatter,
-      description: '3D scatter with size',
+      description: '2D scatter with size',
       requirements: { numeric: 3 },
       library: 'plotly'
     },
@@ -111,24 +117,51 @@ const ChartTypeSelector = ({
       description: 'Multi-dimensional data',
       requirements: { categorical: 1, numeric: 1 },
       library: 'plotly'
-    },
+    }
+  ];
+
+  // 3D Chart Types
+  const chart3DTypes = [
     {
       type: 'scatter3d',
       name: '3D Scatter',
       icon: Box,
-      description: '3D scatter plot',
+      description: 'Interactive 3D scatter plot',
       requirements: { numeric: 3 },
-      library: 'plotly'
+      library: 'plotly',
+      is3D: true
     },
     {
       type: 'surface3d',
       name: '3D Surface',
-      icon: TrendingUp,
-      description: '3D surface plot',
+      icon: Layers,
+      description: 'Beautiful 3D surface visualization',
       requirements: { numeric: 3 },
-      library: 'plotly'
+      library: 'plotly',
+      is3D: true
+    },
+    {
+      type: 'mesh3d',
+      name: '3D Mesh',
+      icon: Move3D,
+      description: 'Advanced 3D mesh with alpha hull',
+      requirements: { numeric: 3 },
+      library: 'plotly',
+      is3D: true
+    },
+    {
+      type: 'bar3d',
+      name: '3D Bar Chart',
+      icon: BarChart3,
+      description: 'Multi-dimensional bar visualization',
+      requirements: { numeric: 3 },
+      library: 'plotly',
+      is3D: true
     }
   ];
+
+  // Get current chart types based on mode
+  const chartTypes = is3DMode ? chart3DTypes : chart2DTypes;
 
   const isChartAvailable = (chartType) => {
     const reqs = chartType.requirements;
@@ -240,10 +273,14 @@ const ChartTypeSelector = ({
 
       case 'scatter3d':
       case 'surface3d':
+      case 'mesh3d':
+      case 'bar3d':
         chartData = data.slice(0, 100).map(row => ({
           x: parseFloat(row[chartOptions.xAxis]) || 0,
           y: parseFloat(row[chartOptions.yAxis]) || 0,
-          z: parseFloat(row[chartOptions.sizeBy]) || 0
+          z: parseFloat(row[chartOptions.sizeBy]) || 0,
+          value: parseFloat(row[chartOptions.sizeBy]) || 0,
+          label: row[chartOptions.xAxis] || `Point ${data.indexOf(row) + 1}`
         }));
         break;
 
@@ -281,10 +318,84 @@ const ChartTypeSelector = ({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Create New Chart
-        </h3>
-        <Wand2 className="h-5 w-5 text-emerald-600" />
+        <div className="flex items-center space-x-3">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Create New Chart
+          </h3>
+          <Wand2 className="h-5 w-5 text-emerald-600" />
+        </div>
+        
+        {/* 2D/3D Toggle */}
+        <div className="flex items-center space-x-3">
+          <span className={`text-sm font-medium transition-colors ${
+            !is3DMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'
+          }`}>
+            2D Charts
+          </span>
+          <button
+            onClick={() => {
+              setIs3DMode(!is3DMode);
+              setSelectedChartType(''); // Reset selection when switching modes
+            }}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+              is3DMode ? 'bg-emerald-600' : 'bg-gray-200 dark:bg-gray-700'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                is3DMode ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+          <span className={`text-sm font-medium transition-colors ${
+            is3DMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'
+          }`}>
+            3D Charts
+          </span>
+          {is3DMode && (
+            <div className="flex items-center space-x-1 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/20 rounded-full">
+              <Move3D className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                WebGL
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mode Description */}
+      <div className={`mb-6 p-4 rounded-lg border-l-4 ${
+        is3DMode 
+          ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-400 dark:border-emerald-500' 
+          : 'bg-blue-50 dark:bg-blue-900/10 border-blue-400 dark:border-blue-500'
+      }`}>
+        <div className="flex items-center space-x-2 mb-2">
+          {is3DMode ? (
+            <>
+              <Eye className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
+                3D Visualization Mode
+              </span>
+            </>
+          ) : (
+            <>
+              <BarChart3 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                2D Chart Mode
+              </span>
+            </>
+          )}
+        </div>
+        <p className={`text-sm ${
+          is3DMode 
+            ? 'text-emerald-700 dark:text-emerald-300' 
+            : 'text-blue-700 dark:text-blue-300'
+        }`}>
+          {is3DMode 
+            ? 'Create immersive 3D visualizations with interactive controls, smooth animations, and WebGL acceleration. Perfect for exploring multi-dimensional relationships in your data.'
+            : 'Create traditional 2D charts with clean styling and smooth animations. Ideal for standard data visualization and reporting needs.'
+          }
+        </p>
       </div>
 
       {/* Chart Type Grid */}
@@ -299,25 +410,40 @@ const ChartTypeSelector = ({
               key={chartType.type}
               onClick={() => available && setSelectedChartType(chartType.type)}
               disabled={!available}
-              className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+              className={`relative p-4 rounded-lg border-2 transition-all duration-200 ${
                 isSelected
-                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                  ? chartType.is3D
+                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                    : 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
                   : available
                   ? 'border-gray-200 dark:border-gray-600 hover:border-emerald-300 dark:hover:border-emerald-500'
                   : 'border-gray-100 dark:border-gray-700 opacity-50 cursor-not-allowed'
               }`}
             >
+              {/* 3D Badge */}
+              {chartType.is3D && (
+                <div className="absolute -top-1 -right-1 px-2 py-0.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-bold rounded-full shadow-lg">
+                  3D
+                </div>
+              )}
+              
               <div className="text-center">
                 <Icon className={`h-8 w-8 mx-auto mb-2 ${
                   isSelected
-                    ? 'text-emerald-600'
+                    ? chartType.is3D
+                      ? 'text-purple-600'
+                      : 'text-emerald-600'
                     : available
-                    ? 'text-gray-600 dark:text-gray-400'
+                    ? chartType.is3D
+                      ? 'text-purple-500'
+                      : 'text-gray-600 dark:text-gray-400'
                     : 'text-gray-400'
                 }`} />
                 <div className={`text-sm font-medium ${
                   isSelected
-                    ? 'text-emerald-700 dark:text-emerald-300'
+                    ? chartType.is3D
+                      ? 'text-purple-700 dark:text-purple-300'
+                      : 'text-emerald-700 dark:text-emerald-300'
                     : available
                     ? 'text-gray-900 dark:text-white'
                     : 'text-gray-400'
@@ -326,13 +452,25 @@ const ChartTypeSelector = ({
                 </div>
                 <div className={`text-xs mt-1 ${
                   isSelected
-                    ? 'text-emerald-600 dark:text-emerald-400'
+                    ? chartType.is3D
+                      ? 'text-purple-600 dark:text-purple-400'
+                      : 'text-emerald-600 dark:text-emerald-400'
                     : available
                     ? 'text-gray-500 dark:text-gray-400'
                     : 'text-gray-400'
                 }`}>
                   {chartType.description}
                 </div>
+                
+                {/* WebGL indicator for 3D charts */}
+                {chartType.is3D && available && (
+                  <div className="flex items-center justify-center space-x-1 mt-1">
+                    <Move3D className="w-3 h-3 text-purple-500" />
+                    <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                      WebGL
+                    </span>
+                  </div>
+                )}
               </div>
             </button>
           );

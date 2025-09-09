@@ -5,7 +5,8 @@ import Plot from 'react-plotly.js';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import toast from 'react-hot-toast';
-import { BarChart3, LineChart, PieChart, ScatterChart, Activity, TrendingUp, Settings, Download, FileImage, FileText, Edit3, Copy, Trash2, Palette, Move, Check, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { BarChart3, LineChart, PieChart, ScatterChart, Activity, TrendingUp, Settings, Download, FileImage, FileText, Edit3, Copy, Trash2, Palette, Move, Check, ZoomIn, ZoomOut, RotateCcw, Box, Eye } from 'lucide-react';
+import Chart3DRenderer from './Chart3DRenderer';
 
 const AdvancedChart = ({ 
   data = [], 
@@ -19,6 +20,8 @@ const AdvancedChart = ({
   onEdit = null,
   onDuplicate = null,
   onRemove = null,
+  onSave = null,
+  enableSave = true,
   onColorSchemeChange = null,
   id = null,
   performanceMode = false,
@@ -935,13 +938,43 @@ const AdvancedChart = ({
       case 'line': return <LineChart {...iconProps} />;
       case 'area': return <Activity {...iconProps} />;
       case 'pie': return <PieChart {...iconProps} />;
-      case 'scatter':
+      case 'scatter': return <ScatterChart {...iconProps} />;
+      case 'scatter3d': return <Box {...iconProps} />;
+      case 'surface3d': return <Eye {...iconProps} />;
+      case 'mesh3d': return <Box {...iconProps} />;
+      case 'bar3d': return <BarChart3 {...iconProps} />;
       case 'bubble': return <ScatterChart {...iconProps} />;
       default: return <TrendingUp {...iconProps} />;
     }
   };
 
   const renderChart = () => {
+    // Handle 3D Charts with our custom renderer
+    if (['scatter3d', 'surface3d', 'mesh3d', 'bar3d'].includes(type)) {
+      return (
+        <Chart3DRenderer
+          data={data}
+          type={type}
+          title={chartTitle}
+          xAxis={xAxis}
+          yAxis={yAxis}
+          zAxis={series?.[0]?.name || 'z'}
+          colorScheme={colorScheme}
+          onColorSchemeChange={onColorSchemeChange}
+          onEdit={onEdit}
+          onDuplicate={onDuplicate}
+          onRemove={onRemove}
+          onSave={onSave}
+          enableSave={enableSave !== false}
+          autoRotate={false}
+          showControls={true}
+          extremePerformanceMode={extremePerformanceMode}
+          performanceLevel={performanceLevel}
+          className="border-0 shadow-none"
+        />
+      );
+    }
+
     if (['histogram', 'box', 'bubble'].includes(type)) {
       const plotlyData = getPlotlyData();
       if (!plotlyData) return <div className="flex items-center justify-center h-full text-gray-500">No data available</div>;
@@ -1051,7 +1084,7 @@ const AdvancedChart = ({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
+    <div className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg ${['scatter3d', 'surface3d', 'mesh3d', 'bar3d'].includes(type) ? 'overflow-x-auto' : ''}`}>
       {/* Chart Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-2">
@@ -1062,6 +1095,13 @@ const AdvancedChart = ({
           <span className="px-2 py-1 text-xs bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded-full">
             {type}
           </span>
+          
+          {/* 3D Chart Indicator */}
+          {['scatter3d', 'surface3d', 'mesh3d', 'bar3d'].includes(type) && (
+            <span className="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full font-medium">
+              🌟 3D
+            </span>
+          )}
           
           {/* Performance Mode Indicator - Enhanced */}
           {(extremePerformanceMode || performanceMode) && (
@@ -1348,7 +1388,7 @@ const AdvancedChart = ({
       </div>
 
       {/* Chart Content */}
-      <div className="relative h-80">
+      <div className={`relative ${['scatter3d', 'surface3d', 'mesh3d', 'bar3d'].includes(type) ? 'h-auto min-h-[800px] overflow-x-auto' : 'h-80'}`}>
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-800/80 z-10">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500"></div>

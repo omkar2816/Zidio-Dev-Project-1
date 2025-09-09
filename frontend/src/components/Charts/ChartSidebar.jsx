@@ -14,7 +14,12 @@ import {
   Layers,
   Wand2,
   RefreshCw,
-  CheckCircle
+  CheckCircle,
+  Box,
+  Move3D,
+  ToggleLeft,
+  ToggleRight,
+  Radar
 } from 'lucide-react';
 
 const ChartSidebar = ({ 
@@ -54,8 +59,18 @@ const ChartSidebar = ({
     autoConfigEnabled: true,
     fullDataset: false, // Add full dataset flag
     extremePerformanceMode: false, // Auto extreme performance mode
+    is3D: false, // Add 3D mode flag
+    colorBy: '', // For 3D color mapping
+    sizeBy: '', // For 3D size mapping
+    autoRotation: true, // 3D auto-rotation
+    rotationSpeed: 1, // 3D rotation speed
+    interactiveCamera: true, // 3D camera controls
+    colorScheme3D: '', // 3D-specific color scheme
     ...initialConfig
   });
+
+  // Add 3D mode state
+  const [is3DMode, setIs3DMode] = useState(false);
 
   // EXTREME PERFORMANCE MODE - Auto-detection thresholds
   const PERFORMANCE_THRESHOLDS = {
@@ -228,11 +243,33 @@ const ChartSidebar = ({
     const columns = Object.keys(dataToAnalyze[0] || {});
     const analysis = analyzeDataStructure(columns, dataToAnalyze);
     
+    // Enhanced recommendations for 3D mode
+    let recommendedSeries = analysis.bestSeries;
+    
+    // For 3D mode, ensure we have a numeric Z-axis
+    if (is3DMode && analysis.numeric.length >= 3) {
+      // Find a third numeric column that's different from X and Y axes
+      const usedColumns = [analysis.bestCategorical, analysis.bestNumeric].filter(Boolean);
+      const availableNumeric = analysis.numeric
+        .map(n => n.column)
+        .filter(col => !usedColumns.includes(col));
+      
+      if (availableNumeric.length > 0) {
+        recommendedSeries = availableNumeric[0];
+      }
+    } else if (is3DMode && !recommendedSeries) {
+      // Fallback: use any numeric column as Z-axis
+      const numericCols = analysis.numeric.map(n => n.column);
+      recommendedSeries = numericCols.find(col => 
+        col !== analysis.bestCategorical && col !== analysis.bestNumeric
+      ) || numericCols[0];
+    }
+    
     return {
       recommendedXAxis: analysis.bestCategorical || analysis.bestTemporal || columns[0],
       recommendedYAxis: analysis.bestNumeric || columns[1],
       recommendedType: analysis.recommendedChartType,
-      recommendedSeries: analysis.bestSeries,
+      recommendedSeries: recommendedSeries,
       confidence: analysis.confidence
     };
   };
@@ -302,10 +339,26 @@ const ChartSidebar = ({
     const generated = generateAutoConfig();
     if (generated) {
       setAutoConfig(generated);
+      
+      // Get chart type based on current mode
+      let recommendedType = generated.recommendedType;
+      
+      // If in 3D mode, convert 2D recommendations to 3D equivalents
+      if (is3DMode) {
+        const type3DMapping = {
+          'bar': 'bar3d',
+          'scatter': 'scatter3d',
+          'line': 'scatter3d', // Line charts don't have direct 3D equivalent
+          'area': 'surface3d',
+          'pie': 'scatter3d' // Pie charts don't have direct 3D equivalent
+        };
+        recommendedType = type3DMapping[generated.recommendedType] || 'scatter3d';
+      }
+      
       setConfig(prev => ({
         ...prev,
-        type: generated.recommendedType,
-        title: getDefaultTitle(generated.recommendedType),
+        type: recommendedType,
+        title: getDefaultTitle(recommendedType),
         xAxis: generated.recommendedXAxis,
         yAxis: generated.recommendedYAxis,
         series: generated.recommendedSeries || ''
@@ -315,9 +368,23 @@ const ChartSidebar = ({
   };
 
   const applySmartRecommendation = (recommendation) => {
+    let recommendationType = recommendation.type;
+    
+    // If in 3D mode, convert 2D recommendations to 3D equivalents
+    if (is3DMode) {
+      const type3DMapping = {
+        'bar': 'bar3d',
+        'scatter': 'scatter3d',
+        'line': 'scatter3d',
+        'area': 'surface3d',
+        'pie': 'scatter3d'
+      };
+      recommendationType = type3DMapping[recommendation.type] || 'scatter3d';
+    }
+    
     setConfig(prev => ({
       ...prev,
-      type: recommendation.type,
+      type: recommendationType,
       title: recommendation.title,
       xAxis: recommendation.autoSelections?.xAxis || '',
       yAxis: recommendation.autoSelections?.yAxis || '',
@@ -325,8 +392,8 @@ const ChartSidebar = ({
     }));
   };
 
-  // Chart types with descriptions
-  const chartTypes = [
+  // 2D Chart types
+  const chart2DTypes = [
     { 
       value: 'bar', 
       label: 'Bar Chart', 
@@ -386,11 +453,50 @@ const ChartSidebar = ({
     { 
       value: 'radar', 
       label: 'Radar Chart', 
-      icon: TrendingUp, 
+      icon: Radar, 
       description: 'Compare multiple metrics',
       requiredFields: []
     }
   ];
+
+  // 3D Chart types
+  const chart3DTypes = [
+    { 
+      value: 'scatter3d', 
+      label: '3D Scatter', 
+      icon: Box, 
+      description: 'Interactive 3D scatter plot with WebGL',
+      requiredFields: ['xAxis', 'yAxis', 'series'],
+      is3D: true
+    },
+    { 
+      value: 'surface3d', 
+      label: '3D Surface', 
+      icon: Layers, 
+      description: 'Beautiful 3D surface visualization',
+      requiredFields: ['xAxis', 'yAxis', 'series'],
+      is3D: true
+    },
+    { 
+      value: 'mesh3d', 
+      label: '3D Mesh', 
+      icon: Move3D, 
+      description: 'Advanced 3D mesh with alpha hull',
+      requiredFields: ['xAxis', 'yAxis', 'series'],
+      is3D: true
+    },
+    { 
+      value: 'bar3d', 
+      label: '3D Bar Chart', 
+      icon: BarChart3, 
+      description: 'Multi-dimensional bar visualization',
+      requiredFields: ['xAxis', 'yAxis', 'series'],
+      is3D: true
+    }
+  ];
+
+  // Get current chart types based on mode
+  const chartTypes = is3DMode ? chart3DTypes : chart2DTypes;
 
   // Color schemes
   const colorSchemes = [
@@ -446,15 +552,65 @@ const ChartSidebar = ({
         newConfig.title = getDefaultTitle(value);
       }
       
+      // Update 3D flag based on chart type
+      if (field === 'type') {
+        const chartType = chartTypes.find(ct => ct.value === value);
+        newConfig.is3D = chartType?.is3D || false;
+      }
+      
       return newConfig;
     });
   };
 
-  const isConfigValid = () => {
-    const chartType = chartTypes.find(ct => ct.value === config.type);
-    if (!chartType) return false;
+  // Handle 3D mode toggle
+  const handle3DModeToggle = () => {
+    const newIs3DMode = !is3DMode;
+    setIs3DMode(newIs3DMode);
+    
+    // Reset chart type to first available type in the new mode
+    const newChartTypes = newIs3DMode ? chart3DTypes : chart2DTypes;
+    const defaultType = newChartTypes[0]?.value || 'bar';
+    
+    setConfig(prev => ({
+      ...prev,
+      type: defaultType,
+      title: getDefaultTitle(defaultType),
+      is3D: newIs3DMode
+    }));
+  };
 
-    return chartType.requiredFields.every(field => config[field]);
+  const isConfigValid = () => {
+    // Debug logging
+    console.log('🔍 Validating config:', config);
+    console.log('🔍 Available data:', { 
+      dataLength: data.length, 
+      filteredDataLength: filteredData.length,
+      columns: getColumns()
+    });
+    
+    const chartType = chartTypes.find(ct => ct.value === config.type);
+    if (!chartType) {
+      console.log('❌ Chart type not found:', config.type);
+      return false;
+    }
+
+    console.log('🔍 Chart type found:', chartType);
+    console.log('🔍 Required fields:', chartType.requiredFields);
+    console.log('🔍 Current config values:', {
+      xAxis: config.xAxis,
+      yAxis: config.yAxis,
+      series: config.series
+    });
+
+    const isValid = chartType.requiredFields.every(field => {
+      const value = config[field];
+      const hasValue = value && value.trim() !== '';
+      console.log(`🔍 Field ${field}: "${value}" - ${hasValue ? '✅' : '❌'}`);
+      return hasValue;
+    });
+
+    console.log('🔍 Final validation result:', isValid);
+    return isValid;
   };
 
   const handleApply = () => {
@@ -648,15 +804,73 @@ const ChartSidebar = ({
               </div>
             </div>
           )}
-        </div>          {/* Chart Type Section */}
+        </div>
+
+        {/* 2D/3D Mode Toggle */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-50 to-purple-50 dark:from-emerald-900/20 dark:to-purple-900/20 rounded-lg border border-emerald-200 dark:border-emerald-700">
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                {is3DMode ? <Move3D className="w-5 h-5 text-purple-600" /> : <BarChart3 className="w-5 h-5 text-emerald-600" />}
+                <div>
+                  <div className="font-semibold text-gray-900 dark:text-white">
+                    {is3DMode ? '3D Charts' : '2D Charts'}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {is3DMode ? 'Interactive WebGL visualizations' : 'Traditional chart types'}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={handle3DModeToggle}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                is3DMode 
+                  ? 'bg-purple-600' 
+                  : 'bg-emerald-600'
+              }`}
+            >
+              <span className="sr-only">Toggle 3D mode</span>
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  is3DMode ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+          
+          {/* Mode Benefits */}
+          <div className="mt-2 px-4 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div className="text-xs text-gray-600 dark:text-gray-400">
+              {is3DMode ? (
+                <div className="flex items-center space-x-1">
+                  <span>✨ Interactive rotation, zoom controls, WebGL acceleration</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-1">
+                  <span>📊 Fast rendering, wide compatibility, proven chart types</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Chart Type Section */}
           <div>
             <button
               onClick={() => toggleSection('chartType')}
               className="flex items-center justify-between w-full p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
             >
               <div className="flex items-center space-x-2">
-                <BarChart3 className="w-5 h-5 text-emerald-600" />
-                <span className="font-medium text-gray-900 dark:text-white">Chart Type</span>
+                {is3DMode ? <Move3D className="w-5 h-5 text-purple-600" /> : <BarChart3 className="w-5 h-5 text-emerald-600" />}
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {is3DMode ? '3D Chart Types' : '2D Chart Types'}
+                </span>
+                {is3DMode && (
+                  <span className="px-2 py-0.5 text-xs font-bold bg-purple-100 text-purple-700 rounded-full">
+                    WebGL
+                  </span>
+                )}
               </div>
               <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${expandedSections.chartType ? 'rotate-180' : ''}`} />
             </button>
@@ -666,13 +880,18 @@ const ChartSidebar = ({
                 {chartTypes.map(type => {
                   const Icon = type.icon;
                   const isRecommended = autoConfig && autoConfig.recommendedType === type.value;
+                  const isSelected = config.type === type.value;
+                  const is3DChart = type.is3D;
+                  
                   return (
                     <button
                       key={type.value}
                       onClick={() => updateConfig('type', type.value)}
-                      className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
-                        config.type === type.value
-                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                      className={`relative w-full p-3 rounded-lg border-2 text-left transition-all ${
+                        isSelected
+                          ? is3DChart
+                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                            : 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
                           : 'border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600'
                       } ${
                         isRecommended 
@@ -680,13 +899,28 @@ const ChartSidebar = ({
                           : ''
                       }`}
                     >
+                      {/* 3D Badge */}
+                      {is3DChart && (
+                        <div className="absolute -top-1 -right-1 px-2 py-0.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-bold rounded-full shadow-lg">
+                          3D
+                        </div>
+                      )}
+                      
                       <div className="flex items-center space-x-3 mb-1">
                         <Icon className={`w-4 h-4 ${
-                          config.type === type.value ? 'text-emerald-600' : 'text-gray-500'
+                          isSelected 
+                            ? is3DChart 
+                              ? 'text-purple-600' 
+                              : 'text-emerald-600' 
+                            : is3DChart
+                              ? 'text-purple-500'
+                              : 'text-gray-500'
                         }`} />
                         <span className={`font-medium text-sm ${
-                          config.type === type.value 
-                            ? 'text-emerald-700 dark:text-emerald-300' 
+                          isSelected 
+                            ? is3DChart
+                              ? 'text-purple-700 dark:text-purple-300'
+                              : 'text-emerald-700 dark:text-emerald-300'
                             : 'text-gray-700 dark:text-gray-300'
                         }`}>
                           {type.label}
@@ -706,6 +940,16 @@ const ChartSidebar = ({
                           </span>
                         )}
                       </p>
+                      
+                      {/* WebGL indicator for 3D charts */}
+                      {is3DChart && (
+                        <div className="flex items-center justify-center space-x-1 mt-2 ml-7">
+                          <Move3D className="w-3 h-3 text-purple-500" />
+                          <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                            WebGL Accelerated
+                          </span>
+                        </div>
+                      )}
                     </button>
                   );
                 })}
@@ -814,12 +1058,21 @@ const ChartSidebar = ({
                   </div>
                 )}
 
-                {/* Series */}
-                {['bar', 'line', 'area', 'scatter'].includes(config.type) && (
+                {/* Series / Z-Axis for 3D */}
+                {(['bar', 'line', 'area', 'scatter'].includes(config.type) || is3DMode) && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Series (Optional)
+                        {is3DMode ? (
+                          <>
+                            Z-Axis (Depth) 
+                            {['scatter3d', 'surface3d', 'mesh3d', 'bar3d'].includes(config.type) && (
+                              <span className="text-red-500 ml-1">*</span>
+                            )}
+                          </>
+                        ) : (
+                          'Series (Optional)'
+                        )}
                       </label>
                       {autoConfig && autoConfig.recommendedSeries && (
                         <button
@@ -836,8 +1089,8 @@ const ChartSidebar = ({
                       onChange={(e) => updateConfig('series', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
                     >
-                      <option value="">None (single series)</option>
-                      {getCategoricalColumns().map(col => (
+                      <option value="">{is3DMode ? 'Select Z-axis column' : 'None (single series)'}</option>
+                      {(is3DMode ? getNumericColumns() : getCategoricalColumns()).map(col => (
                         <option 
                           key={col} 
                           value={col}
@@ -848,10 +1101,67 @@ const ChartSidebar = ({
                         </option>
                       ))}
                     </select>
+                    {is3DMode && (
+                      <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                        🎯 Z-axis provides depth dimension for 3D visualization
+                      </p>
+                    )}
                     {autoConfig && autoConfig.recommendedSeries && config.series !== autoConfig.recommendedSeries && (
                       <p className="text-xs text-blue-600 mt-1">
                         💡 Recommended: {autoConfig.recommendedSeries}
                       </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Additional 3D Configuration */}
+                {is3DMode && (
+                  <div className="space-y-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                    <h5 className="text-sm font-semibold text-purple-800 dark:text-purple-200 flex items-center">
+                      <Move3D className="w-4 h-4 mr-2" />
+                      3D Chart Configuration
+                    </h5>
+                    
+                    {/* Color By (for 3D) */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Color By (Optional)
+                      </label>
+                      <select
+                        value={config.colorBy || ''}
+                        onChange={(e) => updateConfig('colorBy', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                      >
+                        <option value="">Use default colors</option>
+                        {getCategoricalColumns().map(col => (
+                          <option key={col} value={col}>{col}</option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Color points based on categorical data
+                      </p>
+                    </div>
+                    
+                    {/* Size By (for 3D scatter) */}
+                    {['scatter3d', 'mesh3d'].includes(config.type) && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Size By (Optional)
+                        </label>
+                        <select
+                          value={config.sizeBy || ''}
+                          onChange={(e) => updateConfig('sizeBy', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                        >
+                          <option value="">Use uniform size</option>
+                          {getNumericColumns().map(col => (
+                            <option key={col} value={col}>{col}</option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Vary point sizes based on numeric data
+                        </p>
+                      </div>
                     )}
                   </div>
                 )}
@@ -940,6 +1250,120 @@ const ChartSidebar = ({
                     />
                   </button>
                 </div>
+
+                {/* 3D-Specific Styling Options */}
+                {is3DMode && (
+                  <div className="space-y-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                    <h5 className="text-sm font-semibold text-purple-800 dark:text-purple-200 flex items-center">
+                      <Move3D className="w-4 h-4 mr-2" />
+                      3D Visualization Settings
+                    </h5>
+                    
+                    {/* Auto-rotation */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Auto-Rotation
+                        </label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Continuous smooth rotation of 3D chart
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => updateConfig('autoRotation', !config.autoRotation)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          config.autoRotation ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            config.autoRotation ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    
+                    {/* Rotation Speed */}
+                    {config.autoRotation && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Rotation Speed
+                        </label>
+                        <input
+                          type="range"
+                          min="0.5"
+                          max="3"
+                          step="0.5"
+                          value={config.rotationSpeed || 1}
+                          onChange={(e) => updateConfig('rotationSpeed', parseFloat(e.target.value))}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          <span>Slow</span>
+                          <span>Medium</span>
+                          <span>Fast</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* 3D Camera Controls */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Interactive Camera
+                        </label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Allow mouse/touch interaction
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => updateConfig('interactiveCamera', !config.interactiveCamera)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          config.interactiveCamera !== false ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            config.interactiveCamera !== false ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    
+                    {/* 3D Color Scheme Options */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        3D Color Palette
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { value: 'emerald', label: 'Emerald', preview: '#059669' },
+                          { value: 'ocean', label: 'Ocean', preview: '#0284c7' },
+                          { value: 'sunset', label: 'Sunset', preview: '#dc2626' },
+                          { value: 'cosmic', label: 'Cosmic', preview: '#7c3aed' }
+                        ].map(scheme => (
+                          <button
+                            key={scheme.value}
+                            onClick={() => updateConfig('colorScheme3D', scheme.value)}
+                            className={`flex items-center space-x-2 p-2 rounded-lg border-2 transition-all ${
+                              (config.colorScheme3D || config.colorScheme) === scheme.value
+                                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                                : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
+                            }`}
+                          >
+                            <div 
+                              className="w-4 h-4 rounded-full"
+                              style={{ backgroundColor: scheme.preview }}
+                            />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {scheme.label}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Auto Extreme Performance Mode */}
                 <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">

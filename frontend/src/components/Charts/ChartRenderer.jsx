@@ -10,9 +10,12 @@ import {
   Maximize2,
   Camera,
   FileImage,
-  FileText
+  FileText,
+  Box,
+  Eye
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Chart3DRenderer from './Chart3DRenderer';
 
 const ChartRenderer = ({ 
   chart, 
@@ -607,7 +610,21 @@ const ChartRenderer = ({
 
       {/* Chart Content */}
       <div className="p-4">
-        {chart.library === 'plotly' ? (
+        {/* Use Chart3DRenderer for 3D charts */}
+        {['scatter3d', 'surface3d', 'mesh3d', 'bar3d'].includes(chart.type) ? (
+          <Chart3DRenderer
+            data={chart.data}
+            type={chart.type}
+            title={chart.title}
+            xAxis={chart.xAxis || chart.axes?.x || 'x'}
+            yAxis={chart.yAxis || chart.axes?.y || 'y'}
+            zAxis={chart.zAxis || chart.axes?.z || 'z'}
+            colorScheme="emerald"
+            showControls={true}
+            autoRotate={false}
+            className="border-0 shadow-none"
+          />
+        ) : chart.library === 'plotly' ? (
           <Plot
             ref={plotlyRef}
             {...getPlotlyConfig()}

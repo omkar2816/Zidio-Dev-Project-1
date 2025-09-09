@@ -22,6 +22,7 @@ import Analytics from './pages/Analytics/Analytics';
 import Settings from './pages/Settings/Settings';
 import Files from './pages/Files/Files';
 import Charts from './pages/Charts/ChartHistoryRedesigned';
+import Chart3DDemo from './pages/Charts/Chart3DDemo';
 import Profile from './pages/Profile/Profile';
 import Admin from './pages/Admin/Admin';
 import NotFound from './pages/NotFound';
@@ -78,6 +79,9 @@ function App() {
                 </Route>
                 <Route path="/charts" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                   <Route index element={<Charts />} />
+                </Route>
+                <Route path="/charts/3d-demo" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                  <Route index element={<Chart3DDemo />} />
                 </Route>
                 <Route path="/profile" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                   <Route index element={<Profile />} />
