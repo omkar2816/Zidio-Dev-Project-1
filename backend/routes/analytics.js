@@ -1973,6 +1973,292 @@ router.post('/export', protect, async (req, res) => {
 });
 
 // Get platform statistics for landing page (public endpoint - no auth needed)
+// ==============================================
+// USER DASHBOARD ANALYTICS ENDPOINTS
+// ==============================================
+
+// Get user-specific dashboard analytics
+router.get('/user-dashboard-stats', protect, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { 
+      dateRange = '30', // days
+      activityType = 'all' 
+    } = req.query;
+
+    console.log(`📊 USER DASHBOARD: Fetching analytics for user ${req.user.email} (${userId})`);
+
+    // Calculate date range
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(dateRange));
+
+    console.log(`📅 Date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+
+    // Build activity filter
+    const activityFilter = {
+      user: userId,
+      performedAt: { $gte: startDate, $lte: endDate }
+    };
+
+    if (activityType !== 'all') {
+      activityFilter.activityType = activityType;
+    }
+
+    // Parallel data fetching for performance
+    const [
+      totalFiles,
+      totalCharts,
+      totalActivities,
+      recentActivities,
+      activityBreakdown,
+      dailyActivityTrend,
+      fileUploadTrend,
+      chartGenerationTrend
+    ] = await Promise.all([
+      // Total files uploaded by user
+      UploadedFile.countDocuments({ user: userId }),
+      
+      // Total charts created by user
+      ChartHistory.countDocuments({ user: userId }),
+      
+      // Total activities in date range
+      UserActivity.countDocuments(activityFilter),
+      
+      // Recent activities (last 10)
+      UserActivity.find({ user: userId })
+        .sort({ performedAt: -1 })
+        .limit(10)
+        .populate('fileId', 'originalName fileSize')
+        .select('activityType description performedAt metadata'),
+      
+      // Activity breakdown by type
+      UserActivity.aggregate([
+        { $match: activityFilter },
+        { $group: { _id: '$activityType', count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+      ]),
+      
+      // Daily activity trend (last 30 days)
+      UserActivity.aggregate([
+        { $match: activityFilter },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: '%Y-%m-%d', date: '$performedAt' }
+            },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { '_id': 1 } }
+      ]),
+      
+      // File upload trend by day
+      UserActivity.aggregate([
+        { 
+          $match: { 
+            user: userId,
+            activityType: 'file_upload',
+            performedAt: { $gte: startDate, $lte: endDate }
+          } 
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: '%Y-%m-%d', date: '$performedAt' }
+            },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { '_id': 1 } }
+      ]),
+      
+      // Chart generation trend by day
+      UserActivity.aggregate([
+        { 
+          $match: { 
+            user: userId,
+            activityType: { $in: ['chart_generation', 'chart_save'] },
+            performedAt: { $gte: startDate, $lte: endDate }
+          } 
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: '%Y-%m-%d', date: '$performedAt' }
+            },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { '_id': 1 } }
+      ])
+    ]);
+
+    // Calculate additional metrics
+    const averageActivitiesPerDay = totalActivities > 0 ? 
+      (totalActivities / parseInt(dateRange)).toFixed(1) : '0';
+
+    // Process activity breakdown for charts
+    const activityData = activityBreakdown.map(item => ({
+      type: item._id,
+      count: item.count,
+      label: formatActivityLabel(item._id)
+    }));
+
+    // Generate complete daily data with zero-filled missing days
+    const dailyData = generateDailyData(dailyActivityTrend, startDate, endDate);
+    const uploadData = generateDailyData(fileUploadTrend, startDate, endDate);
+    const chartData = generateDailyData(chartGenerationTrend, startDate, endDate);
+
+    console.log(`✅ USER DASHBOARD: Successfully fetched analytics:`, {
+      totalFiles,
+      totalCharts,
+      totalActivities,
+      activityBreakdownCount: activityBreakdown.length,
+      dailyTrendPoints: dailyData.length
+    });
+
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          totalFiles,
+          totalCharts,
+          totalActivities,
+          averageActivitiesPerDay: parseFloat(averageActivitiesPerDay),
+          dateRange: parseInt(dateRange)
+        },
+        recentActivities: recentActivities.map(activity => ({
+          id: activity._id,
+          type: activity.activityType,
+          description: activity.description,
+          performedAt: activity.performedAt,
+          fileName: activity.fileId?.originalName,
+          fileSize: activity.fileId?.fileSize,
+          metadata: activity.metadata
+        })),
+        charts: {
+          activityBreakdown: activityData,
+          dailyActivityTrend: dailyData,
+          fileUploadTrend: uploadData,
+          chartGenerationTrend: chartData
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching user dashboard stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch user dashboard statistics',
+      message: error.message
+    });
+  }
+});
+
+// Get user activity heatmap data
+router.get('/user-activity-heatmap', protect, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { days = '90' } = req.query; // Default last 90 days
+
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(days));
+
+    // Get activity data grouped by hour and day of week
+    const heatmapData = await UserActivity.aggregate([
+      {
+        $match: {
+          user: userId,
+          performedAt: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            hour: { $hour: '$performedAt' },
+            dayOfWeek: { $dayOfWeek: '$performedAt' }
+          },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Format for frontend heatmap component
+    const formattedData = [];
+    for (let day = 1; day <= 7; day++) {
+      for (let hour = 0; hour <= 23; hour++) {
+        const dataPoint = heatmapData.find(
+          item => item._id.dayOfWeek === day && item._id.hour === hour
+        );
+        formattedData.push({
+          day: day - 1, // Convert to 0-based index
+          hour,
+          value: dataPoint ? dataPoint.count : 0
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: formattedData
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching user activity heatmap:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch user activity heatmap',
+      message: error.message
+    });
+  }
+});
+
+// Helper functions for user dashboard
+function formatActivityLabel(activityType) {
+  const labels = {
+    'file_upload': 'File Uploads',
+    'file_download': 'File Downloads',
+    'file_delete': 'File Deletions',
+    'data_analysis': 'Data Analysis',
+    'chart_generation': 'Chart Generation',
+    'chart_save': 'Chart Saves',
+    'chart_deleted': 'Chart Deletions',
+    'data_export': 'Data Exports',
+    'login': 'Logins',
+    'logout': 'Logouts'
+  };
+  return labels[activityType] || activityType;
+}
+
+function generateDailyData(aggregationResult, startDate, endDate) {
+  const dailyMap = new Map();
+  
+  // Initialize all days with zero
+  const currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    dailyMap.set(dateStr, 0);
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  // Fill in actual data
+  aggregationResult.forEach(item => {
+    dailyMap.set(item._id, item.count);
+  });
+  
+  // Convert to array format for charts
+  return Array.from(dailyMap.entries()).map(([date, count]) => ({
+    date,
+    count,
+    formattedDate: new Date(date).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    })
+  }));
+}
+
 router.get('/platform-stats', async (req, res) => {
   try {
     // Get total files processed

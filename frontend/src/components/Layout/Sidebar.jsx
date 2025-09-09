@@ -10,7 +10,8 @@ import {
   FileSpreadsheet,
   Clock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Activity
 } from 'lucide-react';
 import { toggleSidebarCollapsed, toggleSidebar } from '../../store/slices/uiSlice';
 import TabNotificationBadge from './TabNotificationBadge';
