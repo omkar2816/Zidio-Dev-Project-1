@@ -378,7 +378,8 @@ const AdvancedChart = ({
   };
 
   const processXYData = () => {
-    const categories = data.map(row => row[xAxis]).slice(0, 20); // Limit for performance
+    // Use all data points for full dataset representation
+    const categories = data.map(row => row[xAxis]);
     
     if (series) {
       // Multiple series
@@ -395,13 +396,13 @@ const AdvancedChart = ({
         categories,
         series: Object.keys(seriesGroups).map((name, index) => ({
           name,
-          data: seriesGroups[name].slice(0, 20),
+          data: seriesGroups[name],
           color: currentColors[index % currentColors.length]
         }))
       };
     } else {
       // Single series
-      const values = data.map(row => parseFloat(row[yAxis]) || 0).slice(0, 20);
+      const values = data.map(row => parseFloat(row[yAxis]) || 0);
       return {
         categories,
         series: [{
@@ -414,10 +415,11 @@ const AdvancedChart = ({
   };
 
   const processPieData = () => {
-    // Use progressive loading for pie charts but don't truncate - use full data with smart grouping
-    const maxSlices = extremePerformanceMode ? 25 : Math.min(data.length, 50);
+    // Dynamic slice management for large datasets while preserving all data information
+    const dataSize = data.length;
+    const maxSlices = extremePerformanceMode ? 50 : Math.min(dataSize, 100); // Increased limits
     
-    if (data.length <= maxSlices) {
+    if (dataSize <= maxSlices) {
       // Use all data if under limit
       return data.map((row, index) => ({
         name: row[xAxis],
@@ -506,7 +508,7 @@ const AdvancedChart = ({
     const numericColumns = Object.keys(data[0]).filter(key => {
       const value = data[0][key];
       return !isNaN(parseFloat(value)) && isFinite(value);
-    }).slice(0, 6); // Limit to 6 dimensions
+    }).slice(0, extremePerformanceMode ? 8 : 12); // Increased dimension limits
 
     const indicators = numericColumns.map(col => ({
       name: col,
@@ -983,7 +985,11 @@ const AdvancedChart = ({
         <Plot
           data={plotlyData}
           layout={plotlyLayout}
-          style={{ width: '100%', height: '100%' }}
+          style={{ 
+            width: '100%', 
+            height: '100%',
+            minWidth: data.length > 50 ? `${Math.max(800, data.length * 12)}px` : '100%'
+          }}
           config={{
             responsive: true,
             displayModeBar: true,
@@ -994,7 +1000,7 @@ const AdvancedChart = ({
               format: 'png',
               filename: chartTitle.replace(/\s+/g, '_').toLowerCase(),
               height: 500,
-              width: 700,
+              width: Math.max(700, data.length * 12),
               scale: 2
             },
             scrollZoom: true,
@@ -1015,7 +1021,11 @@ const AdvancedChart = ({
       <ReactECharts
         ref={chartRef}
         option={getEChartsOption()}
-        style={{ width: '100%', height: '100%' }}
+        style={{ 
+          width: '100%', 
+          height: '100%',
+          minWidth: data.length > 50 ? `${Math.max(800, data.length * 12)}px` : '100%'
+        }}
         opts={{ 
           renderer: 'canvas', 
           locale: 'en',
@@ -1084,7 +1094,69 @@ const AdvancedChart = ({
   };
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg ${['scatter3d', 'surface3d', 'mesh3d', 'bar3d'].includes(type) ? 'overflow-x-auto' : ''}`}>
+    <>
+      {/* Custom CSS for chart container scrolling */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .chart-container-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e0 #f7fafc;
+          }
+          .chart-container-scroll::-webkit-scrollbar {
+            height: 8px;
+          }
+          .chart-container-scroll::-webkit-scrollbar-track {
+            background: #f7fafc;
+            border-radius: 4px;
+            margin: 0 4px;
+          }
+          .chart-container-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+          }
+          .chart-container-scroll::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+          }
+          .dark .chart-container-scroll {
+            scrollbar-color: #4a5568 #2d3748;
+          }
+          .dark .chart-container-scroll::-webkit-scrollbar-track {
+            background: #2d3748;
+          }
+          .dark .chart-container-scroll::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-color: #374151;
+          }
+          .dark .chart-container-scroll::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+          }
+          .chart-content-wrapper {
+            position: relative;
+          }
+          /* Ensure tooltips are properly positioned within scroll container */
+          .chart-content-wrapper .recharts-tooltip-wrapper,
+          .chart-content-wrapper [class*="tooltip"] {
+            z-index: 1000;
+            pointer-events: auto;
+          }
+          /* Prevent chart container from extending beyond viewport */
+          .chart-container-scroll {
+            box-sizing: border-box;
+          }
+          .chart-content-wrapper {
+            position: relative;
+            min-height: 100%;
+          }
+          /* Ensure charts render properly within scrollable container */
+          .chart-content-wrapper > div {
+            width: 100% !important;
+            height: 100% !important;
+          }
+        `
+      }} />
+      
+      <div className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg max-w-full`}>
       {/* Chart Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-2">
@@ -1387,16 +1459,44 @@ const AdvancedChart = ({
         </div>
       </div>
 
-      {/* Chart Content */}
-      <div className={`relative ${['scatter3d', 'surface3d', 'mesh3d', 'bar3d'].includes(type) ? 'h-auto min-h-[800px] overflow-x-auto' : 'h-80'}`}>
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-800/80 z-10">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500"></div>
+      {/* Chart Content with Proper Container Scrolling */}
+      <div className={`relative ${['scatter3d', 'surface3d', 'mesh3d', 'bar3d'].includes(type) ? 'h-auto min-h-[800px]' : 'h-80'}`}>
+        {/* Chart container with horizontal scroll (includes tooltips) */}
+        <div 
+          className={`chart-container-scroll ${data.length > 50 ? 'overflow-x-auto overflow-y-hidden' : 'overflow-hidden'}`}
+          style={{ 
+            width: '100%',
+            height: '100%',
+            maxWidth: '100%',
+            scrollBehavior: 'smooth'
+          }}
+        >
+          {/* Chart content wrapper with dynamic width */}
+          <div 
+            className="chart-content-wrapper h-full relative" 
+            style={{ 
+              width: data.length > 50 ? `${Math.max(800, data.length * 12)}px` : '100%',
+              minWidth: '100%'
+            }}
+          >
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-800/80 z-10">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500"></div>
+              </div>
+            )}
+            {renderChart()}
+          </div>
+        </div>
+        
+        {/* Horizontal scroll indicator for large datasets */}
+        {data.length > 50 && (
+          <div className="absolute bottom-2 right-2 text-xs text-gray-400 bg-white/80 dark:bg-gray-800/80 px-2 py-1 rounded">
+            Scroll horizontally to view all data →
           </div>
         )}
-        {renderChart()}
       </div>
     </div>
+    </>
   );
 };
 

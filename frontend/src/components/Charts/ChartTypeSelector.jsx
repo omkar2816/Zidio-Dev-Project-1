@@ -220,7 +220,7 @@ const ChartTypeSelector = ({
             return { name: category, value: aggregatedValue };
           });
         } else {
-          chartData = data.slice(0, 20).map(row => ({
+          chartData = data.map(row => ({
             name: row[chartOptions.xAxis],
             value: parseFloat(row[chartOptions.yAxis]) || 0
           }));
@@ -229,14 +229,14 @@ const ChartTypeSelector = ({
 
       case 'line':
       case 'area':
-        chartData = data.slice(0, 50).map(row => ({
+        chartData = data.map(row => ({
           x: row[chartOptions.xAxis],
           y: parseFloat(row[chartOptions.yAxis]) || 0
         }));
         break;
 
       case 'scatter':
-        chartData = data.slice(0, 100).map(row => ({
+        chartData = data.map(row => ({
           x: parseFloat(row[chartOptions.xAxis]) || 0,
           y: parseFloat(row[chartOptions.yAxis]) || 0
         }));
@@ -264,8 +264,8 @@ const ChartTypeSelector = ({
         break;
 
       case 'radar':
-        // Use more data for radar chart but still keep it reasonable
-        chartData = data.slice(0, 25).map(row => ({
+        // Use complete data for radar chart
+        chartData = data.map(row => ({
           category: row[chartOptions.xAxis],
           value: parseFloat(row[chartOptions.yAxis]) || 0
         }));
@@ -275,7 +275,7 @@ const ChartTypeSelector = ({
       case 'surface3d':
       case 'mesh3d':
       case 'bar3d':
-        chartData = data.slice(0, 100).map(row => ({
+        chartData = data.map(row => ({
           x: parseFloat(row[chartOptions.xAxis]) || 0,
           y: parseFloat(row[chartOptions.yAxis]) || 0,
           z: parseFloat(row[chartOptions.sizeBy]) || 0,

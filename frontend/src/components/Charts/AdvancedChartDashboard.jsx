@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import AdvancedChart from './SimpleChart';
 import ChartSidebar from './ChartSidebar';
 import ProgressiveChartLoader from '../UI/ProgressiveChartLoader';
-import { Plus, BarChart3, Trash2, Edit3, Grid3X3, LayoutGrid, Settings } from 'lucide-react';
+import { Plus, BarChart3, Trash2, Edit3, LayoutGrid, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from '../../config/axios';
 import { saveChartToHistory, fetchChartHistory } from '../../store/slices/analyticsSlice';
@@ -15,7 +15,7 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
   const [charts, setCharts] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [editingChart, setEditingChart] = useState(null);
-  const [layoutMode, setLayoutMode] = useState('grid'); // 'grid', 'list'
+  const [layoutMode, setLayoutMode] = useState('list'); // 'list' only (removed 'grid')
   const [loadingCharts, setLoadingCharts] = useState(new Set()); // Track loading charts
   const [pendingChart, setPendingChart] = useState(null); // Chart waiting to be rendered
   const [smartRecommendations, setSmartRecommendations] = useState([]);
@@ -74,7 +74,7 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
       const response = await axios.post('/api/analytics/analyze', {
         sheetData: {
           headers: Object.keys(data[0] || {}),
-          data: data.slice(0, 100) // Send sample of data for analysis
+          data: data // Send complete data for analysis
         },
         analysisType: 'comprehensive'
       });
@@ -400,24 +400,8 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
   };
 
   const getLayoutClasses = () => {
-    // Check if there are any 3D charts that need more space
-    const has3DCharts = charts.some(chart => 
-      ['scatter3d', 'surface3d', 'mesh3d', 'bar3d'].includes(chart.type)
-    );
-    
-    switch (layoutMode) {
-      case 'grid':
-        // Use wider layout for 3D charts
-        return has3DCharts 
-          ? 'grid grid-cols-1 xl:grid-cols-2 gap-8' 
-          : 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6';
-      case 'list':
-        return 'space-y-6';
-      default:
-        return has3DCharts 
-          ? 'grid grid-cols-1 xl:grid-cols-2 gap-8'
-          : 'grid grid-cols-1 lg:grid-cols-2 gap-6';
-    }
+    // Always use list layout (grid view removed)
+    return 'space-y-6';
   };
 
   const getChartTypeStats = () => {
@@ -443,32 +427,6 @@ const AdvancedChartDashboard = ({ data = [], className = '' }) => {
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
-            {/* Layout Mode */}
-            <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-              <button
-                onClick={() => setLayoutMode('grid')}
-                className={`p-2 rounded-md transition-colors ${
-                  layoutMode === 'grid'
-                    ? 'bg-white dark:bg-gray-600 text-emerald-600 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                }`}
-                title="Grid layout"
-              >
-                <Grid3X3 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setLayoutMode('list')}
-                className={`p-2 rounded-md transition-colors ${
-                  layoutMode === 'list'
-                    ? 'bg-white dark:bg-gray-600 text-emerald-600 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                }`}
-                title="List layout"
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-            </div>
-
             {/* Add Chart */}
             <button
               onClick={handleAddChart}

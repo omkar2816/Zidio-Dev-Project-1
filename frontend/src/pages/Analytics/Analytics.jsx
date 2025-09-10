@@ -625,74 +625,6 @@ const Analytics = () => {
                   </div>
                 </div>
 
-                {/* Performance Summary */}
-                {analysisData && analysisData.statistics && (
-                  <div className="mb-8">
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6">
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-4">
-                        <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
-                        Dataset Performance Summary
-                      </h4>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                            {analysisData.statistics.totalRows?.toLocaleString() || 0}
-                          </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">Total Rows</div>
-                        </div>
-                        
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                            {analysisData.statistics.totalColumns?.toLocaleString() || 0}
-                          </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">Total Columns</div>
-                        </div>
-                        
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                          <div className="flex items-center">
-                            <div className="flex-1">
-                              <div className={`text-2xl font-bold ${
-                                analysisData.statistics.totalRows > 1000 
-                                  ? 'text-orange-600 dark:text-orange-400' 
-                                  : 'text-green-600 dark:text-green-400'
-                              }`}>
-                                {analysisData.statistics.totalRows > 1000 ? 'Large' : 'Normal'}
-                              </div>
-                              <div className="text-sm text-gray-600 dark:text-gray-400">Dataset Size</div>
-                            </div>
-                            {analysisData.statistics.totalRows > 1000 && (
-                              <div className="ml-2">
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
-                                  Performance Mode Enabled
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {analysisData.statistics.totalRows > 1000 && (
-                        <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-700 rounded-lg">
-                          <div className="flex items-start space-x-3">
-                            <TrendingUp className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <h5 className="font-medium text-orange-900 dark:text-orange-200 mb-1">
-                                Performance Mode Active
-                              </h5>
-                              <p className="text-sm text-orange-700 dark:text-orange-300">
-                                Large dataset detected ({analysisData.statistics.totalRows.toLocaleString()} rows). 
-                                Charts automatically use intelligent sampling to maintain optimal performance. 
-                                Data distribution and patterns are preserved using systematic sampling techniques.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
                 {/* Performance Monitor */}
                 {performanceData && (
                   <div className="mb-6">
@@ -897,6 +829,74 @@ const Analytics = () => {
           )}
         </div>
                 </div>
+
+      {/* Dataset Performance Summary - Moved below chart container and sidebar */}
+      {analysisData && analysisData.statistics && (
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-4">
+              <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
+              Dataset Performance Summary
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {analysisData.statistics.totalRows?.toLocaleString() || 0}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Total Rows</div>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {analysisData.statistics.totalColumns?.toLocaleString() || 0}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Total Columns</div>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center">
+                  <div className="flex-1">
+                    <div className={`text-2xl font-bold ${
+                      analysisData.statistics.totalRows > 1000 
+                        ? 'text-orange-600 dark:text-orange-400' 
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
+                      {analysisData.statistics.totalRows > 1000 ? 'Large' : 'Normal'}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Dataset Size</div>
+                  </div>
+                  {analysisData.statistics.totalRows > 1000 && (
+                    <div className="ml-2">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                        Performance Mode Enabled
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {analysisData.statistics.totalRows > 1000 && (
+              <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-700 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <TrendingUp className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h5 className="font-medium text-orange-900 dark:text-orange-200 mb-1">
+                      Performance Mode Active
+                    </h5>
+                    <p className="text-sm text-orange-700 dark:text-orange-300">
+                      Large dataset detected ({analysisData.statistics.totalRows.toLocaleString()} rows). 
+                      Charts automatically use intelligent sampling to maintain optimal performance. 
+                      Data distribution and patterns are preserved using systematic sampling techniques.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Error Display */}
       {error && (

@@ -289,8 +289,8 @@ const ChartSidebar = ({
 
     // Analyze each column
     columns.forEach(column => {
-      const values = data.slice(0, 100).map(row => row[column]).filter(v => v !== null && v !== undefined);
-      const sampleValues = values.slice(0, 50);
+      const values = data.map(row => row[column]).filter(v => v !== null && v !== undefined);
+      const sampleValues = values;
       
       // Check if numeric
       const numericCount = sampleValues.filter(v => !isNaN(parseFloat(v))).length;
@@ -693,7 +693,7 @@ const ChartSidebar = ({
 
   const getUniqueValues = (column) => {
     if (!data || data.length === 0) return [];
-    const values = [...new Set(data.map(row => row[column]))].slice(0, 10);
+    const values = [...new Set(data.map(row => row[column]))];
     return values;
   };
 
