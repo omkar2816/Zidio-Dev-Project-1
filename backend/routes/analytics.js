@@ -359,9 +359,40 @@ const handleMulterError = (error, req, res, next) => {
   next(error);
 };
 
-// Helper function to log activity
+// Cache to prevent duplicate activity logs within 30 seconds
+const activityCache = new Map();
+const ACTIVITY_CACHE_DURATION = 30 * 1000; // 30 seconds
+
+// Helper function to generate activity cache key
+const generateActivityCacheKey = (userId, activityType, description) => {
+  return `${userId}_${activityType}_${description.replace(/[^a-zA-Z0-9]/g, '_')}`;
+};
+
+// Helper function to log activity with deduplication
 const logActivity = async (userId, activityType, description, fileId = null, fileName = null, metadata = {}, req = null) => {
   try {
+    // Check for duplicate activity
+    const cacheKey = generateActivityCacheKey(userId, activityType, description);
+    const now = Date.now();
+    
+    if (activityCache.has(cacheKey)) {
+      const timestamp = activityCache.get(cacheKey);
+      if (now - timestamp < ACTIVITY_CACHE_DURATION) {
+        console.log(`🚫 Duplicate activity prevented: ${activityType} - ${description}`);
+        return;
+      }
+    }
+    
+    // Add to cache
+    activityCache.set(cacheKey, now);
+    
+    // Clean up old cache entries
+    for (const [key, timestamp] of activityCache.entries()) {
+      if (now - timestamp > ACTIVITY_CACHE_DURATION) {
+        activityCache.delete(key);
+      }
+    }
+    
     await UserActivity.logActivity({
       user: userId,
       activityType,
@@ -372,6 +403,8 @@ const logActivity = async (userId, activityType, description, fileId = null, fil
       ipAddress: req?.ip,
       userAgent: req?.get('User-Agent')
     });
+    
+    console.log(`✅ Activity logged: ${activityType} - ${description}`);
   } catch (error) {
     console.error('Failed to log activity:', error);
   }

@@ -25,7 +25,7 @@ import {
 
 import Modal from '../../components/UI/Modal';
 import AuthModal from '../../components/Auth/AuthModal';
-import { Hero, Features, Stats, Testimonials, CTA, Footer } from './components';
+import { Hero, Features, ChartGuide, Stats, Testimonials, CTA, Footer } from './components';
 import { toggleTheme } from '../../store/slices/uiSlice';
 import { useLenisContext } from '../../components/LenisProvider';
 
@@ -96,6 +96,12 @@ const Landing = () => {
                 Features
               </button>
               <button 
+                onClick={() => smoothScrollTo('chart-guide')} 
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+              >
+                Chart Guide
+              </button>
+              <button 
                 onClick={() => smoothScrollTo('stats')} 
                 className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
               >
@@ -152,6 +158,7 @@ const Landing = () => {
       <main className="pt-16">
         <Hero onGetStarted={() => openAuthModal('register')} onSignIn={() => openAuthModal('login')} />
         <Features />
+        <ChartGuide />
         <Stats />
         <Testimonials />
         <CTA onGetStarted={() => openAuthModal('register')} onSignIn={() => openAuthModal('login')} />

@@ -2,6 +2,40 @@ import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 
 class NotificationService {
+  // Cache to prevent duplicate notifications within 5 minutes
+  static notificationCache = new Map();
+  static CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+  
+  // Helper method to generate cache key
+  static generateCacheKey(userId, type, key) {
+    return `${userId}_${type}_${key}`;
+  }
+  
+  // Helper method to check if notification should be created (deduplication)
+  static shouldCreateNotification(userId, type, key) {
+    const cacheKey = this.generateCacheKey(userId, type, key);
+    const now = Date.now();
+    
+    if (this.notificationCache.has(cacheKey)) {
+      const timestamp = this.notificationCache.get(cacheKey);
+      if (now - timestamp < this.CACHE_DURATION) {
+        console.log(`🚫 Duplicate notification prevented for: ${cacheKey}`);
+        return false;
+      }
+    }
+    
+    // Add to cache and allow creation
+    this.notificationCache.set(cacheKey, now);
+    
+    // Clean up old cache entries
+    for (const [key, timestamp] of this.notificationCache.entries()) {
+      if (now - timestamp > this.CACHE_DURATION) {
+        this.notificationCache.delete(key);
+      }
+    }
+    
+    return true;
+  }
   
   // Get users by role
   static async getUsersByRole(role) {
