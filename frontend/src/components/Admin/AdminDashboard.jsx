@@ -123,7 +123,7 @@ const AdminDashboard = () => {
         textStyle: {
           fontSize: 18,
           fontWeight: 'bold',
-          color: '#1f2937'
+          color: '#ffffff'
         },
         subtextStyle: {
           color: '#6b7280'
@@ -210,7 +210,7 @@ const AdminDashboard = () => {
         textStyle: {
           fontSize: 18,
           fontWeight: 'bold',
-          color: '#1f2937'
+          color: '#ffffffff'
         }
       },
       tooltip: { 
@@ -357,7 +357,7 @@ const AdminDashboard = () => {
         textStyle: {
           fontSize: 18,
           fontWeight: 'bold',
-          color: '#1f2937'
+          color: '#ffffffff'
         }
       },
       tooltip: { 
@@ -460,7 +460,7 @@ const AdminDashboard = () => {
         text: 'User Role Distribution', 
         left: 'center',
         textStyle: {
-          fontSize: 16,
+          fontSize: 18,
           fontWeight: 'bold'
         }
       },
@@ -522,7 +522,7 @@ const AdminDashboard = () => {
         textStyle: {
           fontSize: 18,
           fontWeight: 'bold',
-          color: '#1f2937'
+          color: '#ffffff'
         }
       },
       tooltip: { 
