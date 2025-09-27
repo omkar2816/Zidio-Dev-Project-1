@@ -75,7 +75,7 @@ const Header = () => {
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         if (!token) return;
 
         const response = await fetch('/api/notifications?limit=1', {

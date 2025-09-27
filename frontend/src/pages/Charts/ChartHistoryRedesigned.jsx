@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
+import { fetchChartHistory, deleteChartFromHistory } from '../../store/slices/analyticsSlice';
+import ChartViewerModal from '../../components/Charts/ChartViewerModal';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -29,8 +32,6 @@ import {
   ChevronDown,
   Box
 } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { fetchChartHistory, deleteChartFromHistory } from '../../store/slices/analyticsSlice';
 
 const ChartHistoryRedesigned = () => {
   console.log('🏗️ ChartHistoryRedesigned component rendering...');
@@ -39,6 +40,13 @@ const ChartHistoryRedesigned = () => {
   const dispatch = useDispatch();
   const authState = useSelector((state) => state.auth);
   const { chartHistory, loading, error } = useSelector((state) => state.analytics);
+  
+  console.log('📊 Chart History State:', {
+    chartHistoryLength: chartHistory?.length || 0,
+    loading,
+    error: error?.message || error,
+    hasCharts: chartHistory && chartHistory.length > 0
+  });
   
   // Local state for UI
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,6 +60,9 @@ const ChartHistoryRedesigned = () => {
   const [selectedCharts, setSelectedCharts] = useState(new Set());
   const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(true);
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
+  // Chart viewer modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedChart, setSelectedChart] = useState(null);
   const [statsData, setStatsData] = useState({
     totalCharts: 0,
     recentCharts: 0,
@@ -71,10 +82,12 @@ const ChartHistoryRedesigned = () => {
     console.log('🔍 Auth check - user:', authState.user?.email, 'token exists:', !!authState.token);
     if (!authState.user || !authState.token) {
       console.log('❌ No authentication - redirecting to login');
+      toast.error('Please log in to view chart history');
       navigate('/auth');
       return;
     }
     
+    console.log('✅ Authentication confirmed - fetching chart history');
     fetchHistory();
   }, [authState.user, authState.token, navigate]);
 
@@ -270,135 +283,47 @@ const ChartHistoryRedesigned = () => {
   };
 
   const handleViewChart = (chart) => {
-    // Same implementation as before but with enhanced visual feedback
-    console.log('👁️ Viewing chart:', chart);
+    console.log('👁️ Opening chart in modal:', chart.chartTitle);
+    console.log('📊 Full chart object being passed to modal:', JSON.stringify(chart, null, 2));
     
     try {
-      if (!chart.configuration || !chart.configuration.categories || !chart.configuration.values) {
+      // Validate chart data availability
+      if (!chart || (!chart.chartData && (!chart.configuration || !chart.configuration.categories))) {
+        console.error('❌ Chart validation failed:', {
+          hasChart: !!chart,
+          hasChartData: !!chart?.chartData,
+          hasConfiguration: !!chart?.configuration,
+          hasCategories: !!chart?.configuration?.categories
+        });
         toast.error('Chart data not available for viewing');
         return;
       }
 
-      const chartWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+      console.log('✅ Chart validation passed - opening modal');
       
-      if (!chartWindow) {
-        toast.error('Please allow popups for this site to view charts');
-        return;
-      }
+      // Set the selected chart and open modal
+      setSelectedChart(chart);
+      setIsModalOpen(true);
       
-      // Enhanced chart viewer with modern design
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Chart: ${chart.chartTitle || 'Untitled Chart'}</title>
-          <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-          <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: #334155; line-height: 1.6; padding: 20px;
-            }
-            .container {
-              max-width: 1200px; margin: 0 auto; background: white;
-              border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-              overflow: hidden;
-            }
-            .header {
-              background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-              color: white; padding: 24px; text-align: center;
-            }
-            .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
-            .header p { opacity: 0.9; font-size: 16px; }
-            .chart-container { padding: 40px; min-height: 600px; }
-            #chartDisplay { width: 100%; height: 500px; }
-            .chart-info { 
-              display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-              gap: 20px; padding: 24px; background: #f8fafc; border-top: 1px solid #e2e8f0;
-            }
-            .info-item { 
-              background: white; padding: 16px; rounded: 8px; 
-              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            }
-            .info-label { font-weight: 600; color: #64748b; font-size: 14px; }
-            .info-value { font-weight: 700; color: #1e293b; font-size: 18px; margin-top: 4px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>${chart.chartTitle || 'Untitled Chart'}</h1>
-              <p>Interactive Chart Viewer • ${chart.chartType?.toUpperCase() || 'CHART'}</p>
-            </div>
-            <div class="chart-container">
-              <div id="chartDisplay"></div>
-            </div>
-            <div class="chart-info">
-              <div class="info-item">
-                <div class="info-label">Chart Type</div>
-                <div class="info-value">${chart.chartType?.toUpperCase() || 'UNKNOWN'}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Data Points</div>
-                <div class="info-value">${chart.configuration.values?.length || 0}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Created</div>
-                <div class="info-value">${new Date(chart.createdAt).toLocaleDateString()}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Source</div>
-                <div class="info-value">${chart.sourceFileName || 'Direct Input'}</div>
-              </div>
-            </div>
-          </div>
-          
-          <script>
-            const chartData = {
-              labels: ${JSON.stringify(chart.configuration.categories || [])},
-              values: ${JSON.stringify(chart.configuration.values || [])},
-              title: '${chart.chartTitle || 'Data'}',
-              type: '${chart.chartType || 'bar'}'
-            };
-            
-            const chart = echarts.init(document.getElementById('chartDisplay'));
-            
-            const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
-            
-            const option = {
-              title: { text: chartData.title, left: 'center', textStyle: { fontSize: 20, fontWeight: 'bold' } },
-              tooltip: { trigger: 'axis', backgroundColor: 'rgba(0,0,0,0.8)', textStyle: { color: 'white' } },
-              grid: { left: '10%', right: '10%', bottom: '15%', top: '15%', containLabel: true },
-              xAxis: { type: 'category', data: chartData.labels, axisLine: { lineStyle: { color: '#64748b' } } },
-              yAxis: { type: 'value', axisLine: { lineStyle: { color: '#64748b' } } },
-              series: [{
-                name: chartData.title,
-                type: chartData.type === 'line' ? 'line' : 'bar',
-                data: chartData.values,
-                itemStyle: { color: function(params) { return colors[params.dataIndex % colors.length]; } },
-                emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
-              }]
-            };
-            
-            chart.setOption(option);
-            window.addEventListener('resize', () => chart.resize());
-          </script>
-        </body>
-        </html>
-      `;
+      console.log('🔧 Modal state set:', { 
+        selectedChart: chart?.chartTitle, 
+        isModalOpen: true 
+      });
       
-      chartWindow.document.write(htmlContent);
-      chartWindow.document.close();
+      toast.success(`Opening ${chart.chartTitle || 'chart'}`, { 
+        icon: '👁️',
+        duration: 2000 
+      });
       
-      toast.success('Chart opened in new window', { icon: '👁️' });
     } catch (error) {
       console.error('View chart error:', error);
       toast.error('Failed to open chart viewer');
     }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedChart(null);
   };
 
   const handleDeleteChart = async (chartId) => {
@@ -641,6 +566,12 @@ const ChartHistoryRedesigned = () => {
                   <option value="line">Line Charts</option>
                   <option value="pie">Pie Charts</option>
                   <option value="doughnut">Doughnut Charts</option>
+                  <option value="scatter">Scatter Charts</option>
+                  <option value="area">Area Charts</option>
+                  <option value="scatter3d">3D Scatter</option>
+                  <option value="surface3d">3D Surface</option>
+                  <option value="mesh3d">3D Mesh</option>
+                  <option value="3d">3D Charts</option>
                 </select>
               </div>
 
@@ -925,6 +856,13 @@ const ChartHistoryRedesigned = () => {
           )}
         </div>
       </div>
+
+      {/* Chart Viewer Modal */}
+      <ChartViewerModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        chart={selectedChart}
+      />
     </div>
   );
 };

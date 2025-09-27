@@ -140,6 +140,25 @@ export const generate3DCharts = createAsyncThunk(
   }
 );
 
+export const save3DChartToHistory = createAsyncThunk(
+  'analytics/save3DChartToHistory',
+  async ({ chart, fileId = null, chart3DConfig }, { rejectWithValue, getState }) => {
+    try {
+      const token = getState().auth.token;
+      const response = await axios.post('/api/analytics/save-3d-chart', {
+        chart,
+        fileId,
+        chart3DConfig
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: 'Failed to save 3D chart to history' });
+    }
+  }
+);
+
 export const exportData = createAsyncThunk(
   'analytics/exportData',
   async (exportData, { rejectWithValue, getState }) => {
@@ -197,7 +216,7 @@ export const fetchRecentActivities = createAsyncThunk(
 
 export const saveChartToHistory = createAsyncThunk(
   'analytics/saveChartToHistory',
-  async ({ chart, fileId = null }, { rejectWithValue, getState }) => {
+  async ({ chart, fileId = null, chart3DConfig = null }, { rejectWithValue, getState }) => {
     try {
       console.log('📊 SAVE CHART TO HISTORY - Starting save process:', {
         chartId: chart?.id,
@@ -205,8 +224,44 @@ export const saveChartToHistory = createAsyncThunk(
         chartType: chart?.type,
         fileId,
         chartDataLength: chart?.data?.length,
-        chartKeys: chart ? Object.keys(chart) : []
+        chartKeys: chart ? Object.keys(chart) : [],
+        is3DChart: chart3DConfig?.is3D || chart?.type?.includes('3d') || false
       });
+
+      // Detect if this is a 3D chart
+      const is3DChart = chart3DConfig?.is3D || 
+                        chart?.type?.includes('3d') || 
+                        chart?.type === 'bar3d' ||
+                        chart?.type === 'scatter3d' ||
+                        chart?.type === 'surface3d' ||
+                        chart?.type === 'mesh3d' ||
+                        chart?.type === 'line3d' ||
+                        chart?.type === 'pie3d' ||
+                        chart?.type === 'area3d' ||
+                        chart?.type === 'column3d';
+
+      // If it's a 3D chart, use the 3D-specific save function
+      if (is3DChart) {
+        console.log('🎲 Detected 3D chart - routing to save3DChartToHistory');
+        const enhanced3DConfig = {
+          is3D: true,
+          ...chart3DConfig,
+          chartType: chart?.type
+        };
+        
+        // Call the 3D-specific endpoint directly
+        const token = getState().auth.token;
+        const response = await axios.post('/api/analytics/save-3d-chart', {
+          chart,
+          fileId,
+          chart3DConfig: enhanced3DConfig
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        console.log('✅ 3D Chart save API response:', response.data);
+        return { chart, response: response.data, is3D: true };
+      }
 
       const state = getState();
       const token = state.auth.token;
@@ -574,6 +629,45 @@ const analyticsSlice = createSlice({
       .addCase(generate3DCharts.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload?.message || '3D chart generation failed';
+      })
+
+      // Save 3D Chart to History
+      .addCase(save3DChartToHistory.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(save3DChartToHistory.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Add saved 3D chart to chart history if it's not already there
+        const chartExists = state.chartHistory.some(chart => chart.chartId === action.payload.chartId);
+        if (!chartExists && action.payload.chartData) {
+          // Create a full chart history entry matching the expected structure
+          const savedChart = {
+            _id: action.payload.historyId,
+            chartId: action.payload.chartId,
+            chartTitle: action.payload.chartData.title || action.payload.chartData.chartTitle || 'Untitled 3D Chart',
+            chartType: action.payload.chartData.type || action.payload.chartData.chartType || 'scatter3d',
+            chartData: action.payload.chartData.data || action.payload.chartData.chartData,
+            sourceFileName: action.payload.chartData.sourceFileName || '3D Generated Chart',
+            configuration: {
+              is3D: true,
+              xAxis: action.payload.chart3DConfig?.xAxis,
+              yAxis: action.payload.chart3DConfig?.yAxis,
+              zAxis: action.payload.chart3DConfig?.zAxis,
+              colorScheme: action.payload.chartData.colorScheme || 'emerald',
+              chart3DConfig: action.payload.chart3DConfig
+            },
+            createdAt: new Date().toISOString(),
+            lastModified: new Date().toISOString(),
+            isActive: true,
+            status: 'active'
+          };
+          state.chartHistory = [savedChart, ...state.chartHistory];
+        }
+      })
+      .addCase(save3DChartToHistory.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload?.message || 'Failed to save 3D chart to history';
       })
       
       // Export Data

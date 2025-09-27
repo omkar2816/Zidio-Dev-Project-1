@@ -1213,8 +1213,8 @@ router.post('/generate-chart', protect, async (req, res) => {
       },
       chartData: chart.data || chart,
       dataInfo: {
-        totalRows: chart.data ? chart.data.length : 0,
-        displayedRows: chart.data ? chart.data.length : 0,
+        totalRows: (chart.data || chart) ? (Array.isArray(chart.data || chart) ? (chart.data || chart).length : 0) : 0,
+        displayedRows: (chart.data || chart) ? (Array.isArray(chart.data || chart) ? (chart.data || chart).length : 0) : 0,
         isFiltered: false
       },
       metadata: {
@@ -1270,6 +1270,138 @@ router.post('/save-chart', protect, async (req, res) => {
       fileId,
       chartDataLength: chart.data?.length
     });
+
+    // Check if this is a 3D chart that should be redirected
+    const is3DChart = chart.type?.includes('3d') || 
+                      chart.type === 'bar3d' ||
+                      chart.type === 'scatter3d' ||
+                      chart.type === 'surface3d' ||
+                      chart.type === 'mesh3d' ||
+                      chart.type === 'line3d' ||
+                      chart.type === 'pie3d' ||
+                      chart.type === 'area3d' ||
+                      chart.type === 'column3d';
+
+    if (is3DChart) {
+      console.log('🎲 Regular save endpoint detected 3D chart - redirecting to 3D save logic');
+      
+      // Create basic 3D config for fallback
+      const chart3DConfig = {
+        is3D: true,
+        chartType: chart.type,
+        xAxis: chart.xAxis || 'X-Axis',
+        yAxis: chart.yAxis || 'Y-Axis', 
+        zAxis: chart.zAxis || 'Z-Axis'
+      };
+
+      // Use the same logic as the 3D save endpoint
+      try {
+        const { categories, values, xValues, yValues, zValues } = extract3DData(chart.data || chart, chart.type);
+
+        const chartHistory = await ChartHistory.findOneAndUpdate(
+          {
+            user: req.user._id,
+            chartId: chart.id
+          },
+          {
+            $set: {
+              chartTitle: chart.title,
+              chartType: chart.type,
+              chartData: chart.data || chart,
+              lastModified: new Date(),
+              status: 'active',
+              isActive: true,
+              configuration: {
+                chartType: chart.type,
+                xAxis: chart3DConfig.xAxis,
+                yAxis: chart3DConfig.yAxis,
+                zAxis: chart3DConfig.zAxis,
+                dataColumns: chart.dataColumns || [],
+                categories: categories,
+                values: values,
+                colorScheme: chart.colorScheme || 'emerald',
+                customSettings: chart.customSettings || {},
+                chart3DConfig: {
+                  is3D: true,
+                  xValues: xValues,
+                  yValues: yValues,
+                  zValues: zValues
+                }
+              },
+              dataInfo: {
+                totalRows: (chart.data || chart) ? (Array.isArray(chart.data || chart) ? (chart.data || chart).length : 0) : 0,
+                totalColumns: (chart.data || chart) && (chart.data || chart)[0] ? Object.keys((chart.data || chart)[0]).length : 0,
+                is3DChart: true
+              },
+              metadata: {
+                description: `3D ${chart.type} chart: ${chart.title}`,
+                version: '1.0',
+                isFavorite: false,
+                category: '3D Visualization'
+              }
+            },
+            $setOnInsert: {
+              user: req.user._id,
+              chartId: chart.id,
+              sourceFile: fileId || null,
+              sourceFileName: fileId ? '3D File-based Chart' : '3D Generated Chart',
+              sourceSheet: 'Default',
+              createdAt: new Date()
+            }
+          },
+          {
+            upsert: true,
+            new: true,
+            runValidators: true
+          }
+        );
+
+        console.log('✅ 3D Chart saved via fallback regular endpoint');
+        
+        return res.json({
+          success: true,
+          message: '3D Chart saved to history (via fallback)',
+          chartId: chart.id,
+          historyId: chartHistory._id,
+          is3D: true,
+          fallbackSave: true
+        });
+        
+      } catch (error) {
+        console.error('💥 3D Chart fallback save error:', error);
+        // Continue with regular save as ultimate fallback
+      }
+    }
+
+    // Helper function for 3D data extraction (same as in save-3d-chart endpoint)
+    const extract3DData = (chartData, chartType) => {
+      if (!chartData) return { categories: [], values: [], xValues: [], yValues: [], zValues: [] };
+      
+      let categories = [];
+      let values = [];
+      let xValues = [];
+      let yValues = [];
+      let zValues = [];
+      
+      if (Array.isArray(chartData) && chartData.length > 0 && typeof chartData[0] === 'object') {
+        const firstItem = chartData[0];
+        const keys = Object.keys(firstItem);
+        
+        // Find X, Y, Z axes
+        const xKey = keys.find(key => key.toLowerCase().includes('x')) || keys[0];
+        const yKey = keys.find(key => key.toLowerCase().includes('y')) || keys[1];
+        const zKey = keys.find(key => key.toLowerCase().includes('z')) || keys[2];
+        
+        xValues = chartData.map(item => parseFloat(item[xKey]) || 0);
+        yValues = chartData.map(item => parseFloat(item[yKey]) || 0);
+        zValues = chartData.map(item => parseFloat(item[zKey]) || 0);
+        
+        categories = chartData.map((_, index) => `Point ${index + 1}`);
+        values = zValues; // Use Z values as primary values
+      }
+      
+      return { categories, values, xValues, yValues, zValues };
+    };
 
     // Store chart in user activity for backward compatibility
     await logActivity(
@@ -1375,8 +1507,8 @@ router.post('/save-chart', protect, async (req, res) => {
             } : {})
           },
           dataInfo: {
-            totalRows: chart.data ? chart.data.length : 0,
-            totalColumns: chart.data && chart.data[0] ? Object.keys(chart.data[0]).length : 0
+            totalRows: (chart.data || chart) ? (Array.isArray(chart.data || chart) ? (chart.data || chart).length : 0) : 0,
+            totalColumns: (chart.data || chart) && (chart.data || chart)[0] ? Object.keys((chart.data || chart)[0]).length : 0
           },
           metadata: {
             description: `${chart.type} chart: ${chart.title}`,
@@ -1872,8 +2004,8 @@ router.post('/save-3d-chart', protect, async (req, res) => {
             }
           },
           dataInfo: {
-            totalRows: chart.data ? chart.data.length : 0,
-            totalColumns: chart.data && chart.data[0] ? Object.keys(chart.data[0]).length : 0,
+            totalRows: (chart.data || chart) ? (Array.isArray(chart.data || chart) ? (chart.data || chart).length : 0) : 0,
+            totalColumns: (chart.data || chart) && (chart.data || chart)[0] ? Object.keys((chart.data || chart)[0]).length : 0,
             is3DChart: true
           },
           metadata: {
@@ -1907,7 +2039,9 @@ router.post('/save-3d-chart', protect, async (req, res) => {
       message: '3D Chart saved to history',
       chartId: chart.id,
       historyId: chartHistory._id,
-      is3D: true
+      is3D: true,
+      chartData: chart, // Include the full chart data
+      chart3DConfig: chart3DConfig // Include the 3D configuration
     });
 
   } catch (error) {

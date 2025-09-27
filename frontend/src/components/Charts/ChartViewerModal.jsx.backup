@@ -1,0 +1,681 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Download } from 'lucide-react';
+import ReactECharts from 'echarts-for-rea    console.log('📊 Creating chart option for:', chartType, 'with', data.length, 'data points');
+    
+    const maxDisplayPoints = 25;
+    const totalPages = Math.ceil(data.length / maxDisplayPoints);
+    // Use scrollPosition directly as startIndex for more accurate scrolling
+    const startIndex = Math.max(0, Math.min(scrollPosition, data.length - maxDisplayPoints));
+    const endIndex = Math.min(startIndex + maxDisplayPoints, data.length);
+    const visibleData = data.slice(startIndex, endIndex);
+    
+    console.log('🔄 Pagination calculation:', {
+      totalPoints: data.length,
+      maxDisplayPoints,
+      totalPages,
+      scrollPosition,
+      currentPage,
+      startIndex,
+      endIndex,
+      visibleDataLength: visibleData.length,
+      visibleDataSample: visibleData.slice(0, 3)
+    }); from 'react-hot-toast';
+
+// Add custom styles for slider
+const sliderStyles = `
+  .slider::-webkit-slider-thumb {
+    appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #3b82f6;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .slider::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #3b82f6;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .slider:focus {
+    outline: none;
+  }
+  .slider:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  }
+`;
+
+const ChartViewerModal = ({ isOpen, onClose, chart }) => {
+  const [chartData, setChartData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [echartsOption, setEchartsOption] = useState(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  console.log('🔍 ChartViewerModal render:', { 
+    isOpen, 
+    hasChart: !!chart, 
+    chartTitle: chart?.chartTitle,
+    chartId: chart?.chartId || chart?._id,
+    chartType: chart?.chartType,
+    hasChartData: !!chart?.chartData,
+    chartDataLength: Array.isArray(chart?.chartData) ? chart.chartData.length : 'not array',
+    hasConfiguration: !!chart?.configuration,
+    renderTimestamp: new Date().toISOString()
+  });
+
+  // Additional debugging for modal state
+  if (isOpen) {
+    console.log('🚀 MODAL IS OPEN - Debugging info:');
+    console.log('Chart object keys:', chart ? Object.keys(chart) : 'no chart');
+    console.log('Chart data type:', typeof chart?.chartData);
+    console.log('Chart data sample:', chart?.chartData ? JSON.stringify(chart.chartData).substring(0, 100) + '...' : 'none');
+  }
+
+  useEffect(() => {
+    if (isOpen && chart) {
+      console.log('📊 Modal opened with chart:', chart.chartTitle);
+      console.log('📊 Full chart object received:', JSON.stringify(chart, null, 2));
+      setScrollPosition(0);
+      setCurrentPage(1);
+      loadSavedChart();
+    }
+  }, [isOpen, chart]);
+
+  // Regenerate chart when scroll position changes
+  useEffect(() => {
+    if (chartData && chartData.length > 0) {
+      try {
+        const configuration = chart.configuration || {};
+        const chartOption = createEChartsOption(chartData, chart.chartType, configuration);
+        setEchartsOption(chartOption);
+      } catch (error) {
+        console.error('Error updating chart for scroll:', error);
+      }
+    }
+  }, [scrollPosition, currentPage, chartData]);
+
+  const loadSavedChart = () => {
+    if (!chart) {
+      console.error('❌ No chart provided to modal');
+      return;
+    }
+
+    setIsLoading(true);
+    console.log('🔄 Loading chart...', chart.chartTitle);
+    
+    try {
+      const configuration = chart.configuration || {};
+      
+      let originalData = [];
+      
+      // Handle different chart data structures
+      if (chart.chartData && Array.isArray(chart.chartData)) {
+        console.log('📊 Processing array-based chart data, length:', chart.chartData.length);
+        
+        // For complex data structures with multiple fields
+        if (chart.chartData.length > 0 && typeof chart.chartData[0] === 'object') {
+          // Extract the first meaningful field as categories and second as values
+          const firstItem = chart.chartData[0];
+          const keys = Object.keys(firstItem);
+          console.log('📊 Data keys found:', keys);
+          
+          if (keys.length >= 2) {
+            // Use first key as category, second key as value
+            const categoryKey = keys[0];
+            const valueKey = keys[1];
+            
+            originalData = chart.chartData.map((item, index) => ({
+              name: String(item[categoryKey] || `Item ${index + 1}`),
+              value: parseFloat(item[valueKey]) || 0
+            }));
+            
+            console.log('📊 Using keys:', { categoryKey, valueKey });
+          } else if (keys.length === 1) {
+            // Only one key, use index as category
+            const valueKey = keys[0];
+            originalData = chart.chartData.map((item, index) => ({
+              name: `Item ${index + 1}`,
+              value: parseFloat(item[valueKey]) || 0
+            }));
+          } else {
+            // Fallback for simple structures
+            originalData = chart.chartData.map((item, index) => ({
+              name: item.name || item.label || `Item ${index + 1}`,
+              value: parseFloat(item.value || item.y || item.data || 0)
+            }));
+          }
+        } else if (chart.chartData.length > 0) {
+          // Handle simple array of values
+          originalData = chart.chartData.map((value, index) => ({
+            name: `Item ${index + 1}`,
+            value: parseFloat(value) || 0
+          }));
+        }
+      } else if (configuration.categories && configuration.values) {
+        console.log('📊 Processing configuration-based data');
+        originalData = configuration.categories.map((category, index) => ({
+          name: String(category),
+          value: parseFloat(configuration.values[index]) || 0
+        }));
+      }
+
+      // Fallback: if no data processed, create dummy data to show something
+      if (originalData.length === 0) {
+        console.warn('⚠️ No chart data found, creating fallback data');
+        originalData = [
+          { name: 'No Data', value: 0 }
+        ];
+      }
+
+      console.log('📊 Processed data sample:', originalData.slice(0, 3));
+      console.log('📊 Total data points:', originalData.length);
+
+      setChartData(originalData);
+      
+      const chartOption = createEChartsOption(originalData, chart.chartType, configuration);
+      setEchartsOption(chartOption);
+      
+      console.log('✅ Chart loaded successfully');
+      
+    } catch (error) {
+      console.error('❌ Error loading chart:', error);
+      console.error('📊 Chart object:', chart);
+      toast.error(`Failed to load chart: ${error.message}`);
+      
+      // Set fallback data even on error
+      const fallbackData = [{ name: 'Error Loading Data', value: 0 }];
+      setChartData(fallbackData);
+      
+      try {
+        const fallbackOption = createEChartsOption(fallbackData, 'bar', {});
+        setEchartsOption(fallbackOption);
+      } catch (fallbackError) {
+        console.error('❌ Even fallback failed:', fallbackError);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const createEChartsOption = (data, chartType, config) => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.error('❌ Invalid chart data for createEChartsOption:', data);
+      throw new Error('Invalid chart data');
+    }
+
+    console.log('📊 Creating chart option for:', chartType, 'with', data.length, 'data points');
+    
+    const maxDisplayPoints = 25;
+    const totalPages = Math.ceil(data.length / maxDisplayPoints);
+    const startIndex = currentPage > 0 ? (currentPage - 1) * maxDisplayPoints : 0;
+    const endIndex = Math.min(startIndex + maxDisplayPoints, data.length);
+    const visibleData = data.slice(startIndex, endIndex);
+    
+    console.log('� Pagination calculation:', {
+      totalPoints: data.length,
+      maxDisplayPoints,
+      totalPages,
+      currentPage,
+      startIndex,
+      endIndex,
+      visibleDataLength: visibleData.length
+    });
+
+    const colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f97316', '#22c55e', '#ef4444', '#f59e0b', '#06b6d4'];
+    
+    const baseOption = {
+      backgroundColor: 'transparent',
+      animation: true,
+      tooltip: {
+        trigger: chartType === 'pie' || chartType === 'doughnut' ? 'item' : 'axis',
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        textStyle: { color: '#fff' },
+        confine: true
+      },
+      grid: {
+        left: '8%',
+        right: '8%',
+        bottom: '12%',
+        top: '15%',
+        containLabel: true
+      }
+    };
+
+    // Ensure all data points have valid name and value
+    const safeData = data.map((item, index) => ({
+      name: String(item.name || `Item ${index + 1}`),
+      value: Number(item.value) || 0
+    }));
+
+    console.log('📊 Safe data sample:', safeData[0]);
+
+    switch (chartType?.toLowerCase()) {
+      case 'bar':
+        return {
+          ...baseOption,
+          xAxis: {
+            type: 'category',
+            data: visibleData.map(item => item.name || ''),
+            axisLabel: {
+              rotate: 0,
+              interval: 0,
+              fontSize: 12,
+              color: '#666'
+            },
+            axisTick: {
+              alignWithLabel: true
+            }
+          },
+          yAxis: { 
+            type: 'value',
+            axisLabel: {
+              formatter: '{value}',
+              fontSize: 12,
+              color: '#666'
+            },
+            splitLine: {
+              show: true,
+              lineStyle: { color: '#f0f0f0', type: 'dashed' }
+            }
+          },
+          series: [{
+            name: chart.chartTitle || 'Data',
+            type: 'bar',
+            data: visibleData.map(item => item.value || 0),
+            itemStyle: { 
+              color: colors[0],
+              borderRadius: [4, 4, 0, 0]
+            },
+            barWidth: '70%',
+            emphasis: {
+              itemStyle: {
+                shadowBlur: 5,
+                shadowColor: 'rgba(0, 0, 0, 0.3)'
+              }
+            }
+          }]
+        };
+
+      case 'line':
+        return {
+          ...baseOption,
+          xAxis: {
+            type: 'category',
+            data: visibleData.map(item => item.name || ''),
+            axisLabel: {
+              rotate: 0,
+              interval: 0,
+              fontSize: 12,
+              color: '#666'
+            },
+            axisTick: {
+              alignWithLabel: true
+            }
+          },
+          yAxis: { 
+            type: 'value',
+            axisLabel: {
+              formatter: '{value}',
+              fontSize: 12,
+              color: '#666'
+            },
+            splitLine: {
+              show: true,
+              lineStyle: { color: '#f0f0f0', type: 'dashed' }
+            }
+          },
+          series: [{
+            name: chart.chartTitle || 'Data',
+            type: 'line',
+            data: visibleData.map(item => item.value || 0),
+            lineStyle: { 
+              color: colors[0], 
+              width: 2,
+              shadowColor: 'rgba(0,0,0,0.1)',
+              shadowBlur: 3
+            },
+            itemStyle: { color: colors[0] },
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 6,
+            emphasis: {
+              itemStyle: {
+                borderWidth: 2,
+                borderColor: '#fff',
+                shadowBlur: 5,
+                shadowColor: colors[0]
+              }
+            }
+          }]
+        };
+
+      case 'pie':
+      case 'doughnut':
+        return {
+          ...baseOption,
+          series: [{
+            name: chart?.chartTitle || 'Data',
+            type: 'pie',
+            radius: chartType === 'doughnut' ? ['30%', '70%'] : '60%',
+            center: ['50%', '50%'],
+            data: visibleData.map((item, index) => ({
+              name: item.name || `Item ${index + 1}`,
+              value: item.value || 0,
+              itemStyle: { color: colors[index % colors.length] }
+            })),
+            label: {
+              show: visibleData.length <= 20,
+              formatter: '{b}: {c} ({d}%)'
+            },
+            emphasis: {
+              itemStyle: {
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+              }
+            }
+          }]
+        };
+
+      case 'scatter':
+        return {
+          ...baseOption,
+          xAxis: {
+            type: 'value',
+            name: 'X Axis',
+            nameLocation: 'middle',
+            nameGap: 30
+          },
+          yAxis: {
+            type: 'value',
+            name: 'Y Axis',
+            nameLocation: 'middle',
+            nameGap: 40
+          },
+          series: [{
+            name: chart.chartTitle || 'Data',
+            type: 'scatter',
+            data: visibleData.map((item, index) => [index + (currentPage - 1) * 25, item.value || 0]),
+            itemStyle: { color: colors[0] },
+            symbolSize: 8
+          }]
+        };
+
+      default:
+        console.log('📊 Using default bar chart for type:', chartType);
+        return {
+          ...baseOption,
+          xAxis: {
+            type: 'category',
+            data: safeData.map(item => item.name),
+            axisLabel: {
+              rotate: safeData.length > 10 ? 45 : 0
+            }
+          },
+          yAxis: { type: 'value' },
+          series: [{ 
+            name: chart?.chartTitle || 'Data',
+            type: 'bar', 
+            data: safeData.map(item => item.value),
+            itemStyle: { color: colors[0] }
+          }]
+        };
+    }
+  };
+
+  // Handle horizontal scroll
+  const handleScroll = (event) => {
+    const scrollValue = parseInt(event.target.value);
+    console.log('🔄 Scroll handle triggered:', { scrollValue, currentPage, totalPoints: chartData?.length });
+    setScrollPosition(scrollValue);
+    setCurrentPage(Math.floor(scrollValue / 25) + 1);
+  };
+
+  const downloadChart = () => {
+    if (!chartData) return;
+    
+    const dataStr = JSON.stringify(chartData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${chart.chartTitle || 'chart'}_data.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast.success('Chart data downloaded!');
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4"
+      style={{ 
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 9999,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem'
+      }}
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden"
+        style={{ 
+          backgroundColor: 'white',
+          borderRadius: '0.75rem',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          maxWidth: '64rem',
+          width: '90%',
+          maxHeight: '80vh',
+          overflow: 'hidden'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              � {chart?.chartTitle || 'Saved Chart'}
+            </h2>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={downloadChart}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              disabled={!chartData}
+            >
+              <Download className="w-4 h-4" />
+              Download
+            </button>
+            
+            <button
+              onClick={onClose}
+              className="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Info Bar */}
+        <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center gap-4">
+              <span className="font-medium">Type: {chart?.chartType}</span>
+              <span>•</span>
+              <span>Created: {chart?.createdAt ? new Date(chart.createdAt).toLocaleDateString() : 'Unknown'}</span>
+              <span>•</span>
+              <span>Data Points: {chartData?.length || 0}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-hidden">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-96">
+              <div className="flex items-center gap-3 text-gray-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <span>Loading chart...</span>
+              </div>
+            </div>
+          ) : echartsOption && chartData && chartData.length > 0 ? (
+            <div 
+              className="overflow-hidden"
+              style={{ 
+                minHeight: '350px',
+                maxHeight: '450px',
+                width: '100%'
+              }}
+            >
+              <div 
+                style={{ 
+                  height: '380px',
+                  width: '100%',
+                  position: 'relative'
+                }}
+              >
+                <ReactECharts
+                  option={echartsOption}
+                  style={{ 
+                    height: '100%', 
+                    width: '100%'
+                  }}
+                  notMerge={true}
+                  lazyUpdate={true}
+                  opts={{ 
+                    renderer: 'svg',
+                    devicePixelRatio: window.devicePixelRatio || 1,
+                    locale: 'en'
+                  }}
+                />
+              </div>
+              
+              {/* Pagination controls for large datasets */}
+              {chartData?.length > 25 && (
+                <div className="mt-4">
+                  {/* Dataset info */}
+                  <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center justify-center gap-2 text-sm text-blue-700">
+                      <span className="flex items-center gap-1">
+                        📊 <strong>Large Dataset</strong> ({chartData.length} total points)
+                      </span>
+                      <span>•</span>
+                      <span>Showing {Math.min(25, chartData.length - (currentPage - 1) * 25)} points</span>
+                      <span>•</span>
+                      <span>Page {currentPage} of {Math.ceil(chartData.length / 25)}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Horizontal scroll bar */}
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    {/* Dataset info */}
+                    <div className="text-center mb-3">
+                      <div className="text-sm text-gray-600 mb-1">
+                        <strong>Showing:</strong> Points {((currentPage - 1) * 25) + 1} - {Math.min(currentPage * 25, chartData.length)} of {chartData.length}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Page {currentPage} of {Math.ceil(chartData.length / 25)}
+                      </div>
+                    </div>
+                    
+                    {/* Scroll bar */}
+                    <div className="px-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max={Math.max(0, chartData.length - 25)}
+                        step="1"
+                        value={scrollPosition}
+                        onChange={handleScroll}
+                        className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                        style={{
+                          background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(scrollPosition / Math.max(1, chartData.length - 25)) * 100}%, #e5e7eb ${(scrollPosition / Math.max(1, chartData.length - 25)) * 100}%, #e5e7eb 100%)`
+                        }}
+                      />
+                      <div className="flex justify-between text-xs text-gray-400 mt-2">
+                        <span>Start (Point 1)</span>
+                        <div className="text-blue-600 font-medium">
+                          📍 Current: Point {scrollPosition + 1} - {Math.min(scrollPosition + 25, chartData.length)}
+                        </div>
+                        <span>End (Point {chartData.length})</span>
+                      </div>
+                    </div>
+                    
+                    {/* Quick jump buttons */}
+                    <div className="flex justify-center gap-2 mt-3">
+                      <button
+                        onClick={() => {
+                          setScrollPosition(0);
+                          setCurrentPage(1);
+                        }}
+                        className="px-3 py-1 text-xs bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition-colors"
+                      >
+                        ⏪ Start
+                      </button>
+                      <button
+                        onClick={() => {
+                          const maxScroll = Math.max(0, chartData.length - 25);
+                          setScrollPosition(maxScroll);
+                          setCurrentPage(Math.ceil(chartData.length / 25));
+                        }}
+                        className="px-3 py-1 text-xs bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition-colors"
+                      >
+                        End ⏩
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-96 text-gray-500">
+              <div className="text-center">
+                <div className="text-4xl mb-4">📊</div>
+                <div className="font-semibold mb-2">No chart data available</div>
+                <div className="text-sm text-gray-400 mb-4">
+                  The chart may contain invalid or missing data
+                </div>
+                
+                {/* Debug information */}
+                <div className="text-xs text-left bg-gray-100 p-3 rounded max-w-md mx-auto">
+                  <div><strong>Debug Info:</strong></div>
+                  <div>Has Chart: {chart ? '✅' : '❌'}</div>
+                  <div>Has ChartData: {chart?.chartData ? '✅' : '❌'}</div>
+                  <div>ChartData Length: {chart?.chartData?.length || 0}</div>
+                  <div>Has Config: {chart?.configuration ? '✅' : '❌'}</div>
+                  <div>Has ECharts Option: {echartsOption ? '✅' : '❌'}</div>
+                  <div>Processed Data Points: {chartData?.length || 0}</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+    </>
+  );
+};
+
+export default ChartViewerModal;

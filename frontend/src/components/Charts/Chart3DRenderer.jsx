@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { save3DChartToHistory } from '../../store/slices/analyticsSlice';
 import Plot from 'react-plotly.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -45,6 +47,7 @@ const Chart3DRenderer = ({
   onSave = null,
   enableSave = true
 }) => {
+  const dispatch = useDispatch();
   const plotRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
@@ -90,32 +93,95 @@ const Chart3DRenderer = ({
     };
   }, []);
 
-  // Performance optimization based on data size
+  // Enhanced performance optimization based on data size with progressive loading
   const getPerformanceOptimizations = () => {
     const dataLength = data.length;
     
-    if (extremePerformanceMode || performanceLevel === 'extreme' || performanceLevel === 'ultra') {
+    console.log(`🚀 Chart3D Performance: Optimizing for ${dataLength} data points`);
+    
+    // Ultra performance for massive datasets (100k+)
+    if (dataLength > 100000 || extremePerformanceMode || performanceLevel === 'ultra') {
+      console.log('⚡ Using ULTRA performance mode');
       return {
         useWebGL: true,
         enableLargeDataOptimization: true,
-        maxPointsBeforeSampling: 50000,
-        samplingFactor: dataLength > 50000 ? 0.5 : 1,
+        maxPointsBeforeSampling: 25000,
+        samplingFactor: 0.25, // Show only 25% of data
         renderMode: 'webgl',
-        animationDuration: 200,
-        useScatterGL: type === 'scatter3d'
+        animationDuration: 100,
+        useScatterGL: true,
+        enableProgressiveLoading: true,
+        chunkSize: 5000,
+        loadDelay: 50,
+        enableDataAggregation: true,
+        aggregationThreshold: 50000,
+        enableLOD: true, // Level of Detail
+        maxRenderPoints: 25000
       };
-    } else if (performanceLevel === 'optimized' || dataLength > 5000) {
+    }
+    // Extreme performance for very large datasets (50k-100k)
+    else if (dataLength > 50000 || performanceLevel === 'extreme') {
+      console.log('🔥 Using EXTREME performance mode');
       return {
         useWebGL: true,
+        enableLargeDataOptimization: true,
+        maxPointsBeforeSampling: 35000,
+        samplingFactor: 0.4, // Show 40% of data
+        renderMode: 'webgl',
+        animationDuration: 150,
+        useScatterGL: type === 'scatter3d',
+        enableProgressiveLoading: true,
+        chunkSize: 7500,
+        loadDelay: 100,
+        enableDataAggregation: true,
+        aggregationThreshold: 35000,
+        enableLOD: true,
+        maxRenderPoints: 35000
+      };
+    }
+    // High performance for large datasets (10k-50k)
+    else if (dataLength > 10000 || performanceLevel === 'optimized') {
+      console.log('⚡ Using HIGH performance mode');
+      return {
+        useWebGL: true,
+        enableLargeDataOptimization: true,
+        maxPointsBeforeSampling: 15000,
+        samplingFactor: dataLength > 25000 ? 0.6 : 0.8,
+        renderMode: 'webgl',
+        animationDuration: 300,
+        useScatterGL: type === 'scatter3d',
+        enableProgressiveLoading: dataLength > 20000,
+        chunkSize: 5000,
+        loadDelay: 150,
+        enableDataAggregation: dataLength > 20000,
+        aggregationThreshold: 20000,
+        enableLOD: false,
+        maxRenderPoints: 15000
+      };
+    }
+    // Standard performance for medium datasets (5k-10k)
+    else if (dataLength > 5000) {
+      console.log('🎯 Using STANDARD performance mode');
+      return {
+        useWebGL: dataLength > 7500,
         enableLargeDataOptimization: true,
         maxPointsBeforeSampling: 10000,
-        samplingFactor: dataLength > 10000 ? 0.7 : 1,
-        renderMode: 'webgl',
+        samplingFactor: 1,
+        renderMode: dataLength > 7500 ? 'webgl' : 'svg',
         animationDuration: 500,
-        useScatterGL: type === 'scatter3d'
+        useScatterGL: false,
+        enableProgressiveLoading: false,
+        chunkSize: 0,
+        loadDelay: 0,
+        enableDataAggregation: false,
+        aggregationThreshold: Infinity,
+        enableLOD: false,
+        maxRenderPoints: 10000
       };
     }
     
+    // Default performance for small datasets (<5k)
+    console.log('💎 Using DEFAULT performance mode');
     return {
       useWebGL: false,
       enableLargeDataOptimization: false,
@@ -123,7 +189,14 @@ const Chart3DRenderer = ({
       samplingFactor: 1,
       renderMode: 'svg',
       animationDuration: 750,
-      useScatterGL: false
+      useScatterGL: false,
+      enableProgressiveLoading: false,
+      chunkSize: 0,
+      loadDelay: 0,
+      enableDataAggregation: false,
+      aggregationThreshold: Infinity,
+      enableLOD: false,
+      maxRenderPoints: Infinity
     };
   };
 
@@ -159,8 +232,115 @@ const Chart3DRenderer = ({
 
   const currentPalette = colorPalettes[colorScheme] || colorPalettes.emerald;
 
+  // Smart data aggregation for large datasets
+  const aggregateData = (rawData, threshold) => {
+    if (rawData.length <= threshold) return rawData;
+    
+    console.log(`📊 Aggregating ${rawData.length} points to improve performance`);
+    
+    // Group similar data points and create aggregated points
+    const aggregated = [];
+    const gridSize = Math.ceil(Math.sqrt(threshold)); // Create a grid for aggregation
+    const xRange = { min: Infinity, max: -Infinity };
+    const yRange = { min: Infinity, max: -Infinity };
+    const zRange = { min: Infinity, max: -Infinity };
+    
+    // Find data ranges
+    rawData.forEach(item => {
+      const x = Number(item[xAxis]) || 0;
+      const y = Number(item[yAxis]) || 0;
+      const z = Number(item[zAxis]) || 0;
+      xRange.min = Math.min(xRange.min, x);
+      xRange.max = Math.max(xRange.max, x);
+      yRange.min = Math.min(yRange.min, y);
+      yRange.max = Math.max(yRange.max, y);
+      zRange.min = Math.min(zRange.min, z);
+      zRange.max = Math.max(zRange.max, z);
+    });
+    
+    const xStep = (xRange.max - xRange.min) / gridSize;
+    const yStep = (yRange.max - yRange.min) / gridSize;
+    const zStep = (zRange.max - zRange.min) / gridSize;
+    
+    // Create grid buckets
+    const buckets = new Map();
+    
+    rawData.forEach(item => {
+      const x = Number(item[xAxis]) || 0;
+      const y = Number(item[yAxis]) || 0;
+      const z = Number(item[zAxis]) || 0;
+      
+      const xBucket = Math.floor((x - xRange.min) / xStep);
+      const yBucket = Math.floor((y - yRange.min) / yStep);
+      const zBucket = Math.floor((z - zRange.min) / zStep);
+      const key = `${xBucket},${yBucket},${zBucket}`;
+      
+      if (!buckets.has(key)) {
+        buckets.set(key, []);
+      }
+      buckets.get(key).push(item);
+    });
+    
+    // Create aggregated points from buckets
+    buckets.forEach(bucketItems => {
+      if (bucketItems.length === 0) return;
+      
+      // Calculate average values for the bucket
+      const avgX = bucketItems.reduce((sum, item) => sum + (Number(item[xAxis]) || 0), 0) / bucketItems.length;
+      const avgY = bucketItems.reduce((sum, item) => sum + (Number(item[yAxis]) || 0), 0) / bucketItems.length;
+      const avgZ = bucketItems.reduce((sum, item) => sum + (Number(item[zAxis]) || 0), 0) / bucketItems.length;
+      
+      aggregated.push({
+        [xAxis]: avgX,
+        [yAxis]: avgY,
+        [zAxis]: avgZ,
+        _aggregated: true,
+        _count: bucketItems.length,
+        _originalItems: bucketItems.slice(0, 3) // Keep sample of original items
+      });
+    });
+    
+    console.log(`✅ Aggregated to ${aggregated.length} points (${((1 - aggregated.length / rawData.length) * 100).toFixed(1)}% reduction)`);
+    return aggregated;
+  };
+
+  // Smart sampling for performance
+  const sampleData = (data, factor) => {
+    if (factor >= 1) return data;
+    
+    const targetSize = Math.floor(data.length * factor);
+    console.log(`🎯 Sampling ${data.length} points down to ${targetSize} points`);
+    
+    // Use systematic sampling to maintain data distribution
+    const step = data.length / targetSize;
+    const sampled = [];
+    
+    for (let i = 0; i < targetSize; i++) {
+      const index = Math.floor(i * step);
+      if (index < data.length) {
+        sampled.push(data[index]);
+      }
+    }
+    
+    console.log(`✅ Sampled to ${sampled.length} points`);
+    return sampled;
+  };
+
+  // Process data with performance optimizations
+  let workingData = data;
+  
+  // Apply aggregation if enabled
+  if (performanceOpts.enableDataAggregation && data.length > performanceOpts.aggregationThreshold) {
+    workingData = aggregateData(data, performanceOpts.maxRenderPoints);
+  }
+  
+  // Apply sampling if needed
+  if (performanceOpts.samplingFactor < 1) {
+    workingData = sampleData(workingData, performanceOpts.samplingFactor);
+  }
+
   // Process data for better visualization
-  const processedData = data.map((item, index) => {
+  const processedData = workingData.map((item, index) => {
     let xValue, yValue, zValue;
     
     // For bar3d charts, handle categorical data by converting to indices
@@ -196,10 +376,8 @@ const Chart3DRenderer = ({
     };
   });
 
-  // Apply performance sampling if needed
-  const finalData = performanceOpts.samplingFactor < 1 
-    ? processedData.filter((_, index) => index % Math.ceil(1 / performanceOpts.samplingFactor) === 0)
-    : processedData;
+  // Final data is already optimized through aggregation and sampling above
+  const finalData = processedData;
 
   // Get plot data based on chart type
   const getPlotData = () => {
@@ -1001,21 +1179,45 @@ const Chart3DRenderer = ({
     toImageButtonOptions: {
       format: 'png',
       filename: `3d_chart_${Date.now()}`,
-      height: 1000, // Increased for better quality to match larger canvas
-      width: 1400,  // Increased for better quality to match larger canvas
-      scale: 2
+      height: performanceOpts.useWebGL ? 1200 : 800,
+      width: performanceOpts.useWebGL ? 1600 : 1000,
+      scale: performanceOpts.useWebGL ? 1.5 : 2
     },
     responsive: true,
-    scrollZoom: true,
-    // Performance optimizations
+    scrollZoom: !performanceOpts.enableLargeDataOptimization, // Disable for large datasets
+    doubleClick: performanceOpts.enableLargeDataOptimization ? false : 'reset+autosize',
+    // Enhanced performance optimizations based on data size
     plotGlPixelRatio: performanceOpts.renderMode === 'webgl' ? 1 : 2,
     useResizeHandler: true,
     autosizable: true,
-    // WebGL optimizations for extreme performance mode
+    // Advanced WebGL optimizations for large datasets
     ...(performanceOpts.useWebGL && {
-      webglpointthreshold: 1000,
-      // Enable hardware acceleration
-      useWebGL: true
+      webglpointthreshold: performanceOpts.enableLargeDataOptimization ? 500 : 1000,
+      useWebGL: true,
+      // Reduce quality for better performance on large datasets
+      webglquality: performanceOpts.enableLargeDataOptimization ? 'low' : 'medium',
+      webgldepthtest: !performanceOpts.enableLargeDataOptimization, // Disable depth testing for performance
+    }),
+    // Memory management for large datasets
+    ...(performanceOpts.enableLargeDataOptimization && {
+      editable: false,
+      staticPlot: false,
+      showTips: false,
+      // Reduce animation quality
+      transition: {
+        duration: performanceOpts.animationDuration,
+        easing: 'linear'
+      },
+      // Optimize for large datasets
+      queueLength: 1,
+      // Reduce hover sensitivity for performance
+      hovermode: data.length > 50000 ? false : 'closest',
+    }),
+    // Progressive loading configuration
+    ...(performanceOpts.enableProgressiveLoading && {
+      frameMargins: 0,
+      showAxisDragHandles: false,
+      showAxisRangeEntryBoxes: false,
     })
   });
 
@@ -1049,13 +1251,32 @@ const Chart3DRenderer = ({
 
   const saveChartToHistory = async () => {
     try {
+      console.log('🔥 Starting 3D chart save process...');
+      console.log('📊 Chart data:', { 
+        title, 
+        type, 
+        originalDataLength: data?.length, 
+        processedDataLength: finalData?.length,
+        performanceMode: performanceOpts.renderMode,
+        xAxis, 
+        yAxis, 
+        zAxis 
+      });
+      
       if (onSave) {
+        // Use custom save function if provided
         const chartData = {
           id: `3d_chart_${Date.now()}`,
           title,
           type,
-          data: finalData,
+          data: data, // Use original data instead of finalData
           colorScheme,
+          dataInfo: {
+            originalDataPoints: data?.length || 0,
+            processedDataPoints: finalData?.length || 0,
+            performanceOptimizations: performanceOpts,
+            dataReduction: data?.length ? ((data.length - (finalData?.length || 0)) / data.length * 100).toFixed(1) + '%' : '0%'
+          },
           chart3DConfig: {
             is3D: true,
             xAxis,
@@ -1063,48 +1284,61 @@ const Chart3DRenderer = ({
             zAxis,
             camera: camera,
             extremePerformanceMode,
-            performanceLevel
+            performanceLevel,
+            renderMode: performanceOpts.renderMode,
+            useWebGL: performanceOpts.useWebGL
           }
         };
         await onSave(chartData);
         toast.success('3D Chart saved to history!');
       } else {
-        // Default save implementation
-        const response = await fetch('/api/analytics/save-3d-chart', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({
-            chart: {
-              id: `3d_chart_${Date.now()}`,
-              title,
-              type,
-              data: finalData,
-              colorScheme
-            },
-            chart3DConfig: {
-              is3D: true,
-              xAxis,
-              yAxis,
-              zAxis,
-              camera: camera,
-              extremePerformanceMode,
-              performanceLevel
-            }
-          })
-        });
+        // Use Redux store to save 3D chart
+        const chartData = {
+          id: `3d_chart_${Date.now()}`,
+          title,
+          type,
+          data: data, // Use original data instead of finalData
+          colorScheme,
+          dataInfo: {
+            originalDataPoints: data?.length || 0,
+            processedDataPoints: finalData?.length || 0,
+            performanceOptimizations: performanceOpts,
+            dataReduction: data?.length ? ((data.length - (finalData?.length || 0)) / data.length * 100).toFixed(1) + '%' : '0%'
+          }
+        };
+        
+        const chart3DConfig = {
+          is3D: true,
+          xAxis,
+          yAxis,
+          zAxis,
+          camera: camera,
+          extremePerformanceMode,
+          performanceLevel,
+          renderMode: performanceOpts.renderMode,
+          useWebGL: performanceOpts.useWebGL,
+          aggregationUsed: performanceOpts.enableDataAggregation && data?.length > performanceOpts.aggregationThreshold,
+          samplingUsed: performanceOpts.samplingFactor < 1
+        };
 
-        if (response.ok) {
-          toast.success('3D Chart saved to history!');
-        } else {
-          throw new Error('Failed to save chart');
-        }
+        console.log('📤 Sending enhanced 3D chart data to Redux:', { chartData, chart3DConfig });
+
+        const result = await dispatch(save3DChartToHistory({
+          chart: chartData,
+          fileId: null,
+          chart3DConfig
+        })).unwrap();
+
+        console.log('✅ Redux save result:', result);
+        
+        // Show detailed success message
+        const reductionInfo = chartData.dataInfo.dataReduction !== '0%' ? 
+          ` (${chartData.dataInfo.dataReduction} size reduction applied)` : '';
+        toast.success(`3D Chart saved to history!${reductionInfo}`);
       }
     } catch (error) {
-      console.error('Save chart error:', error);
-      toast.error('Failed to save chart to history');
+      console.error('💥 Save chart error:', error);
+      toast.error(`Failed to save chart to history: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -1129,7 +1363,7 @@ const Chart3DRenderer = ({
   const plotData = getPlotData();
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg w-full overflow-x-auto overflow-y-hidden ${className}`}>
+    <div className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg w-full overflow-hidden ${className}`}>
       {/* 3D Chart */}
       <div className="p-8 w-full overflow-hidden">
         <div 
@@ -1137,8 +1371,7 @@ const Chart3DRenderer = ({
           style={{ 
             height: extremePerformanceMode ? '900px' : '800px', 
             minHeight: '700px',
-            width: '100%',
-            minWidth: '800px'
+            width: '100%'
           }}
         >
           {plotData.length > 0 ? (
@@ -1162,6 +1395,33 @@ const Chart3DRenderer = ({
             </div>
           )}
         </div>
+        
+        {/* Performance Info Display for Large Datasets */}
+        {(data?.length > 5000 || performanceOpts.enableLargeDataOptimization) && (
+          <div className="mt-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 rounded-lg border border-blue-200 dark:border-gray-500">
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1">
+                  📊 <strong>{data?.length?.toLocaleString() || 0}</strong> total points
+                </span>
+                {finalData?.length !== data?.length && (
+                  <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
+                    ⚡ <strong>{finalData?.length?.toLocaleString() || 0}</strong> rendered 
+                    ({((finalData?.length / data?.length) * 100).toFixed(1)}%)
+                  </span>
+                )}
+                <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                  🚀 {performanceOpts.renderMode.toUpperCase()} mode
+                </span>
+              </div>
+              <div className="text-gray-500 dark:text-gray-400">
+                {performanceOpts.enableDataAggregation && '🔄 Aggregated'} 
+                {performanceOpts.samplingFactor < 1 && ' 📉 Sampled'}
+                {performanceOpts.useWebGL && ' 💨 WebGL'}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Loading Overlay */}
@@ -1179,7 +1439,14 @@ const Chart3DRenderer = ({
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                 className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full mx-auto mb-2"
               />
-              <p className="text-sm text-gray-600 dark:text-gray-400">Rendering 3D chart...</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Rendering 3D chart...
+                {performanceOpts.enableLargeDataOptimization && (
+                  <span className="block text-xs mt-1">
+                    Optimizing for {data?.length?.toLocaleString()} data points
+                  </span>
+                )}
+              </p>
             </div>
           </motion.div>
         )}

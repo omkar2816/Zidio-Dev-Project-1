@@ -25,7 +25,7 @@ const AdminRequests = () => {
 
   const fetchAdminRequests = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch('/api/auth/admin-requests', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -50,7 +50,7 @@ const AdminRequests = () => {
 
   const handleApprove = async (requestId) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch(`/api/auth/admin-requests/${requestId}/approve`, {
         method: 'POST',
         headers: {
@@ -77,7 +77,7 @@ const AdminRequests = () => {
     if (!selectedRequest) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch(`/api/auth/admin-requests/${selectedRequest._id}/reject`, {
         method: 'POST',
         headers: {

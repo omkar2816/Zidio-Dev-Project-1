@@ -22,7 +22,7 @@ const chartHistorySchema = new mongoose.Schema(
     chartType: { 
       type: String, 
       required: true,
-      enum: ['bar', 'line', 'pie', 'scatter', 'area', 'column', 'doughnut', 'bubble', 'radar', 'funnel', 'treemap', 'heatmap', '3d', 'scatter3d', 'surface3d', 'mesh3d']
+      enum: ['bar', 'line', 'pie', 'scatter', 'area', 'column', 'doughnut', 'bubble', 'radar', 'funnel', 'treemap', 'heatmap', '3d', 'scatter3d', 'surface3d', 'mesh3d', 'bar3d', 'line3d', 'pie3d', 'area3d', 'column3d']
     },
     
     // Source Data Reference

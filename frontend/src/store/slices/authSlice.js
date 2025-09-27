@@ -123,8 +123,8 @@ export const changePassword = createAsyncThunk(
 
 const initialState = {
   user: null,
-  token: localStorage.getItem('token'),
-  isAuthenticated: !!localStorage.getItem('token'),
+  token: sessionStorage.getItem('token'), // Changed from localStorage to sessionStorage
+  isAuthenticated: !!sessionStorage.getItem('token'), // Changed from localStorage to sessionStorage
   isLoading: false,
   error: null,
   isAdmin: false,
@@ -142,9 +142,9 @@ const authSlice = createSlice({
       state.token = action.payload;
       state.isAuthenticated = !!action.payload;
       if (action.payload) {
-        localStorage.setItem('token', action.payload);
+        sessionStorage.setItem('token', action.payload); // Changed from localStorage to sessionStorage
       } else {
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('token'); // Changed from localStorage to sessionStorage
       }
     },
     logout: (state) => {
@@ -153,7 +153,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.isAdmin = false;
       state.error = null;
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('token'); // Changed from localStorage to sessionStorage
     },
   },
   extraReducers: (builder) => {
@@ -171,7 +171,7 @@ const authSlice = createSlice({
         if (action.payload.data.token) {
           state.token = action.payload.data.token;
           state.isAuthenticated = true;
-          localStorage.setItem('token', action.payload.data.token);
+          sessionStorage.setItem('token', action.payload.data.token); // Changed from localStorage to sessionStorage
         }
         
         state.isAdmin = action.payload.data.user.role === 'admin' || action.payload.data.user.role === 'superadmin';
@@ -192,7 +192,7 @@ const authSlice = createSlice({
         state.token = action.payload.data.token;
         state.isAuthenticated = true;
         state.isAdmin = action.payload.data.user.role === 'admin';
-        localStorage.setItem('token', action.payload.data.token);
+        sessionStorage.setItem('token', action.payload.data.token); // Changed from localStorage to sessionStorage
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -211,7 +211,7 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.isAdmin = action.payload.data.user.role === 'admin' || action.payload.data.user.role === 'superadmin';
         state.isSuperAdmin = action.payload.data.user.role === 'superadmin';
-        localStorage.setItem('token', action.payload.data.token);
+        sessionStorage.setItem('token', action.payload.data.token); // Changed from localStorage to sessionStorage
       })
       .addCase(adminLogin.rejected, (state, action) => {
         state.isLoading = false;
@@ -236,7 +236,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.isAdmin = false;
         state.isSuperAdmin = false;
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
       })
       
       // Logout
@@ -246,7 +246,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.isAdmin = false;
         state.isSuperAdmin = false;
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
       })
       .addCase(logoutUser.rejected, (state) => {
         // Even if the API call fails, ensure client-side logout
@@ -255,7 +255,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.isAdmin = false;
         state.isSuperAdmin = false;
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
       })
       
       // Update Profile

@@ -28,7 +28,7 @@ const Sidebar = () => {
       if (!isSuperAdmin) return;
       
       try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const response = await fetch('/api/notifications?category=admin&isRead=false&limit=50', {
           headers: {
             'Authorization': `Bearer ${token}`,

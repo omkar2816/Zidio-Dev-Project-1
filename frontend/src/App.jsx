@@ -44,8 +44,8 @@ function App() {
   useEffect(() => {
     initializeTheme();
     
-    // Initialize authentication state from localStorage token
-    const token = localStorage.getItem('token');
+    // Initialize authentication state from sessionStorage token
+    const token = sessionStorage.getItem('token');
     if (token) {
       // Validate token and get current user
       store.dispatch(getCurrentUser());
