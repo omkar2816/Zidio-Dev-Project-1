@@ -1,9 +1,10 @@
 import axios from 'axios';
 
-// Set base URL for all requests - this should match your backend port
-axios.defaults.baseURL = 'http://localhost:5000';
+// Set base URL for all requests
+// In development, use Vite proxy. In production, use full backend URL
+axios.defaults.baseURL = import.meta.env.DEV ? '' : 'http://localhost:5000';
 
-// Enable credentials to be included in requests
+// Enable credentials to be included in requests (needed for auth)
 axios.defaults.withCredentials = true;
 
 // Request interceptor to add auth token
