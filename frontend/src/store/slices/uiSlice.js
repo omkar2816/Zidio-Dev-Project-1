@@ -13,14 +13,14 @@ const initialState = {
   },
   chartPreferences: {
     defaultColors: [
-      '#3B82F6', // blue
-      '#8B5CF6', // purple
-      '#06B6D4', // cyan
-      '#10B981', // emerald
-      '#F59E0B', // amber
-      '#EF4444', // red
-      '#84CC16', // lime
-      '#F97316', // orange
+      '#10B981', // emerald-500
+      '#14B8A6', // teal-500
+      '#8B5CF6', // purple-500
+      '#F59E0B', // amber-500
+      '#EF4444', // red-500
+      '#3B82F6', // blue-500
+      '#84CC16', // lime-500
+      '#F97316', // orange-500
     ],
     animationDuration: 1000,
     showGrid: true,
