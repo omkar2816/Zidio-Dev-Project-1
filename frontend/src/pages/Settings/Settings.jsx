@@ -81,7 +81,7 @@ const Settings = () => {
               />
             </div>
             <div className="md:col-span-2 flex justify-end">
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Profile</button>
+              <button className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Save Profile</button>
             </div>
           </form>
         ) : (
@@ -118,7 +118,7 @@ const Settings = () => {
           </div>
 
           <div className="flex justify-end">
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Preferences</button>
+            <button className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Save Preferences</button>
           </div>
         </form>
       </div>

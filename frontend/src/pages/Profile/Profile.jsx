@@ -99,7 +99,7 @@ const Profile = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
             Profile Settings
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -109,13 +109,13 @@ const Profile = () => {
       </div>
 
       {/* Profile Header */}
-      <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/30 shadow-xl">
+      <div className="bg-gray-50/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/20 dark:border-gray-700/30 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
           <div className="relative mx-auto sm:mx-0">
-            <div className="w-20 h-20 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+            <div className="w-20 h-20 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg">
               {user?.firstName?.[0]}{user?.lastName?.[0]}
             </div>
-            <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white hover:scale-105 transition-all shadow-lg">
+            <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center text-white hover:scale-105 transition-all shadow-lg">
               <Camera className="h-4 w-4" />
             </button>
           </div>
@@ -124,7 +124,7 @@ const Profile = () => {
               {user?.firstName} {user?.lastName}
             </h2>
             <p className="text-gray-600 dark:text-gray-400 break-all">{user?.email}</p>
-            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 text-blue-700 dark:text-blue-300 mt-2">
+            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 text-emerald-700 dark:text-emerald-300 mt-2">
               <Shield className="h-3 w-3 mr-1" />
               {user?.role} Account
             </div>
@@ -133,7 +133,7 @@ const Profile = () => {
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/30 shadow-xl">
+      <div className="bg-gray-50/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl border border-gray-200/20 dark:border-gray-700/30 shadow-xl">
         <div className="flex overflow-x-auto p-1">
           {tabs.map((tab) => (
             <button
@@ -141,8 +141,8 @@ const Profile = () => {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center space-x-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-300/30 dark:border-blue-600/30 text-blue-700 dark:text-blue-300 shadow-lg'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/30 dark:hover:bg-gray-800/30 hover:backdrop-blur-md'
+                  ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-300/30 dark:border-emerald-600/30 text-emerald-700 dark:text-emerald-300 shadow-lg'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100/30 dark:hover:bg-gray-800/30 hover:backdrop-blur-md'
               }`}
             >
               <tab.icon className="h-4 w-4" />
@@ -155,16 +155,16 @@ const Profile = () => {
       {/* Tab Content */}
       <div className="space-y-6">
         {activeTab === 'profile' && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Personal Information
             </h3>
             
             {isSuperAdmin && (
-              <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="mb-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
                 <div className="flex items-center">
-                  <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
-                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <Shield className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mr-2" />
+                  <p className="text-sm text-emerald-800 dark:text-emerald-200">
                     Super Admin profile cannot be modified for security reasons.
                   </p>
                 </div>
@@ -188,7 +188,7 @@ const Profile = () => {
                       className={`block w-full pl-10 pr-3 py-3 border rounded-lg text-sm transition-colors duration-200 ${
                         profileErrors.firstName
                           ? 'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900/20'
-                          : `border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 ${isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`
+                          : `border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:border-emerald-500 dark:focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 ${isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`
                       }`}
                       placeholder="First name"
                     />
@@ -216,7 +216,7 @@ const Profile = () => {
                       className={`block w-full pl-10 pr-3 py-3 border rounded-lg text-sm transition-colors duration-200 ${
                         profileErrors.lastName
                           ? 'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900/20'
-                          : `border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 ${isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`
+                          : `border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:border-emerald-500 dark:focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 ${isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`
                       }`}
                       placeholder="Last name"
                     />
@@ -262,7 +262,7 @@ const Profile = () => {
                 <button
                   type="submit"
                   disabled={isLoading || isSuperAdmin}
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {isLoading ? 'Saving...' : 'Save Changes'}
@@ -279,10 +279,10 @@ const Profile = () => {
             </h3>
             
             {isSuperAdmin && (
-              <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="mb-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
                 <div className="flex items-center">
-                  <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
-                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <Shield className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mr-2" />
+                  <p className="text-sm text-emerald-800 dark:text-emerald-200">
                     Super Admin password cannot be changed through this interface for security reasons.
                   </p>
                 </div>
@@ -396,7 +396,7 @@ const Profile = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors duration-200"
+                  className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors duration-200"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {isLoading ? 'Changing...' : 'Change Password'}
@@ -417,7 +417,7 @@ const Profile = () => {
                   <h4 className="text-sm font-medium text-gray-900 dark:text-white">Theme</h4>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Choose your preferred theme</p>
                 </div>
-                <span className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg capitalize">
+                <span className="px-3 py-1 text-sm bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg capitalize">
                   {theme}
                 </span>
               </div>

@@ -8,7 +8,7 @@ const Layout = () => {
   const { sidebarCollapsed } = useSelector((state) => state.ui);
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-900 dark:to-indigo-950">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-100 dark:from-gray-900 dark:via-slate-900 dark:to-emerald-950">
       <Sidebar />
       <div 
         className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${

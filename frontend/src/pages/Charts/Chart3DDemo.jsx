@@ -210,7 +210,7 @@ const Chart3DDemo = () => {
                 </motion.div>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
-                  className="px-4 py-2 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg border border-blue-200 dark:border-blue-700"
+                  className="px-4 py-2 bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 rounded-lg border border-emerald-200 dark:border-emerald-700"
                 >
                   <div className="flex items-center space-x-2">
                     <Eye className="w-4 h-4" />
@@ -287,8 +287,8 @@ const Chart3DDemo = () => {
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-700/50 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                    <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  <div className="p-2 bg-emerald-100 dark:bg-emerald-900/20 rounded-lg">
+                    <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">Color Themes</h3>

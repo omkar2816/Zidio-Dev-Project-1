@@ -163,12 +163,12 @@ const NotificationPanel = ({ isOpen, onClose }) => {
         case 'performance_report':
         case 'analytics_report_ready':
         case 'analytics_data_ready':
-          return 'text-blue-500';
+          return 'text-emerald-500';
         case 'new_user_registration':
         case 'file_upload_activity':
         case 'welcome_user':
         case 'feature_announcement':
-          return 'text-purple-500';
+          return 'text-teal-500';
         case 'account_updated':
         case 'new_user_assigned':
         case 'user_support_request':
@@ -176,7 +176,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
           return 'text-indigo-500';
         // Tab-specific notification colors
         case 'dashboard_update':
-          return 'text-blue-600';
+          return 'text-emerald-600';
         case 'charts_template_added':
         case 'chart_generation_complete':
           return 'text-green-500';
@@ -195,7 +195,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
   const getPriorityBadge = (priority) => {
     const colors = {
       low: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-      medium: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+      medium: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300',
       high: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
       critical: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
     };
@@ -209,8 +209,8 @@ const NotificationPanel = ({ isOpen, onClose }) => {
 
   const getCategoryBadge = (category) => {
     const colors = {
-      admin: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-      system: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+      admin: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-300',
+      system: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300',
       user: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
       security: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
       analytics: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
@@ -386,7 +386,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
                 key={notification._id}
                 layout
                 className={`p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group ${
-                  !notification.isRead ? 'bg-blue-50 dark:bg-blue-900/10' : ''
+                  !notification.isRead ? 'bg-emerald-50 dark:bg-emerald-900/10' : ''
                 }`}
                 onClick={() => handleNotificationClick(notification)}
               >
@@ -417,7 +417,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
                           {getCategoryBadge(notification.category)}
                           {getPriorityBadge(notification.priority)}
                           {notification.actionUrl && (
-                            <span className="inline-flex items-center space-x-1 text-xs text-blue-600 dark:text-blue-400">
+                            <span className="inline-flex items-center space-x-1 text-xs text-emerald-600 dark:text-emerald-400">
                               <ExternalLink className="w-3 h-3" />
                               <span>View</span>
                             </span>
@@ -448,7 +448,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
                                 e.stopPropagation();
                                 markAsRead(notification._id);
                               }}
-                              className="p-1 rounded text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                              className="p-1 rounded text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400"
                               title="Ignore (mark as read and hide)"
                             >
                               <X className="w-4 h-4" />

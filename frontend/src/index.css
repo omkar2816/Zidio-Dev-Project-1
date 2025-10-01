@@ -17,19 +17,24 @@
   
   /* Custom scrollbar with emerald theme */
   ::-webkit-scrollbar {
-    @apply w-2;
+    @apply w-3;
   }
   
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100 dark:bg-gray-800;
+    @apply bg-gray-100 dark:bg-gray-800 rounded-full;
   }
   
   ::-webkit-scrollbar-thumb {
     @apply bg-emerald-400 hover:bg-emerald-500 rounded-full;
+    transition: background-color 0.2s ease;
   }
   
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-emerald-600;
+  }
+  
+  ::-webkit-scrollbar-thumb:active {
+    @apply bg-emerald-700;
   }
 }
 
@@ -69,7 +74,7 @@ html {
 /* Custom Scrollbar */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  scrollbar-color: rgba(16, 185, 129, 0.5) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -81,22 +86,70 @@ html {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.5);
+  background-color: rgba(16, 185, 129, 0.5);
   border-radius: 3px;
   transition: background-color 0.2s ease;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(156, 163, 175, 0.8);
+  background-color: rgba(5, 150, 105, 0.8);
 }
 
 /* Dark mode custom scrollbar */
 .dark .custom-scrollbar {
-  scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
+  scrollbar-color: rgba(52, 211, 153, 0.5) transparent;
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(75, 85, 99, 0.5);
+  background-color: rgba(52, 211, 153, 0.5);
+}
+
+/* Emerald themed scrollbar utility classes */
+.scrollbar-emerald {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 185, 129, 0.6) rgba(243, 244, 246, 0.2);
+}
+
+.scrollbar-emerald::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-emerald::-webkit-scrollbar-track {
+  background: rgba(243, 244, 246, 0.2);
+  border-radius: 4px;
+}
+
+.scrollbar-emerald::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.6), rgba(5, 150, 105, 0.8));
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.scrollbar-emerald::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.8), rgba(4, 120, 87, 0.9));
+  transform: scale(1.1);
+}
+
+.scrollbar-emerald::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Dark mode emerald scrollbar */
+.dark .scrollbar-emerald {
+  scrollbar-color: rgba(52, 211, 153, 0.6) rgba(31, 41, 55, 0.3);
+}
+
+.dark .scrollbar-emerald::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.3);
+}
+
+.dark .scrollbar-emerald::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.6), rgba(16, 185, 129, 0.8));
+}
+
+.dark .scrollbar-emerald::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.8), rgba(5, 150, 105, 0.9));
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {

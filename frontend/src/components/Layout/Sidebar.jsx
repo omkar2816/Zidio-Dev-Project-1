@@ -113,19 +113,19 @@ const Sidebar = () => {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-white/20 dark:border-gray-700/30 bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-sm">
+          <div className="flex items-center justify-between h-16 px-4 border-b border-white/20 dark:border-gray-700/30 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 backdrop-blur-sm">
             {!sidebarCollapsed && (
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-lg">
                   <BarChart3 className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
                   Excel Analytics
                 </span>
               </div>
             )}
             {sidebarCollapsed && (
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto shadow-lg">
+              <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center mx-auto shadow-lg">
                 <BarChart3 className="w-5 h-5 text-white" />
               </div>
             )}
@@ -144,7 +144,7 @@ const Sidebar = () => {
                   className={({ isActive }) =>
                     `flex items-center ${sidebarCollapsed ? 'justify-center px-0' : 'px-3'} py-3 text-sm font-medium rounded-xl transition-all duration-200 relative backdrop-blur-sm ${
                       isActive
-                        ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-300/30 dark:border-blue-600/30 text-blue-700 dark:text-blue-300 shadow-lg'
+                        ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-300/30 dark:border-emerald-600/30 text-emerald-700 dark:text-emerald-300 shadow-lg'
                         : 'text-gray-700 dark:text-gray-300 hover:bg-white/30 dark:hover:bg-gray-800/30 hover:text-gray-900 dark:hover:text-gray-100 hover:backdrop-blur-md hover:shadow-md'
                     }`
                   }
@@ -201,10 +201,10 @@ const Sidebar = () => {
           </nav>
 
           {/* Bottom section */}
-          <div className="p-4 border-t border-white/20 dark:border-gray-700/30 bg-gradient-to-r from-blue-500/5 to-purple-500/5 backdrop-blur-sm">
+          <div className="p-4 border-t border-white/20 dark:border-gray-700/30 bg-gradient-to-r from-emerald-500/5 to-teal-500/5 backdrop-blur-sm">
             {!sidebarCollapsed && (
               <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                <div className="font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <div className="font-medium bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
                   Excel Analytics Platform
                 </div>
                 <div className="text-gray-400 dark:text-gray-500 mt-1">

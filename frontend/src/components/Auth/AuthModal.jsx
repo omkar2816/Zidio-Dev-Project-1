@@ -115,7 +115,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialAdminMode = 
           onClick={() => setMode('login')}
           className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
             mode === 'login'
-              ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm'
+              ? 'bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
           }`}
         >
@@ -127,7 +127,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialAdminMode = 
           onClick={() => setMode('register')}
           className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
             mode === 'register'
-              ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm'
+              ? 'bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
           }`}
         >
@@ -149,7 +149,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialAdminMode = 
         <select
           value={selectedRole}
           onChange={(e) => setSelectedRole(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
         >
           <option value="user">User</option>
           {mode === 'login' && <option value="admin">Admin / Super Admin</option>}
@@ -162,9 +162,9 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialAdminMode = 
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3"
+          className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3"
         >
-          <p className="text-sm text-blue-700 dark:text-blue-300">
+          <p className="text-sm text-emerald-700 dark:text-emerald-300">
             <strong>Note:</strong> This requests regular admin access (user management only). 
             Super Admin approval is required. Only one Super Admin exists in the system.
           </p>
@@ -178,11 +178,11 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialAdminMode = 
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
+            className="p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg"
           >
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-blue-700 dark:text-blue-300 text-sm">
+                <p className="text-emerald-700 dark:text-emerald-300 text-sm">
                   <strong>Super Admin Credentials:</strong><br />
                   Email: superadmin@excel-analytics.local<br />
                   Password: SuperAdmin123!
@@ -198,7 +198,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialAdminMode = 
                     password: 'SuperAdmin123!'
                   });
                 }}
-                className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                className="text-xs px-2 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
               >
                 Auto-fill
               </motion.button>
@@ -217,7 +217,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialAdminMode = 
                   minLength: { value: 2, message: 'First name must be at least 2 characters' }
                 })}
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
                 placeholder="John"
               />
               {errors.firstName && (
@@ -235,7 +235,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialAdminMode = 
                   minLength: { value: 2, message: 'Last name must be at least 2 characters' }
                 })}
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
                 placeholder="Doe"
               />
               {errors.lastName && (
@@ -260,7 +260,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialAdminMode = 
                 }
               })}
               type="email"
-              className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
+              className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
               placeholder="john@example.com"
             />
           </div>
@@ -285,7 +285,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialAdminMode = 
                 } : undefined
               })}
               type={showPassword ? 'text' : 'password'}
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
               placeholder="••••••••"
             />
             <button
@@ -314,7 +314,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialAdminMode = 
                   validate: value => value === password || 'Passwords do not match'
                 })}
                 type={showPassword ? 'text' : 'password'}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
                 placeholder="••••••••"
               />
             </div>
@@ -335,7 +335,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialAdminMode = 
           whileTap={{ scale: 0.98 }}
           type="submit"
           disabled={isLoading}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-emerald-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
         >
           {isLoading ? (
             <div className="flex items-center justify-center">
@@ -354,7 +354,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialAdminMode = 
           {mode === 'login' ? "Don't have an account?" : "Already have an account?"}
           <button
             onClick={switchMode}
-            className="ml-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors"
+            className="ml-1 text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium transition-colors"
           >
             {mode === 'login' ? 'Sign up' : 'Sign in'}
           </button>
@@ -368,7 +368,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialAdminMode = 
               // You can add forgot password logic here
               console.log('Forgot password clicked');
             }}
-            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mt-2 block mx-auto transition-colors"
+            className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 mt-2 block mx-auto transition-colors"
           >
             Forgot your password?
           </button>

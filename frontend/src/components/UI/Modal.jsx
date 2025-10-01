@@ -97,11 +97,11 @@ const Modal = ({ isOpen, onClose, children, title }) => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative w-full max-w-sm sm:max-w-md lg:max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-h-[95vh] overflow-hidden flex flex-col modal-content"
+            className="relative w-full max-w-sm sm:max-w-md lg:max-w-lg bg-gray-50 dark:bg-gray-800 rounded-2xl shadow-2xl border border-emerald-200 dark:border-gray-700 max-h-[95vh] overflow-hidden flex flex-col modal-content"
             style={{ pointerEvents: 'auto' }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-emerald-200 dark:border-gray-700 flex-shrink-0">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white truncate pr-2">
                 {title}
               </h2>
@@ -109,7 +109,7 @@ const Modal = ({ isOpen, onClose, children, title }) => {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={onClose}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
+                className="p-2 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors rounded-lg hover:bg-emerald-50 dark:hover:bg-gray-700 flex-shrink-0"
               >
                 <X className="w-5 h-5" />
               </motion.button>
@@ -119,7 +119,7 @@ const Modal = ({ isOpen, onClose, children, title }) => {
             <div 
               ref={modalContentRef}
               className="flex-1 p-4 sm:p-6 overflow-y-auto overscroll-contain modal-scroll
-                         scrollbar-thin scrollbar-thumb-blue-500 hover:scrollbar-thumb-blue-600 
+                         scrollbar-thin scrollbar-thumb-emerald-500 hover:scrollbar-thumb-emerald-600 
                          scrollbar-track-gray-100 dark:scrollbar-track-gray-800
                          scroll-smooth"
               style={{

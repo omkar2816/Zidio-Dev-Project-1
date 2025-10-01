@@ -333,29 +333,29 @@ const Header = () => {
                   dispatch(toggleSidebar());
                 }
               }}
-              className="group relative p-2.5 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 hover:from-blue-50 hover:to-blue-100 dark:hover:from-blue-900/20 dark:hover:to-blue-800/20 border border-gray-200/60 dark:border-gray-600/60 hover:border-blue-300/60 dark:hover:border-blue-600/60 transition-all duration-300 shadow-sm hover:shadow-md"
+              className="group relative p-2.5 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 hover:from-emerald-50 hover:to-emerald-100 dark:hover:from-emerald-900/20 dark:hover:to-emerald-800/20 border border-gray-200/60 dark:border-gray-600/60 hover:border-emerald-300/60 dark:hover:border-emerald-600/60 transition-all duration-300 shadow-sm hover:shadow-md"
               aria-label="Toggle sidebar"
             >
               <div className="relative z-10">
                 {typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches ? (
-                  sidebarCollapsed ? <ChevronRight size={18} className="text-gray-600 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:scale-110 transition-all duration-200" /> : <ChevronLeft size={18} className="text-gray-600 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:scale-110 transition-all duration-200" />
+                  sidebarCollapsed ? <ChevronRight size={18} className="text-gray-600 dark:text-gray-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:scale-110 transition-all duration-200" /> : <ChevronLeft size={18} className="text-gray-600 dark:text-gray-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:scale-110 transition-all duration-200" />
                 ) : (
-                  sidebarOpen ? <X size={18} className="text-gray-600 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:scale-110 transition-all duration-200" /> : <Menu size={18} className="text-gray-600 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:scale-110 transition-all duration-200" />
+                  sidebarOpen ? <X size={18} className="text-gray-600 dark:text-gray-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:scale-110 transition-all duration-200" /> : <Menu size={18} className="text-gray-600 dark:text-gray-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:scale-110 transition-all duration-200" />
                 )}
               </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-400/0 to-purple-400/0 group-hover:from-blue-400/10 group-hover:to-purple-400/10 rounded-2xl transition-all duration-300"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/0 to-teal-400/0 group-hover:from-emerald-400/10 group-hover:to-teal-400/10 rounded-2xl transition-all duration-300"></div>
             </button>
 
             {/* Logo/Brand Section - Enhanced */}
             <div className="hidden sm:flex items-center space-x-3">
               <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/25">
                   <BarChart3 className="w-5 h-5 text-white" />
                 </div>
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full border-2 border-white dark:border-gray-900 animate-pulse"></div>
               </div>
               <div className="hidden lg:block">
-                <h1 className="text-lg font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent">
+                <h1 className="text-lg font-bold bg-gradient-to-r from-gray-900 via-emerald-800 to-teal-800 dark:from-white dark:via-emerald-200 dark:to-teal-200 bg-clip-text text-transparent">
                   Excel Analytics
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1">Professional Dashboard</p>
@@ -367,7 +367,7 @@ const Header = () => {
             <div className="relative" ref={searchDropdownRef}>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-                  <Search className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200" />
+                  <Search className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors duration-200" />
                 </div>
                 <input
                   ref={searchInputRef}
@@ -382,7 +382,7 @@ const Header = () => {
                       setShowSuggestions(true);
                     }
                   }}
-                  className="w-full h-12 pl-12 pr-12 bg-gray-50/80 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 rounded-2xl text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/60 transition-all duration-300 backdrop-blur-sm shadow-inner hover:shadow-md focus:shadow-lg group"
+                  className="w-full h-12 pl-12 pr-12 bg-gray-50/80 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 rounded-2xl text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/60 transition-all duration-300 backdrop-blur-sm shadow-inner hover:shadow-md focus:shadow-lg group"
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-4 space-x-2">
                   {searchQuery && (
@@ -438,14 +438,14 @@ const Header = () => {
                           key={`${item.type}-${item.title}-${index}`}
                           onClick={() => navigateToItem(item)}
                           className={`w-full px-4 py-3 text-left hover:bg-gray-50/80 dark:hover:bg-gray-700/50 border border-transparent hover:border-gray-200/50 dark:hover:border-gray-600/50 transition-all duration-200 rounded-xl ${
-                            selectedSuggestion === index ? 'bg-blue-50/80 dark:bg-blue-900/20 border-blue-200/50 dark:border-blue-700/50' : ''
+                            selectedSuggestion === index ? 'bg-emerald-50/80 dark:bg-emerald-900/20 border-emerald-200/50 dark:border-emerald-700/50' : ''
                           }`}
                         >
                           <div className="flex items-center space-x-4">
                             <div className={`p-2.5 rounded-xl ${
-                              item.type === 'page' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
-                              item.type === 'file' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
-                              item.type === 'chart' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' :
+                              item.type === 'page' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' :
+                              item.type === 'file' ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400' :
+                              item.type === 'chart' ? 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400' :
                               'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                             }`}>
                               <item.icon size={16} />
@@ -500,18 +500,18 @@ const Header = () => {
             <div className="relative">
               <button 
                 onClick={() => setNotificationPanelOpen(!notificationPanelOpen)}
-                className="group relative p-2.5 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 hover:from-blue-50 hover:to-blue-100 dark:hover:from-blue-900/20 dark:hover:to-blue-800/20 border border-gray-200/60 dark:border-gray-600/60 hover:border-blue-300/60 dark:hover:border-blue-600/60 transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-center"
+                className="group relative p-2.5 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 hover:from-emerald-50 hover:to-emerald-100 dark:hover:from-emerald-900/20 dark:hover:to-emerald-800/20 border border-gray-200/60 dark:border-gray-600/60 hover:border-emerald-300/60 dark:hover:border-emerald-600/60 transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-center"
                 title="View notifications"
               >
                 <div className="relative z-10 flex items-center justify-center">
-                  <Bell size={18} className="text-gray-600 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:scale-110 transition-all duration-200" />
+                  <Bell size={18} className="text-gray-600 dark:text-gray-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:scale-110 transition-all duration-200" />
                   {unreadCount > 0 && (
                     <span className="absolute -top-2 -right-2 h-5 w-5 bg-gradient-to-r from-red-500 via-red-600 to-pink-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-red-500/30 animate-pulse border-2 border-white dark:border-gray-800">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-400/0 to-purple-400/0 group-hover:from-blue-400/10 group-hover:to-purple-400/10 rounded-2xl transition-all duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/0 to-teal-400/0 group-hover:from-emerald-400/10 group-hover:to-teal-400/10 rounded-2xl transition-all duration-300"></div>
               </button>
             </div>
 
@@ -519,23 +519,23 @@ const Header = () => {
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="group flex items-center space-x-3 p-2 pr-4 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 hover:from-blue-50 hover:to-blue-100 dark:hover:from-blue-900/20 dark:hover:to-blue-800/20 border border-gray-200/60 dark:border-gray-600/60 hover:border-blue-300/60 dark:hover:border-blue-600/60 transition-all duration-300 shadow-sm hover:shadow-md"
+                className="group flex items-center space-x-3 p-2 pr-4 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 hover:from-emerald-50 hover:to-emerald-100 dark:hover:from-emerald-900/20 dark:hover:to-emerald-800/20 border border-gray-200/60 dark:border-gray-600/60 hover:border-emerald-300/60 dark:hover:border-emerald-600/60 transition-all duration-300 shadow-sm hover:shadow-md"
               >
                 <div className="relative">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform duration-200">
+                  <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform duration-200">
                     {user?.firstName?.charAt(0) || 'U'}
                   </div>
                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full border-2 border-white dark:border-gray-800"></div>
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[120px] lg:max-w-[150px] group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[120px] lg:max-w-[150px] group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
                     {user?.firstName} {user?.lastName}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px] lg:max-w-[150px]">
                     {isAdmin ? (isSuperAdmin ? 'Super Admin' : 'Admin') : 'User'}
                   </p>
                 </div>
-                <div className="hidden sm:block text-gray-400 group-hover:text-blue-500 transition-colors">
+                <div className="hidden sm:block text-gray-400 group-hover:text-emerald-500 transition-colors">
                   <ArrowRight size={14} className="transform group-hover:translate-x-0.5 transition-transform" />
                 </div>
               </button>
@@ -544,9 +544,9 @@ const Header = () => {
               {userMenuOpen && (
                 <div className="absolute right-0 mt-3 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/60 dark:border-gray-700/60 z-50 overflow-hidden">
                   {/* User Info Header */}
-                  <div className="px-6 py-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b border-gray-200/50 dark:border-gray-700/50">
+                  <div className="px-6 py-4 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-b border-gray-200/50 dark:border-gray-700/50">
                     <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                         {user?.firstName?.charAt(0) || 'U'}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -557,7 +557,7 @@ const Header = () => {
                           {user?.email}
                         </p>
                         {isAdmin && (
-                          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-sm">
+                          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg shadow-sm">
                             {isSuperAdmin ? 'Super Admin' : 'Admin'}
                           </span>
                         )}
@@ -569,14 +569,14 @@ const Header = () => {
                   <div className="py-2">
                     <Link
                       to="/profile"
-                      className="flex items-center space-x-3 px-6 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50/80 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300 transition-all duration-200 group"
+                      className="flex items-center space-x-3 px-6 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-emerald-50/80 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all duration-200 group"
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl group-hover:bg-blue-200 dark:group-hover:bg-blue-800/40 transition-colors">
-                        <User size={16} className="text-blue-600 dark:text-blue-400" />
+                      <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl group-hover:bg-emerald-200 dark:group-hover:bg-emerald-800/40 transition-colors">
+                        <User size={16} className="text-emerald-600 dark:text-emerald-400" />
                       </div>
                       <span className="font-medium">My Profile</span>
-                      <ArrowRight size={14} className="ml-auto text-gray-400 group-hover:text-blue-500 transform group-hover:translate-x-0.5 transition-all" />
+                      <ArrowRight size={14} className="ml-auto text-gray-400 group-hover:text-emerald-500 transform group-hover:translate-x-0.5 transition-all" />
                     </Link>
                     
                     <Link

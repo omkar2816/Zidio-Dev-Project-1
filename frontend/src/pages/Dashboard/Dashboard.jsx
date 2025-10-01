@@ -130,16 +130,16 @@ const Dashboard = () => {
 
   const colorStyles = {
     blue: {
-      bg: 'bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-900/20',
-      text: 'text-blue-600 dark:text-blue-400',
+      bg: 'bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20',
+      text: 'text-emerald-600 dark:text-emerald-400',
     },
     green: {
       bg: 'bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20',
       text: 'text-green-600 dark:text-green-400',
     },
     purple: {
-      bg: 'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20',
-      text: 'text-purple-600 dark:text-purple-400',
+      bg: 'bg-gradient-to-r from-teal-100 to-cyan-100 dark:from-teal-900/20 dark:to-cyan-900/20',
+      text: 'text-teal-600 dark:text-teal-400',
     },
     orange: {
       bg: 'bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/20 dark:to-red-900/20',
@@ -460,7 +460,7 @@ const Dashboard = () => {
     <div className="space-y-6">
       {/* Welcome Section */}
       {!isAdmin && !isSuperAdmin && (
-        <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl p-6 text-white shadow-2xl">
+        <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 rounded-2xl p-6 text-white shadow-2xl">
           {/* Glassmorphism overlay */}
           <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
           <div className="relative z-10">
@@ -469,13 +469,13 @@ const Dashboard = () => {
                 <h1 className="text-2xl font-bold">
                   Welcome back, {user?.firstName || 'User'}!
                 </h1>
-                <p className="text-blue-100 mt-1">
+                <p className="text-emerald-100 mt-1">
                   Ready to analyze some data today?
                 </p>
               </div>
               <div className="hidden md:block">
                 <div className="text-right">
-                  <p className="text-blue-100 text-sm">Current Time</p>
+                  <p className="text-emerald-100 text-sm">Current Time</p>
                   <p className="text-xl font-semibold">
                     {new Date().toLocaleTimeString()}
                   </p>
@@ -497,7 +497,7 @@ const Dashboard = () => {
         <div className="lg:col-span-1 xl:col-span-2">
           <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/30 shadow-xl">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
-              <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg mr-2"></div>
+              <div className="w-6 h-6 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg mr-2"></div>
               Quick Actions
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -506,14 +506,14 @@ const Dashboard = () => {
                   key={index}
                   to={action.href}
                   aria-label={action.title}
-                  className="group relative overflow-hidden p-4 bg-white/50 dark:bg-gray-900/50 border border-white/30 dark:border-gray-700/30 rounded-xl hover:bg-white/70 dark:hover:bg-gray-900/70 transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 backdrop-blur-sm hover:shadow-lg hover:scale-105"
+                  className="group relative overflow-hidden p-4 bg-white/50 dark:bg-gray-900/50 border border-white/30 dark:border-gray-700/30 rounded-xl hover:bg-white/70 dark:hover:bg-gray-900/70 transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 backdrop-blur-sm hover:shadow-lg hover:scale-105"
                 >
                   <div className="relative z-10 flex items-center space-x-3 min-w-0">
                     <div className={`p-3 rounded-xl ${colorStyles[action.color].bg} flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                       <action.icon className={`h-5 w-5 ${colorStyles[action.color].text} flex-shrink-0`} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                      <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
                         {action.title}
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
@@ -522,7 +522,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                   {/* Hover effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </Link>
               ))}
             </div>

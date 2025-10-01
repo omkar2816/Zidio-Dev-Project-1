@@ -907,18 +907,18 @@ const ChartViewerModal = ({ isOpen, onClose, chart }) => {
             className={`relative w-full ${is3DChart ? 'max-w-6xl max-h-[90vh]' : 'max-w-4xl max-h-[70vh]'} ${
               isDarkMode 
                 ? 'bg-gray-800 border-gray-600' 
-                : 'bg-white border-blue-200'
-            } rounded-2xl shadow-2xl border-2 flex flex-col`}
+                : 'bg-gray-50 border-emerald-200'
+            } rounded-2xl shadow-2xl border-2 flex flex-col =border border-transparent px-2 py-1 rounded-lg`}
             style={{ pointerEvents: 'auto' }}
           >
             {/* Header */}
             <div className={`flex items-center justify-between p-6 border-b ${
               isDarkMode 
                 ? 'border-gray-700 bg-gradient-to-r from-gray-800 to-gray-700' 
-                : 'border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50'
+                : 'border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 border'
             } flex-shrink-0`}>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="flex items-center gap-3 border border-transparent hover:border-emerald-400 px-2 py-1 rounded-lg">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse border border-green-500"></div>
                 <h2 className={`text-xl font-semibold ${
                   isDarkMode ? 'text-gray-100' : 'text-gray-900'
                 } truncate pr-2`}>
@@ -965,7 +965,6 @@ const ChartViewerModal = ({ isOpen, onClose, chart }) => {
                     <div className={`text-xs ${
                       isDarkMode ? 'text-gray-400' : 'text-gray-400'
                     } text-center mb-2`}>
-                      📜 <strong>Scroll with mouse wheel</strong> to view all content
                     </div>
             {/* Chart Info */}
         <div className={`${
@@ -1015,7 +1014,7 @@ const ChartViewerModal = ({ isOpen, onClose, chart }) => {
               onClick={() => setRenderingEngine('echarts')}
               className={`px-3 py-1 text-sm rounded ${
                 renderingEngine === 'echarts'
-                  ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white')
+                  ? (isDarkMode ? 'bg-emerald-600 text-white' : 'bg-emerald-500 text-white')
                   : (isDarkMode 
                       ? 'bg-gray-600 text-gray-200 hover:bg-gray-500' 
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -1028,7 +1027,7 @@ const ChartViewerModal = ({ isOpen, onClose, chart }) => {
               onClick={() => setRenderingEngine('plotly')}
               className={`px-3 py-1 text-sm rounded ${
                 renderingEngine === 'plotly'
-                  ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white')
+                  ? (isDarkMode ? 'bg-emerald-600 text-white' : 'bg-emerald-500 text-white')
                   : (isDarkMode 
                       ? 'bg-gray-600 text-gray-200 hover:bg-gray-500' 
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -1060,7 +1059,7 @@ const ChartViewerModal = ({ isOpen, onClose, chart }) => {
               <div className={`absolute right-0 mt-1 w-48 ${
                 isDarkMode 
                   ? 'bg-gray-800 border-gray-600' 
-                  : 'bg-white border-gray-200'
+                  : 'bg-gray-50 border-gray-200'
               } border rounded-md shadow-lg z-10`}>
                 <div className="py-1">
                   <div className={`px-3 py-2 text-xs font-medium ${
@@ -1081,7 +1080,7 @@ const ChartViewerModal = ({ isOpen, onClose, chart }) => {
                         : 'text-gray-700 hover:bg-gray-100'
                     } flex items-center gap-2`}
                   >
-                    <span className="w-4 h-4 bg-blue-100 text-blue-600 rounded text-xs flex items-center justify-center font-bold">PNG</span>
+                    <span className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded text-xs flex items-center justify-center font-bold">PNG</span>
                     PNG Image (Recommended)
                   </button>
                   <button
@@ -1125,7 +1124,7 @@ const ChartViewerModal = ({ isOpen, onClose, chart }) => {
                           : 'text-gray-700 hover:bg-gray-100'
                       } flex items-center gap-2`}
                     >
-                      <span className="w-4 h-4 bg-purple-100 text-purple-600 rounded text-xs flex items-center justify-center font-bold">GIF</span>
+                      <span className="w-4 h-4 bg-teal-100 text-teal-600 rounded text-xs flex items-center justify-center font-bold">GIF</span>
                       GIF Animation (3D Only)
                     </button>
                   )}
@@ -1139,7 +1138,7 @@ const ChartViewerModal = ({ isOpen, onClose, chart }) => {
         {/* Chart Display */}
         <div 
           className={`${
-            isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+            isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'
           } border rounded-lg p-4 ${is3DChart ? 'overflow-visible' : 'overflow-x-auto'}`} 
           style={{ 
             height: is3DChart ? '600px' : '350px',
@@ -1243,7 +1242,7 @@ const ChartViewerModal = ({ isOpen, onClose, chart }) => {
               } mt-2`}>
                 <span>Start (Point 1)</span>
                 <div className={`${
-                  isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                  isDarkMode ? 'text-emerald-400' : 'text-emerald-600'
                 } font-medium`}>
                   📍 Current View: {scrollPosition + 1} - {Math.min(scrollPosition + maxPointsPerView, chartData.length)}
                 </div>
@@ -1260,8 +1259,8 @@ const ChartViewerModal = ({ isOpen, onClose, chart }) => {
                 }}
                 className={`px-3 py-1 text-xs ${
                   isDarkMode 
-                    ? 'bg-blue-800 text-blue-200 hover:bg-blue-700' 
-                    : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                    ? 'bg-emerald-800 text-emerald-200 hover:bg-emerald-700' 
+                    : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'
                 } rounded-md transition-colors`}
               >
                 ⏪ Start
@@ -1274,8 +1273,8 @@ const ChartViewerModal = ({ isOpen, onClose, chart }) => {
                 }}
                 className={`px-3 py-1 text-xs ${
                   isDarkMode 
-                    ? 'bg-blue-800 text-blue-200 hover:bg-blue-700' 
-                    : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                    ? 'bg-emerald-800 text-emerald-200 hover:bg-emerald-700' 
+                    : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'
                 } rounded-md transition-colors`}
               >
                 End ⏩

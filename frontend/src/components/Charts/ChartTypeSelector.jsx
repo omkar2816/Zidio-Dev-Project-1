@@ -367,7 +367,7 @@ const ChartTypeSelector = ({
       <div className={`mb-6 p-4 rounded-lg border-l-4 ${
         is3DMode 
           ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-400 dark:border-emerald-500' 
-          : 'bg-blue-50 dark:bg-blue-900/10 border-blue-400 dark:border-blue-500'
+          : 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-400 dark:border-emerald-500'
       }`}>
         <div className="flex items-center space-x-2 mb-2">
           {is3DMode ? (
@@ -379,8 +379,8 @@ const ChartTypeSelector = ({
             </>
           ) : (
             <>
-              <BarChart3 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+              <BarChart3 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
                 2D Chart Mode
               </span>
             </>
@@ -389,7 +389,7 @@ const ChartTypeSelector = ({
         <p className={`text-sm ${
           is3DMode 
             ? 'text-emerald-700 dark:text-emerald-300' 
-            : 'text-blue-700 dark:text-blue-300'
+            : 'text-emerald-700 dark:text-emerald-300'
         }`}>
           {is3DMode 
             ? 'Create immersive 3D visualizations with interactive controls, smooth animations, and WebGL acceleration. Perfect for exploring multi-dimensional relationships in your data.'
@@ -413,7 +413,7 @@ const ChartTypeSelector = ({
               className={`relative p-4 rounded-lg border-2 transition-all duration-200 ${
                 isSelected
                   ? chartType.is3D
-                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                    ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20'
                     : 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
                   : available
                   ? 'border-gray-200 dark:border-gray-600 hover:border-emerald-300 dark:hover:border-emerald-500'
@@ -431,18 +431,18 @@ const ChartTypeSelector = ({
                 <Icon className={`h-8 w-8 mx-auto mb-2 ${
                   isSelected
                     ? chartType.is3D
-                      ? 'text-purple-600'
+                      ? 'text-teal-600'
                       : 'text-emerald-600'
                     : available
                     ? chartType.is3D
-                      ? 'text-purple-500'
+                      ? 'text-teal-500'
                       : 'text-gray-600 dark:text-gray-400'
                     : 'text-gray-400'
                 }`} />
                 <div className={`text-sm font-medium ${
                   isSelected
                     ? chartType.is3D
-                      ? 'text-purple-700 dark:text-purple-300'
+                      ? 'text-teal-700 dark:text-teal-300'
                       : 'text-emerald-700 dark:text-emerald-300'
                     : available
                     ? 'text-gray-900 dark:text-white'
@@ -453,7 +453,7 @@ const ChartTypeSelector = ({
                 <div className={`text-xs mt-1 ${
                   isSelected
                     ? chartType.is3D
-                      ? 'text-purple-600 dark:text-purple-400'
+                      ? 'text-teal-600 dark:text-teal-400'
                       : 'text-emerald-600 dark:text-emerald-400'
                     : available
                     ? 'text-gray-500 dark:text-gray-400'
@@ -465,8 +465,8 @@ const ChartTypeSelector = ({
                 {/* WebGL indicator for 3D charts */}
                 {chartType.is3D && available && (
                   <div className="flex items-center justify-center space-x-1 mt-1">
-                    <Move3D className="w-3 h-3 text-purple-500" />
-                    <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                    <Move3D className="w-3 h-3 text-teal-500" />
+                    <span className="text-xs text-teal-600 dark:text-teal-400 font-medium">
                       WebGL
                     </span>
                   </div>

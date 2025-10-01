@@ -72,7 +72,7 @@ const Admin = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
             {isSuperAdmin ? 'Super Admin Panel' : 'Admin Panel'}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -83,9 +83,9 @@ const Admin = () => {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 px-4 py-2 rounded-xl border border-blue-200/50 dark:border-blue-700/30 backdrop-blur-sm">
-            <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+          <div className="flex items-center space-x-2 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 px-4 py-2 rounded-xl border border-emerald-200/50 dark:border-emerald-700/30 backdrop-blur-sm">
+            <Shield className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-sm text-emerald-700 dark:text-emerald-300 font-medium">
               {isSuperAdmin ? 'Super Admin' : 'Admin'}
             </span>
           </div>
@@ -102,7 +102,7 @@ const Admin = () => {
             onClick={() => setActiveTab('dashboard')}
             className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
               activeTab === 'dashboard'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
             }`}
           >
@@ -113,7 +113,7 @@ const Admin = () => {
             onClick={() => setActiveTab('users')}
             className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
               activeTab === 'users'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
             }`}
           >
@@ -130,7 +130,7 @@ const Admin = () => {
               onClick={() => setActiveTab('requests')}
               className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
                 activeTab === 'requests'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
