@@ -740,15 +740,15 @@ const ChartSidebar = ({
         </div>
 
         {/* Auto-Configuration Section */}
-        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+        <div className="mb-6 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Wand2 className="text-blue-600" size={18} />
+              <Wand2 className="text-emerald-600" size={18} />
               <h4 className="font-semibold text-gray-800">Smart Configuration</h4>
             </div>
             <button
               onClick={applyAutoConfig}
-              className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+              className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors text-sm shadow-lg hover:shadow-xl"
             >
               <RefreshCw size={14} />
               Auto-Configure
@@ -791,12 +791,12 @@ const ChartSidebar = ({
                 {smartRecommendations.slice(0, 3).map((rec, index) => (
                   <div 
                     key={index}
-                    className="p-2 bg-white rounded border hover:border-blue-300 cursor-pointer transition-colors"
+                    className="p-2 bg-white rounded border hover:border-emerald-300 cursor-pointer transition-colors"
                     onClick={() => applySmartRecommendation(rec)}
                   >
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium capitalize">{rec.type}</span>
-                      <span className="text-xs text-blue-600">{Math.round(rec.confidence * 100)}%</span>
+                      <span className="text-xs text-emerald-600">{Math.round(rec.confidence * 100)}%</span>
                     </div>
                     <div className="text-xs text-gray-500 mt-1">{rec.reason}</div>
                   </div>
@@ -808,7 +808,11 @@ const ChartSidebar = ({
 
         {/* 2D/3D Mode Toggle */}
         <div className="mb-6">
-          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-50 to-purple-50 dark:from-emerald-900/20 dark:to-purple-900/20 rounded-lg border border-emerald-200 dark:border-emerald-700">
+          <div className={`flex items-center justify-between p-4 rounded-lg border transition-all duration-300 ${
+            is3DMode 
+              ? 'bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/20 border-purple-200 dark:border-purple-700'
+              : 'bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200 dark:border-emerald-700'
+          }`}>
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
                 {is3DMode ? <Move3D className="w-5 h-5 text-purple-600" /> : <BarChart3 className="w-5 h-5 text-emerald-600" />}
@@ -824,7 +828,7 @@ const ChartSidebar = ({
             </div>
             <button
               onClick={handle3DModeToggle}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
                 is3DMode 
                   ? 'bg-purple-600' 
                   : 'bg-emerald-600'
@@ -895,7 +899,7 @@ const ChartSidebar = ({
                           : 'border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-600'
                       } ${
                         isRecommended 
-                          ? 'ring-2 ring-blue-300 border-blue-400' 
+                          ? 'ring-2 ring-emerald-300 border-emerald-400' 
                           : ''
                       }`}
                     >

@@ -649,7 +649,7 @@ const Analytics = () => {
                     <div className="flex items-center space-x-2">
               <button
                         onClick={() => setShowAllRows(!showAllRows)}
-                        className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                        className="px-3 py-1 text-sm bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors"
               >
                         {showAllRows ? 'Show Less' : `Show All (${editableData.length})`}
               </button>
@@ -662,7 +662,7 @@ const Analytics = () => {
                       </button>
                       <button
                         onClick={exportEditedData}
-                        className="px-3 py-1 text-sm bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-800 transition-colors flex items-center"
+                        className="px-3 py-1 text-sm bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors flex items-center"
               >
                         <Download className="w-3 h-3 mr-1" />
                         Export
@@ -833,9 +833,9 @@ const Analytics = () => {
       {/* Dataset Performance Summary - Moved below chart container and sidebar */}
       {analysisData && analysisData.statistics && (
         <div className="mb-8">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6">
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl p-6">
             <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-4">
-              <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
+              <TrendingUp className="w-5 h-5 mr-2 text-emerald-600" />
               Dataset Performance Summary
             </h4>
             

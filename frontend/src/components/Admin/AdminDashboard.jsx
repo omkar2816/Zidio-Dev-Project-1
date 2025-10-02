@@ -85,10 +85,10 @@ const AdminDashboard = () => {
     const dates = [...new Set(data.map(item => item._id.date))].sort();
     const activityTypes = [...new Set(data.map(item => item._id.activityType))];
 
-    // Modern color palette
+    // Emerald-focused modern color palette
     const modernColors = [
-      '#667eea', '#764ba2', '#f093fb', '#f5576c', 
-      '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'
+      '#10b981', '#14b8a6', '#06b6d4', '#f59e0b', 
+      '#059669', '#0891b2', '#34d399', '#22d3ee'
     ];
 
     const series = activityTypes.map((type, index) => ({
@@ -266,12 +266,12 @@ const AdminDashboard = () => {
             type: 'linear',
             x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: '#3b82f6' },
-              { offset: 1, color: '#1d4ed8' }
+              { offset: 0, color: '#10b981' },
+              { offset: 1, color: '#059669' }
             ]
           },
           borderRadius: [4, 4, 0, 0],
-          shadowColor: 'rgba(59, 130, 246, 0.3)',
+          shadowColor: 'rgba(16, 185, 129, 0.3)',
           shadowBlur: 10,
           shadowOffsetY: 5
         },
@@ -281,8 +281,8 @@ const AdminDashboard = () => {
               type: 'linear',
               x: 0, y: 0, x2: 0, y2: 1,
               colorStops: [
-                { offset: 0, color: '#60a5fa' },
-                { offset: 1, color: '#3b82f6' }
+                { offset: 0, color: '#34d399' },
+                { offset: 1, color: '#10b981' }
               ]
             }
           }
@@ -308,14 +308,14 @@ const AdminDashboard = () => {
   const getActivityDistributionChart = () => {
     if (!dashboardData?.chartData?.activityDistribution) return {};
 
-    // Specified color palette
+    // Emerald-focused color palette
     const specifiedColors = [
       '#10B981', // Emerald Green
-      '#3B82F6', // Sky Blue
+      '#14B8A6', // Teal
+      '#06B6D4', // Cyan
       '#F59E0B', // Amber/Orange
       '#EF4444', // Rose Red
-      '#8B5CF6', // Violet Purple
-      '#14B8A6', // Teal
+      '#059669', // Emerald 600
       '#64748B'  // Slate Gray
     ];
 
@@ -415,10 +415,10 @@ const AdminDashboard = () => {
   const getUserRoleChart = () => {
     if (!dashboardData?.chartData?.userRoleDistribution) return {};
 
-    // Define specified colors for different roles
+    // Define emerald-focused colors for different roles
     const roleColors = {
       'SUPERADMIN': '#EF4444', // Rose Red
-      'ADMIN': '#3B82F6',      // Sky Blue
+      'ADMIN': '#14B8A6',      // Teal (emerald family)
       'USER': '#10B981',       // Emerald Green
       'GUEST': '#64748B',      // Slate Gray
       'MODERATOR': '#F59E0B'   // Amber/Orange
@@ -432,8 +432,8 @@ const AdminDashboard = () => {
           type: 'linear',
           x: 0, y: 0, x2: 0, y2: 1,
           colorStops: [
-            { offset: 0, color: roleColors[item._id.toUpperCase()] || '#8B5CF6' },
-            { offset: 1, color: adjustBrightness(roleColors[item._id.toUpperCase()] || '#8B5CF6', -0.2) }
+            { offset: 0, color: roleColors[item._id.toUpperCase()] || '#14B8A6' },
+            { offset: 1, color: adjustBrightness(roleColors[item._id.toUpperCase()] || '#14B8A6', -0.2) }
           ]
         },
         borderRadius: 4,
@@ -607,18 +607,18 @@ const AdminDashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="space-y-8 p-6 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border rounded-2xl">
+      <div className="space-y-8 p-6 backdrop-blur-sm border border-emerald-200 dark:border-emerald-700 rounded-2xl">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
               {isSuperAdmin ? 'Super Admin Dashboard' : 'Admin Dashboard'}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-3 text-lg">
@@ -634,7 +634,7 @@ const AdminDashboard = () => {
           <select
             value={filters.dateRange}
             onChange={(e) => handleFiltersChange({ ...filters, dateRange: e.target.value })}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            className="px-4 py-2 border border-emerald-300 dark:border-emerald-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
           >
             <option value="7">Last 7 days</option>
             <option value="30">Last 30 days</option>
@@ -645,7 +645,7 @@ const AdminDashboard = () => {
           <button
             onClick={refreshData}
             disabled={refreshing}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 shadow-lg hover:shadow-xl transition-all duration-200"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -676,8 +676,8 @@ const AdminDashboard = () => {
                 </p>
               </div>
             </div>
-            <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/20">
-              <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <div className="p-3 rounded-lg bg-emerald-100 dark:bg-emerald-900/20">
+              <Users className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
             </div>
           </div>
         </div>
@@ -710,14 +710,14 @@ const AdminDashboard = () => {
                 {dashboardData?.chartData?.chartGenerationTrend?.reduce((sum, item) => sum + item.count, 0) || 0}
               </p>
               <div className="flex items-center mt-1">
-                <BarChart3 className="w-4 h-4 text-blue-500 mr-1" />
-                <p className="text-xs text-blue-600 dark:text-blue-400">
+                <BarChart3 className="w-4 h-4 text-emerald-500 mr-1" />
+                <p className="text-xs text-emerald-600 dark:text-emerald-400">
                   Last {filters.dateRange} days
                 </p>
               </div>
             </div>
-            <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-900/20">
-              <BarChart3 className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            <div className="p-3 rounded-lg bg-teal-100 dark:bg-teal-900/20">
+              <BarChart3 className="h-6 w-6 text-teal-600 dark:text-teal-400" />
             </div>
           </div>
         </div>
@@ -747,8 +747,8 @@ const AdminDashboard = () => {
             Admin Activity Metrics
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                 {dashboardData.metrics.adminActivityStats.userCreation}
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">Users Created</p>
@@ -853,9 +853,9 @@ const AdminDashboard = () => {
                   </td>
                   <td className="py-3 px-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      user.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300' :
+                      user.role === 'admin' ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/20 dark:text-teal-300' :
                       user.role === 'superadmin' ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300' :
-                      'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
+                      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'
                     }`}>
                       {user.role?.toUpperCase()}
                     </span>

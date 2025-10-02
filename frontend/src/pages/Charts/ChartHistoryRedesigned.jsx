@@ -398,11 +398,11 @@ const ChartHistoryRedesigned = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-100 dark:from-gray-900 dark:via-slate-900 dark:to-emerald-950 border rounded-lg">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-100 dark:from-gray-900 dark:via-slate-900 dark:to-emerald-950 border rounded-2xl">
       {/* Glassmorphism background */}
       <div className="absolute inset-0 bg-gray-100/20 dark:bg-black/20 backdrop-blur-sm"></div>
       
-      <div className="relative z-10 border rounded-lg">
+      <div className="relative z-10 border rounded-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" ref={containerRef}>
           
           {/* Modern Header with Real-time Status */}

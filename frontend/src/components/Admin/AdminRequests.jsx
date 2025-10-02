@@ -109,9 +109,9 @@ const AdminRequests = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'pending':
-        return <Clock className="w-5 h-5 text-yellow-500" />;
+        return <Clock className="w-5 h-5 text-amber-500" />;
       case 'approved':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
+        return <CheckCircle className="w-5 h-5 text-emerald-500" />;
       case 'rejected':
         return <XCircle className="w-5 h-5 text-red-500" />;
       default:
@@ -122,9 +122,9 @@ const AdminRequests = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400';
       case 'approved':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400';
       case 'rejected':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       default:
@@ -145,7 +145,7 @@ const AdminRequests = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
       </div>
     );
   }
@@ -162,9 +162,9 @@ const AdminRequests = () => {
             Manage admin access requests from users
           </p>
         </div>
-        <div className="flex items-center space-x-2 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg">
-          <Users className="w-5 h-5 text-blue-600" />
-          <span className="text-blue-600 dark:text-blue-400 font-medium">
+        <div className="flex items-center space-x-2 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-lg border border-emerald-200/50 dark:border-emerald-700/30">
+          <Users className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <span className="text-emerald-600 dark:text-emerald-400 font-medium">
             {requests.filter(r => r.status === 'pending').length} Pending
           </span>
         </div>
@@ -193,7 +193,7 @@ const AdminRequests = () => {
             >
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
                     <User className="w-6 h-6 text-white" />
                   </div>
                   
@@ -226,7 +226,7 @@ const AdminRequests = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => handleApprove(request._id)}
-                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center space-x-1"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center space-x-1 shadow-lg hover:shadow-xl"
                       >
                         <CheckCircle className="w-4 h-4" />
                         <span className="hidden sm:inline">Approve</span>
@@ -239,7 +239,7 @@ const AdminRequests = () => {
                           setSelectedRequest(request);
                           setShowRejectModal(true);
                         }}
-                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center space-x-1"
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center space-x-1 shadow-lg hover:shadow-xl"
                       >
                         <XCircle className="w-4 h-4" />
                         <span className="hidden sm:inline">Reject</span>
