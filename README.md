@@ -505,7 +505,7 @@ For support and questions:
 - **Three.js** - 3D graphics
 - **Tailwind CSS** - Styling framework
 
----
+----
 
 **Made by the Omkar Korgaonkar**
 
