@@ -39,30 +39,30 @@ const Stats = () => {
     {
       icon: FileSpreadsheet,
       number: loading ? "Loading..." : `${(platformStats?.filesProcessed || 0).toLocaleString()}+`,
-      label: "Files Processed",
-      description: "Excel and CSV files analyzed with perfect accuracy",
-      color: "blue"
+      label: "Files Analyzed",
+      description: "Data files processed with advanced analytics algorithms",
+      color: "emerald"
     },
     {
       icon: Users,
       number: loading ? "Loading..." : `${(platformStats?.activeUsers || 0).toLocaleString()}+`,
-      label: "Active Users",
-      description: "Data analysts and business professionals worldwide",
-      color: "green"
+      label: "Data Scientists",
+      description: "Analytics professionals and business intelligence experts",
+      color: "teal"
     },
     {
       icon: TrendingUp,
       number: loading ? "Loading..." : `${platformStats?.uptime || 99.9}%`,
-      label: "Uptime Guarantee",
-      description: "Reliable platform you can count on 24/7",
-      color: "purple"
+      label: "Analytics Accuracy",
+      description: "Precise insights you can trust for critical decisions",
+      color: "green"
     },
     {
       icon: Clock,
       number: loading ? "Loading..." : `< ${platformStats?.avgProcessingTime || 2}s`,
       label: "Processing Speed",
-      description: "Lightning-fast data analysis and chart generation",
-      color: "orange"
+      description: "Real-time data analysis and visualization generation",
+      color: "emerald"
     }
   ];
 
@@ -97,19 +97,21 @@ const Stats = () => {
 
   const getColorClasses = (color) => {
     const colors = {
-      blue: "from-blue-400 to-blue-600",
+      emerald: "from-emerald-400 to-emerald-600",
+      teal: "from-teal-400 to-teal-600",
       green: "from-green-400 to-green-600",
-      purple: "from-purple-400 to-purple-600",
-      orange: "from-orange-400 to-orange-600"
+      blue: "from-emerald-400 to-emerald-600",
+      purple: "from-teal-400 to-teal-600",
+      orange: "from-green-400 to-green-600"
     };
-    return colors[color] || colors.blue;
+    return colors[color] || colors.emerald;
   };
 
   return (
     <section id="stats" className="py-20 bg-white dark:bg-gray-900 relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10"></div>
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-300/20 to-purple-300/20 rounded-full blur-3xl"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 dark:from-emerald-900/10 dark:to-teal-900/10"></div>
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-emerald-300/20 to-teal-300/20 rounded-full blur-3xl"></div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
@@ -121,20 +123,20 @@ const Stats = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Trusted by Thousands of
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-              {" "}Data Professionals
+            Trusted by Leading
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
+              {" "}Analytics Teams
             </span>
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            Join the growing community of analysts who rely on our platform for their daily data insights and business intelligence.
+            Join thousands of data professionals who rely on our advanced analytics platform for critical business insights and intelligence.
           </p>
           
           {/* Live Data Indicator */}
           {!loading && platformStats && (
-            <div className="inline-flex items-center mt-4 px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-              Live Data • Updated {new Date(platformStats.lastUpdated).toLocaleTimeString()}
+            <div className="inline-flex items-center mt-4 px-3 py-1 bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded-full text-sm font-medium">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
+              Live Analytics • Updated {new Date(platformStats.lastUpdated).toLocaleTimeString()}
             </div>
           )}
         </motion.div>
@@ -200,7 +202,7 @@ const Stats = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-2xl p-8 border border-gray-200 dark:border-gray-700"
+          className="bg-gradient-to-r from-gray-50 to-emerald-50 dark:from-gray-800 dark:to-emerald-900/20 rounded-2xl p-8 border border-gray-200 dark:border-gray-700"
         >
           <div className="text-center mb-8">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -221,7 +223,7 @@ const Stats = () => {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="flex items-center space-x-3"
               >
-                <div className="flex-shrink-0 w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+                <div className="flex-shrink-0 w-2 h-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
                 <span className="text-gray-700 dark:text-gray-300 font-medium">
                   {achievement}
                 </span>
@@ -257,7 +259,7 @@ const Stats = () => {
                   whileHover={{ scale: 1.05 }}
                   className="text-center"
                 >
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-3">
+                  <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-3">
                     {item.step}
                   </div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-1">{item.title}</h4>

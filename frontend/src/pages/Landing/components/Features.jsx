@@ -23,60 +23,57 @@ const Features = () => {
   const features = [
     {
       icon: FileSpreadsheet,
-      title: "Excel & CSV Upload",
-      description: "Drag & drop Excel files (.xlsx, .xls) or CSV files with multi-sheet support and real-time validation.",
-      color: "blue"
+      title: "Data Import & Processing",
+      description: "Import Excel, CSV, and JSON files with intelligent data type detection and automated cleaning pipelines.",
+      color: "emerald"
     },
     {
       icon: BarChart3,
-      title: "Advanced Analytics",
-      description: "Get comprehensive statistics, correlation analysis, and categorical data insights with automated processing.",
-      color: "purple"
+      title: "Advanced Analytics Engine",
+      description: "Comprehensive statistical analysis, correlation matrices, and predictive modeling with machine learning algorithms.",
+      color: "teal"
     },
     {
       icon: PieChart,
-      title: "2D & 3D Charts",
-      description: "Beautiful visualizations with 50+ chart types including interactive 3D charts and animations.",
+      title: "Interactive Visualizations",
+      description: "Dynamic 2D & 3D charts, real-time dashboards, and customizable data visualization widgets.",
       color: "green"
     },
     {
       icon: Shield,
-      title: "Secure & Protected",
-      description: "Enterprise-grade security with JWT authentication, encrypted data storage, and role-based access control.",
-      color: "red"
+      title: "Enterprise Security",
+      description: "End-to-end encryption, role-based access control, and SOC 2 compliant data protection standards.",
+      color: "emerald"
     },
     {
       icon: Users,
-      title: "User Management",
-      description: "Complete admin panel with user roles, activity monitoring, and system configuration options.",
-      color: "yellow"
+      title: "Collaborative Analytics",
+      description: "Team workspaces, shared dashboards, real-time collaboration, and centralized project management.",
+      color: "teal"
     },
     {
       icon: Zap,
       title: "Real-time Processing",
-      description: "Lightning-fast data processing with live updates, notifications, and instant chart generation.",
-      color: "indigo"
-    }
-  ];
-
-  const mainFeatures = [
+      description: "Stream processing, live data updates, automated alerts, and instant notification systems.",
+      color: "green"
+    },
     {
       icon: Database,
-      title: "Smart Data Processing",
-      description: "Advanced algorithms automatically detect data patterns, handle missing values, and optimize your datasets for analysis.",
-      image: "/api/placeholder/400/300"
+      title: "Intelligent Data Processing",
+      description: "AI-powered data cleaning, pattern recognition, anomaly detection, and automated feature engineering for better insights.",
+      color: "emerald"
     },
     {
       icon: TrendingUp,
-      title: "Predictive Analytics",
-      description: "AI-powered insights that forecast trends, identify outliers, and provide actionable recommendations for your business.",
-      image: "/api/placeholder/400/300"
+      title: "Predictive Analytics Suite",
+      description: "Advanced forecasting models, trend analysis, risk assessment, and business intelligence reporting tools.",
+      color: "teal"
     },
     {
       icon: Globe,
-      title: "Collaborative Platform",
-      description: "Share dashboards, collaborate in real-time, and export results in multiple formats for team collaboration.",
-      image: "/api/placeholder/400/300"
+      title: "Analytics Collaboration Hub",
+      description: "Real-time team collaboration, dashboard sharing, version control, and integrated communication tools.",
+      color: "green"
     }
   ];
 
@@ -103,18 +100,20 @@ const Features = () => {
 
   const getColorClasses = (color) => {
     const colors = {
-      blue: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
-      purple: "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
+      emerald: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400",
+      teal: "bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400",
       green: "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400",
+      blue: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400",
+      purple: "bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400",
       red: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
       yellow: "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400",
-      indigo: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400"
+      indigo: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
     };
-    return colors[color] || colors.blue;
+    return colors[color] || colors.emerald;
   };
 
   return (
-    <section id="features" className="py-20 bg-gray-50 dark:bg-gray-800">
+    <section id="features" className="py-20 bg-gradient-to-br from-emerald-50 via-teal-50/50 to-green-50/30 dark:from-gray-900 dark:via-emerald-900/10 dark:to-teal-900/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
@@ -125,13 +124,13 @@ const Features = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Powerful Features for
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+            Advanced Analytics Platform for
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
               {" "}Data Excellence
             </span>
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            Everything you need to transform your Excel data into actionable insights with modern tools and enterprise security.
+            Comprehensive data analytics suite with enterprise-grade security, real-time collaboration, and intelligent insights.
           </p>
         </motion.div>
 
@@ -141,7 +140,7 @@ const Features = () => {
           variants={containerVariants}
           initial="hidden"
           animate={gridInView ? "visible" : "hidden"}
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20"
+          className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
           {features.map((feature, index) => (
             <motion.div
@@ -162,59 +161,6 @@ const Features = () => {
             </motion.div>
           ))}
         </motion.div>
-
-        {/* Main Features */}
-        <div className="space-y-20">
-          {mainFeatures.map((feature, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className={`grid lg:grid-cols-2 gap-12 items-center ${
-                index % 2 === 1 ? 'lg:grid-flow-col-dense' : ''
-              }`}
-            >
-              <div className={index % 2 === 1 ? 'lg:col-start-2' : ''}>
-                <div className="inline-flex p-3 rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 mb-4">
-                  <feature.icon className="w-6 h-6" />
-                </div>
-                <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                  {feature.title}
-                </h3>
-                <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-                  {feature.description}
-                </p>
-                <ul className="space-y-2">
-                  {[
-                    "Automated data cleaning and preparation",
-                    "Real-time processing and validation",
-                    "Export results in multiple formats"
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center text-gray-600 dark:text-gray-300">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div className={index % 2 === 1 ? 'lg:col-start-1' : ''}>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.3 }}
-                  className="relative"
-                >
-                  <div className="bg-gradient-to-br from-blue-400 to-purple-600 rounded-2xl p-8 h-80 flex items-center justify-center">
-                    <feature.icon className="w-24 h-24 text-white opacity-50" />
-                  </div>
-                  <div className="absolute inset-0 bg-black/10 rounded-2xl"></div>
-                </motion.div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
       </div>
     </section>
   );

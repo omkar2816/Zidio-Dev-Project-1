@@ -92,7 +92,7 @@ const Testimonials = () => {
   };
 
   return (
-    <section id="testimonials" className="py-20 bg-gray-50 dark:bg-gray-800 overflow-hidden">
+    <section id="testimonials" className="py-20 bg-gradient-to-br from-teal-50 via-emerald-50/40 to-green-50/30 dark:from-gray-800 dark:via-emerald-900/10 dark:to-gray-900 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
@@ -103,13 +103,13 @@ const Testimonials = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Loved by Data Professionals
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+            Loved by Analytics Professionals
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
               {" "}Worldwide
             </span>
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            Don't just take our word for it. Here's what our customers have to say about their experience with our platform.
+            Trusted by data scientists, analysts, and business intelligence experts who rely on our platform for critical insights.
           </p>
           
           {/* Rating Summary */}
@@ -146,7 +146,7 @@ const Testimonials = () => {
               className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 relative"
             >
               {/* Quote Icon */}
-              <Quote className="absolute top-4 right-4 w-6 h-6 text-blue-200 dark:text-blue-800" />
+              <Quote className="absolute top-4 right-4 w-6 h-6 text-emerald-200 dark:text-emerald-800" />
               
               {/* Stars */}
               <div className="flex space-x-1 mb-4">
@@ -174,7 +174,7 @@ const Testimonials = () => {
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {testimonial.role}
                   </p>
-                  <p className="text-sm text-blue-600 dark:text-blue-400">
+                  <p className="text-sm text-emerald-600 dark:text-emerald-400">
                     {testimonial.company}
                   </p>
                 </div>
@@ -191,13 +191,13 @@ const Testimonials = () => {
           transition={{ duration: 0.8 }}
           className="text-center mt-16"
         >
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-8 text-white">
             <h3 className="text-2xl font-bold mb-4">
-              Join Thousands of Satisfied Users
+              Join Leading Analytics Teams
             </h3>
-            <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
-              Experience the power of advanced data analytics and beautiful visualizations. 
-              Start your free trial today and see why professionals choose our platform.
+            <p className="text-emerald-100 mb-6 max-w-2xl mx-auto">
+              Experience the power of advanced data analytics and intelligent business insights. 
+              Start your free trial today and discover why data professionals choose our platform.
             </p>
             
             {/* Trust Indicators */}
@@ -206,19 +206,19 @@ const Testimonials = () => {
                 <div className="text-2xl font-bold">
                   {platformStats ? `${platformStats.uptime}%` : '99.9%'}
                 </div>
-                <div className="text-blue-200 text-sm">Uptime</div>
+                <div className="text-emerald-200 text-sm">Uptime</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">24/7</div>
-                <div className="text-blue-200 text-sm">Support</div>
+                <div className="text-emerald-200 text-sm">Support</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">SOC 2</div>
-                <div className="text-blue-200 text-sm">Compliant</div>
+                <div className="text-emerald-200 text-sm">Compliant</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">GDPR</div>
-                <div className="text-blue-200 text-sm">Ready</div>
+                <div className="text-emerald-200 text-sm">Ready</div>
               </div>
             </div>
           </div>

@@ -175,23 +175,23 @@ const ChartGuide = () => {
   const currentSteps = activeTab === '2d' ? steps2D : steps3D;
 
   const chartTypes2D = [
-    { name: "Bar Chart", icon: <BarChart3 className="w-5 h-5" />, color: "bg-blue-500" },
-    { name: "Line Chart", icon: <LineChart className="w-5 h-5" />, color: "bg-green-500" },
-    { name: "Pie Chart", icon: <PieChart className="w-5 h-5" />, color: "bg-purple-500" },
-    { name: "Area Chart", icon: <TrendingUp className="w-5 h-5" />, color: "bg-orange-500" }
+    { name: "Bar Chart", icon: <BarChart3 className="w-5 h-5" />, color: "bg-emerald-500" },
+    { name: "Line Chart", icon: <LineChart className="w-5 h-5" />, color: "bg-teal-500" },
+    { name: "Pie Chart", icon: <PieChart className="w-5 h-5" />, color: "bg-green-500" },
+    { name: "Area Chart", icon: <TrendingUp className="w-5 h-5" />, color: "bg-emerald-600" }
   ];
 
   const chartTypes3D = [
     { name: "3D Scatter", icon: <Move3D className="w-5 h-5" />, color: "bg-emerald-500" },
-    { name: "3D Bars", icon: <BarChart3 className="w-5 h-5" />, color: "bg-cyan-500" },
-    { name: "3D Surface", icon: <Layers className="w-5 h-5" />, color: "bg-indigo-500" },
-    { name: "3D Mesh", icon: <Zap className="w-5 h-5" />, color: "bg-pink-500" }
+    { name: "3D Bars", icon: <BarChart3 className="w-5 h-5" />, color: "bg-teal-500" },
+    { name: "3D Surface", icon: <Layers className="w-5 h-5" />, color: "bg-green-500" },
+    { name: "3D Mesh", icon: <Zap className="w-5 h-5" />, color: "bg-emerald-600" }
   ];
 
   const currentChartTypes = activeTab === '2d' ? chartTypes2D : chartTypes3D;
 
   return (
-    <section id="chart-guide" className="py-20 bg-gray-50 dark:bg-gray-800">
+    <section id="chart-guide" className="py-20 bg-gradient-to-br from-gray-50 via-emerald-50/30 to-teal-50/20 dark:from-gray-800 dark:via-gray-900/80 dark:to-emerald-900/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
@@ -217,13 +217,13 @@ const ChartGuide = () => {
           viewport={{ once: true }}
           className="flex justify-center mb-12"
         >
-          <div className="bg-white dark:bg-gray-700 rounded-lg p-2 shadow-lg">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-2 shadow-lg border border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setActiveTab('2d')}
               className={`px-6 py-3 rounded-md font-medium transition-all duration-300 ${
                 activeTab === '2d'
-                  ? 'bg-blue-600 text-white shadow-lg'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                  ? 'bg-emerald-600 text-white shadow-lg'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400'
               }`}
             >
               <BarChart3 className="w-5 h-5 inline-block mr-2" />
@@ -262,7 +262,7 @@ const ChartGuide = () => {
                 whileInView={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="bg-white dark:bg-gray-700 rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-300 text-center"
+                className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-300 text-center border border-gray-200 dark:border-gray-700"
               >
                 <div className={`${chart.color} rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center text-white`}>
                   {chart.icon}
@@ -283,7 +283,7 @@ const ChartGuide = () => {
             viewport={{ once: true }}
             className="lg:col-span-1"
           >
-            <div className="bg-white dark:bg-gray-700 rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
                 {activeTab === '2d' ? '2D Chart' : '3D Chart'} Process
               </h3>
@@ -296,14 +296,14 @@ const ChartGuide = () => {
                     whileTap={{ scale: 0.98 }}
                     className={`w-full text-left p-4 rounded-lg transition-all duration-300 ${
                       activeStep === index
-                        ? `${activeTab === '2d' ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600' : 'bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-600'}`
+                        ? `${activeTab === '2d' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-600' : 'bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-600'}`
                         : 'hover:bg-gray-50 dark:hover:bg-gray-600'
                     }`}
                   >
                     <div className="flex items-center space-x-3">
                       <div className={`p-2 rounded-lg ${
                         activeStep === index
-                          ? `${activeTab === '2d' ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white'}`
+                          ? `${activeTab === '2d' ? 'bg-emerald-600 text-white' : 'bg-emerald-600 text-white'}`
                           : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
                       }`}>
                         {step.icon}
@@ -314,7 +314,7 @@ const ChartGuide = () => {
                         </div>
                         <div className={`text-sm ${
                           activeStep === index 
-                            ? `${activeTab === '2d' ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`
+                            ? `${activeTab === '2d' ? 'text-emerald-600 dark:text-emerald-400' : 'text-emerald-600 dark:text-emerald-400'}`
                             : 'text-gray-600 dark:text-gray-400'
                         }`}>
                           {step.title}
@@ -342,11 +342,11 @@ const ChartGuide = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white dark:bg-gray-700 rounded-lg shadow-lg p-8"
+                className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 border border-gray-200 dark:border-gray-700"
               >
                 <div className="flex items-center space-x-4 mb-6">
                   <div className={`p-3 rounded-lg ${
-                    activeTab === '2d' ? 'bg-blue-600' : 'bg-emerald-600'
+                    activeTab === '2d' ? 'bg-emerald-600' : 'bg-emerald-600'
                   } text-white`}>
                     {currentSteps[activeStep].icon}
                   </div>
@@ -370,7 +370,7 @@ const ChartGuide = () => {
                       className="flex items-start space-x-3"
                     >
                       <CheckCircle className={`w-5 h-5 mt-0.5 ${
-                        activeTab === '2d' ? 'text-blue-600' : 'text-emerald-600'
+                        activeTab === '2d' ? 'text-emerald-600' : 'text-emerald-600'
                       }`} />
                       <span className="text-gray-700 dark:text-gray-300">{detail}</span>
                     </motion.div>
@@ -379,12 +379,12 @@ const ChartGuide = () => {
 
                 <div className={`p-4 rounded-lg ${
                   activeTab === '2d' 
-                    ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-600' 
+                    ? 'bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-600' 
                     : 'bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-600'
                 }`}>
                   <div className="flex items-center space-x-2 mb-2">
                     <div className={`w-2 h-2 rounded-full ${
-                      activeTab === '2d' ? 'bg-blue-600' : 'bg-emerald-600'
+                      activeTab === '2d' ? 'bg-emerald-600' : 'bg-emerald-600'
                     }`}></div>
                     <span className="font-medium text-gray-900 dark:text-white">Pro Tip</span>
                   </div>
@@ -408,7 +408,7 @@ const ChartGuide = () => {
                     disabled={activeStep === currentSteps.length - 1}
                     className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       activeTab === '2d' 
-                        ? 'bg-blue-600 hover:bg-blue-700' 
+                        ? 'bg-emerald-600 hover:bg-emerald-700' 
                         : 'bg-emerald-600 hover:bg-emerald-700'
                     }`}
                   >
@@ -436,7 +436,7 @@ const ChartGuide = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+              className="bg-emerald-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center space-x-2"
             >
               <Play className="w-5 h-5" />
               <span>Start with 2D Charts</span>
@@ -444,7 +444,7 @@ const ChartGuide = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-emerald-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center space-x-2"
+              className="bg-purple-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2"
             >
               <Move3D className="w-5 h-5" />
               <span>Try 3D Visualizations</span>

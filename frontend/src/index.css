@@ -10,31 +10,142 @@
     @apply border-gray-200 dark:border-gray-700;
   }
   
+  /* CSS Custom Properties for Theme-aware Scrollbar */
+  :root {
+    --scrollbar-track: rgb(243 244 246);
+    --scrollbar-thumb-start: #10b981;
+    --scrollbar-thumb-middle: #059669;
+    --scrollbar-thumb-end: #047857;
+    --scrollbar-thumb-hover-start: #059669;
+    --scrollbar-thumb-hover-middle: #047857;
+    --scrollbar-thumb-hover-end: #065f46;
+    --scrollbar-shadow: rgba(16, 185, 129, 0.3);
+    --scrollbar-shadow-hover: rgba(16, 185, 129, 0.5);
+  }
+  
+  .dark {
+    --scrollbar-track: rgb(31 41 55);
+    --scrollbar-thumb-start: #34d399;
+    --scrollbar-thumb-middle: #10b981;
+    --scrollbar-thumb-end: #059669;
+    --scrollbar-thumb-hover-start: #10b981;
+    --scrollbar-thumb-hover-middle: #059669;
+    --scrollbar-thumb-hover-end: #047857;
+    --scrollbar-shadow: rgba(52, 211, 153, 0.4);
+    --scrollbar-shadow-hover: rgba(52, 211, 153, 0.6);
+  }
+  
   body {
     @apply bg-gradient-to-br from-gray-50 via-emerald-50/20 to-teal-50/20 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 text-gray-900 dark:text-gray-100;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   
-  /* Custom scrollbar with emerald theme */
+  /* Modern Custom scrollbar with theme-aware colors */
   ::-webkit-scrollbar {
-    @apply w-3;
+    @apply w-4;
   }
   
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100 dark:bg-gray-800 rounded-full;
+    background: var(--scrollbar-track);
+    border-radius: 10px;
+    margin: 4px;
+    position: relative;
+    transition: background-color 0.3s ease;
   }
   
   ::-webkit-scrollbar-thumb {
-    @apply bg-emerald-400 hover:bg-emerald-500 rounded-full;
-    transition: background-color 0.2s ease;
+    background: linear-gradient(135deg, var(--scrollbar-thumb-start), var(--scrollbar-thumb-middle), var(--scrollbar-thumb-end));
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    box-shadow: 0 2px 6px var(--scrollbar-shadow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-emerald-600;
+    background: linear-gradient(135deg, var(--scrollbar-thumb-hover-start), var(--scrollbar-thumb-hover-middle), var(--scrollbar-thumb-hover-end));
+    box-shadow: 0 4px 12px var(--scrollbar-shadow-hover);
+    transform: scale(1.05);
   }
   
   ::-webkit-scrollbar-thumb:active {
-    @apply bg-emerald-700;
+    background: linear-gradient(135deg, var(--scrollbar-thumb-hover-middle), var(--scrollbar-thumb-hover-end), #064e3b);
+    box-shadow: 0 2px 4px var(--scrollbar-shadow-hover);
+    transform: scale(0.95);
+  }
+  
+  /* Theme-aware Scrollbar Arrow Buttons */
+  ::-webkit-scrollbar-button:vertical:start:decrement {
+    background: linear-gradient(135deg, var(--scrollbar-thumb-start), var(--scrollbar-thumb-middle));
+    border-radius: 6px 6px 0 0;
+    height: 20px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 24 24'%3E%3Cpath d='M7 14l5-5 5 5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 12px;
+    transition: all 0.3s ease;
+  }
+  
+  ::-webkit-scrollbar-button:vertical:end:increment {
+    background: linear-gradient(135deg, var(--scrollbar-thumb-start), var(--scrollbar-thumb-middle));
+    border-radius: 0 0 6px 6px;
+    height: 20px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 12px;
+    transition: all 0.3s ease;
+  }
+  
+  ::-webkit-scrollbar-button:vertical:start:decrement:hover,
+  ::-webkit-scrollbar-button:vertical:end:increment:hover {
+    background: linear-gradient(135deg, var(--scrollbar-thumb-hover-start), var(--scrollbar-thumb-hover-middle));
+    box-shadow: 0 2px 8px var(--scrollbar-shadow);
+  }
+  
+  ::-webkit-scrollbar-button:vertical:start:decrement:active,
+  ::-webkit-scrollbar-button:vertical:end:increment:active {
+    background: linear-gradient(135deg, var(--scrollbar-thumb-hover-middle), var(--scrollbar-thumb-hover-end));
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  
+  /* Scrollbar Track Animation */
+  ::-webkit-scrollbar-track:hover {
+    background: var(--scrollbar-track);
+    opacity: 0.8;
+  }
+  
+  /* Smooth scrolling enhancement */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Custom scrollbar for Firefox and other browsers */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb-middle) var(--scrollbar-track);
+  }
+  
+  /* Enhanced scrollbar animations */
+  @keyframes scrollbar-fade-in {
+    from {
+      opacity: 0;
+      transform: scaleY(0.8);
+    }
+    to {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+  }
+  
+  ::-webkit-scrollbar-thumb,
+  ::-webkit-scrollbar-button {
+    animation: scrollbar-fade-in 0.3s ease-out;
   }
 }
 
@@ -104,51 +215,96 @@ html {
   background-color: rgba(52, 211, 153, 0.5);
 }
 
-/* Emerald themed scrollbar utility classes */
+/* Enhanced Emerald themed scrollbar utility classes */
 .scrollbar-emerald {
   scrollbar-width: thin;
-  scrollbar-color: rgba(16, 185, 129, 0.6) rgba(243, 244, 246, 0.2);
+  scrollbar-color: rgba(16, 185, 129, 0.7) rgba(243, 244, 246, 0.1);
 }
 
 .scrollbar-emerald::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 12px;
+  height: 12px;
 }
 
 .scrollbar-emerald::-webkit-scrollbar-track {
-  background: rgba(243, 244, 246, 0.2);
-  border-radius: 4px;
+  background: rgba(243, 244, 246, 0.1);
+  border-radius: 8px;
+  margin: 2px;
 }
 
 .scrollbar-emerald::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.6), rgba(5, 150, 105, 0.8));
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.7), rgba(5, 150, 105, 0.9), rgba(4, 120, 87, 0.8));
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .scrollbar-emerald::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.8), rgba(4, 120, 87, 0.9));
-  transform: scale(1.1);
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.9), rgba(4, 120, 87, 0.95), rgba(6, 95, 70, 0.9));
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.5);
+  transform: scale(1.08);
 }
 
 .scrollbar-emerald::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-/* Dark mode emerald scrollbar */
+/* Dark mode enhanced emerald scrollbar */
 .dark .scrollbar-emerald {
-  scrollbar-color: rgba(52, 211, 153, 0.6) rgba(31, 41, 55, 0.3);
+  scrollbar-color: rgba(52, 211, 153, 0.7) rgba(31, 41, 55, 0.2);
 }
 
 .dark .scrollbar-emerald::-webkit-scrollbar-track {
-  background: rgba(31, 41, 55, 0.3);
+  background: rgba(31, 41, 55, 0.2);
 }
 
 .dark .scrollbar-emerald::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, rgba(52, 211, 153, 0.6), rgba(16, 185, 129, 0.8));
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.7), rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.8));
+  box-shadow: 0 2px 8px rgba(52, 211, 153, 0.4);
 }
 
 .dark .scrollbar-emerald::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.95), rgba(4, 120, 87, 0.9));
+  box-shadow: 0 4px 16px rgba(52, 211, 153, 0.6);
+}
+
+/* Ultra-thin emerald scrollbar variant */
+.scrollbar-emerald-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 185, 129, 0.6) transparent;
+}
+
+.scrollbar-emerald-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-emerald-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-emerald-thin::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.6), rgba(5, 150, 105, 0.8));
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.scrollbar-emerald-thin::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.8), rgba(4, 120, 87, 0.9));
+  transform: scale(1.2);
+}
+
+.dark .scrollbar-emerald-thin {
+  scrollbar-color: rgba(52, 211, 153, 0.6) transparent;
+}
+
+.dark .scrollbar-emerald-thin::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.6), rgba(16, 185, 129, 0.8));
+}
+
+.dark .scrollbar-emerald-thin::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.8), rgba(5, 150, 105, 0.9));
 }
 

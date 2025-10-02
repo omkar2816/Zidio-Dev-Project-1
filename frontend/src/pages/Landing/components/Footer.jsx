@@ -55,7 +55,7 @@ const Footer = () => {
   return (
     <footer className="bg-gray-900 text-white relative overflow-hidden">
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-emerald-900/20 to-teal-900/20"></div>
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
@@ -69,7 +69,7 @@ const Footer = () => {
               transition={{ duration: 0.6 }}
             >
               <div className="flex items-center space-x-2 mb-4">
-                <BarChart3 className="h-8 w-8 text-blue-400" />
+                <BarChart3 className="h-8 w-8 text-emerald-400" />
                 <span className="text-2xl font-bold">Excel Analytics</span>
               </div>
               
@@ -81,15 +81,15 @@ const Footer = () => {
               {/* Contact Info */}
               <div className="space-y-3">
                 <div className="flex items-center text-gray-300">
-                  <Mail className="w-4 h-4 mr-3 text-blue-400" />
+                  <Mail className="w-4 h-4 mr-3 text-emerald-400" />
                   <span>support@excelanalytics.com</span>
                 </div>
                 <div className="flex items-center text-gray-300">
-                  <Phone className="w-4 h-4 mr-3 text-blue-400" />
+                  <Phone className="w-4 h-4 mr-3 text-emerald-400" />
                   <span>+1 (555) 123-4567</span>
                 </div>
                 <div className="flex items-center text-gray-300">
-                  <MapPin className="w-4 h-4 mr-3 text-blue-400" />
+                  <MapPin className="w-4 h-4 mr-3 text-emerald-400" />
                   <span>San Francisco, CA</span>
                 </div>
               </div>
@@ -113,7 +113,7 @@ const Footer = () => {
                   <li key={linkIndex}>
                     <a
                       href={link.href}
-                      className="text-gray-300 hover:text-blue-400 transition-colors duration-200"
+                      className="text-gray-300 hover:text-emerald-400 transition-colors duration-200"
                     >
                       {link.name}
                     </a>
@@ -144,12 +144,12 @@ const Footer = () => {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200"
+                className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors duration-200"
               >
                 Subscribe
               </motion.button>
@@ -185,7 +185,7 @@ const Footer = () => {
                   href={social.href}
                   whileHover={{ scale: 1.1, y: -2 }}
                   whileTap={{ scale: 0.95 }}
-                  className="p-2 bg-gray-800 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-gray-700 transition-all duration-200 flex items-center justify-center"
+                  className="p-2 bg-gray-800 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-gray-700 transition-all duration-200 flex items-center justify-center"
                   aria-label={social.label}
                 >
                   <social.icon className="w-5 h-5" />
@@ -197,7 +197,7 @@ const Footer = () => {
                 onClick={scrollToTop}
                 whileHover={{ scale: 1.1, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                className="p-2 bg-blue-600 rounded-lg text-white hover:bg-blue-700 transition-all duration-200 ml-4 flex items-center justify-center"
+                className="p-2 bg-emerald-600 rounded-lg text-white hover:bg-emerald-700 transition-all duration-200 ml-4 flex items-center justify-center"
                 aria-label="Scroll to top"
               >
                 <ArrowUp className="w-5 h-5" />
@@ -220,15 +220,15 @@ const Footer = () => {
               <span>SOC 2 Type II Certified</span>
             </div>
             <div className="flex items-center">
-              <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
+              <div className="w-2 h-2 bg-emerald-400 rounded-full mr-2"></div>
               <span>GDPR Compliant</span>
             </div>
             <div className="flex items-center">
-              <div className="w-2 h-2 bg-purple-400 rounded-full mr-2"></div>
+              <div className="w-2 h-2 bg-teal-400 rounded-full mr-2"></div>
               <span>ISO 27001 Certified</span>
             </div>
             <div className="flex items-center">
-              <div className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></div>
+              <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
               <span>99.9% Uptime SLA</span>
             </div>
           </div>

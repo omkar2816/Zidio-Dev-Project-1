@@ -25,7 +25,7 @@ import {
 
 import Modal from '../../components/UI/Modal';
 import AuthModal from '../../components/Auth/AuthModal';
-import { Hero, Features, ChartGuide, Stats, Testimonials, CTA, Footer } from './components';
+import { Hero, Features, ChartGuide, Stats, Testimonials, Footer } from './components';
 import { toggleTheme } from '../../store/slices/uiSlice';
 import { useLenisContext } from '../../components/LenisProvider';
 
@@ -103,13 +103,13 @@ const Landing = () => {
               </button>
               <button 
                 onClick={() => smoothScrollTo('stats')} 
-                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                className="text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
               >
                 Analytics
               </button>
               <button 
                 onClick={() => smoothScrollTo('testimonials')} 
-                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                className="text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
               >
                 Reviews
               </button>
@@ -117,7 +117,7 @@ const Landing = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => openAuthModal('login', true)}
-                className="text-xs px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+                className="text-xs px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
               >
                 Admin
               </motion.button>
@@ -128,7 +128,7 @@ const Landing = () => {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={handleThemeToggle}
-                className="p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center"
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center justify-center"
                 aria-label="Toggle theme"
               >
                 {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -137,7 +137,7 @@ const Landing = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => openAuthModal('login')}
-                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
               >
                 Sign In
               </motion.button>
@@ -145,7 +145,7 @@ const Landing = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => openAuthModal('register')}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors"
               >
                 Get Started
               </motion.button>
@@ -161,7 +161,6 @@ const Landing = () => {
         <ChartGuide />
         <Stats />
         <Testimonials />
-        <CTA onGetStarted={() => openAuthModal('register')} onSignIn={() => openAuthModal('login')} />
       </main>
 
       <Footer />
