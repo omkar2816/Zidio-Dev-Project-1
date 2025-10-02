@@ -19,7 +19,8 @@ import {
   Move3D,
   ToggleLeft,
   ToggleRight,
-  Radar
+  Radar,
+  Rocket
 } from 'lucide-react';
 
 const ChartSidebar = ({ 
@@ -1373,8 +1374,8 @@ const ChartSidebar = ({
                 <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex-1">
-                      <label className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                        🚀 Auto Extreme Performance Mode
+                      <label className="text-sm font-medium text-purple-700 dark:text-purple-300 flex items-center gap-1">
+                        <Rocket className="w-4 h-4" /> Auto Extreme Performance Mode
                       </label>
                       <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
                         Automatically optimizes rendering for large datasets without sampling

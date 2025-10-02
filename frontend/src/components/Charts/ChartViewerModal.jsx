@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Maximize2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { X, Download, Maximize2, ZoomIn, ZoomOut, RotateCcw, BarChart3 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import Plot from 'react-plotly.js';
 import Chart3DRenderer from './Chart3DRenderer';
@@ -145,7 +145,8 @@ const ChartViewerModal = ({ isOpen, onClose, chart }) => {
 
   useEffect(() => {
     if (isOpen && chart) {
-      toast.success(`📊 Opening chart: ${chart.chartTitle}`, {
+      toast.success(`Opening chart: ${chart.chartTitle}`, {
+        icon: <BarChart3 className="w-4 h-4" />,
         duration: 2000,
         style: {
           background: '#10b981',

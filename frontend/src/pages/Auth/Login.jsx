@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Mail, Lock, User, AlertCircle, ArrowRight, Shield, BarChart3, LogIn } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, AlertCircle, ArrowRight, Shield, BarChart3, LogIn, Rocket } from 'lucide-react';
 import { loginUser, adminLogin } from '../../store/slices/authSlice';
 import toast from 'react-hot-toast';
 
@@ -272,8 +272,8 @@ const Login = () => {
               </div>
               
               <div className="text-center p-3 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 rounded-xl border border-blue-200/30 dark:border-blue-700/20">
-                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                  🚀 Ready to start your analytics journey?
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-center gap-1">
+                  <Rocket className="w-4 h-4" /> Ready to start your analytics journey?
                 </p>
                 <Link
                   to="/register"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Zap, Database, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Clock, Zap, Database, CheckCircle, AlertTriangle, Rocket } from 'lucide-react';
 
 const PerformanceMonitor = ({ 
   responseTime, 
@@ -154,7 +154,9 @@ const PerformanceMonitor = ({
       {performanceMode && (
         <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
           <div className="text-xs text-gray-600 dark:text-gray-400">
-            🚀 Performance optimizations active:
+            <div className="flex items-center gap-1 mb-1">
+              <Rocket className="w-3 h-3" /> Performance optimizations active:
+            </div>
             <ul className="list-disc list-inside mt-1 space-y-0.5">
               <li>Smart data sampling enabled</li>
               <li>Virtual scrolling for large tables</li>

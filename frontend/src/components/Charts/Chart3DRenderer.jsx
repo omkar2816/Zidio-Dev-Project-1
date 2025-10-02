@@ -19,7 +19,21 @@ import {
   Maximize2,
   Edit3,
   Trash2,
-  Save
+  Save,
+  Search,
+  Target,
+  Waves,
+  Mountain,
+  Link,
+  Globe,
+  BarChart3,
+  Lightbulb,
+  RotateCw,
+  HardDrive,
+  Rocket,
+  Zap,
+  Flame,
+  Gem
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -97,11 +111,11 @@ const Chart3DRenderer = ({
   const getPerformanceOptimizations = () => {
     const dataLength = data.length;
     
-    console.log(`🚀 Chart3D Performance: Optimizing for ${dataLength} data points`);
+    console.log(`Chart3D Performance: Optimizing for ${dataLength} data points`);
     
     // Ultra performance for massive datasets (100k+)
     if (dataLength > 100000 || extremePerformanceMode || performanceLevel === 'ultra') {
-      console.log('⚡ Using ULTRA performance mode');
+      console.log('Using ULTRA performance mode');
       return {
         useWebGL: true,
         enableLargeDataOptimization: true,
@@ -121,7 +135,7 @@ const Chart3DRenderer = ({
     }
     // Extreme performance for very large datasets (50k-100k)
     else if (dataLength > 50000 || performanceLevel === 'extreme') {
-      console.log('🔥 Using EXTREME performance mode');
+      console.log('Using EXTREME performance mode');
       return {
         useWebGL: true,
         enableLargeDataOptimization: true,
@@ -141,7 +155,7 @@ const Chart3DRenderer = ({
     }
     // High performance for large datasets (10k-50k)
     else if (dataLength > 10000 || performanceLevel === 'optimized') {
-      console.log('⚡ Using HIGH performance mode');
+      console.log('Using HIGH performance mode');
       return {
         useWebGL: true,
         enableLargeDataOptimization: true,
@@ -161,7 +175,7 @@ const Chart3DRenderer = ({
     }
     // Standard performance for medium datasets (5k-10k)
     else if (dataLength > 5000) {
-      console.log('🎯 Using STANDARD performance mode');
+      console.log('Using STANDARD performance mode');
       return {
         useWebGL: dataLength > 7500,
         enableLargeDataOptimization: true,
@@ -181,7 +195,7 @@ const Chart3DRenderer = ({
     }
     
     // Default performance for small datasets (<5k)
-    console.log('💎 Using DEFAULT performance mode');
+    console.log('Using DEFAULT performance mode');
     return {
       useWebGL: false,
       enableLargeDataOptimization: false,
@@ -236,7 +250,7 @@ const Chart3DRenderer = ({
   const aggregateData = (rawData, threshold) => {
     if (rawData.length <= threshold) return rawData;
     
-    console.log(`📊 Aggregating ${rawData.length} points to improve performance`);
+    console.log(`Aggregating ${rawData.length} points to improve performance`);
     
     // Group similar data points and create aggregated points
     const aggregated = [];
@@ -300,7 +314,7 @@ const Chart3DRenderer = ({
       });
     });
     
-    console.log(`✅ Aggregated to ${aggregated.length} points (${((1 - aggregated.length / rawData.length) * 100).toFixed(1)}% reduction)`);
+    console.log(`Aggregated to ${aggregated.length} points (${((1 - aggregated.length / rawData.length) * 100).toFixed(1)}% reduction)`);
     return aggregated;
   };
 
@@ -309,7 +323,7 @@ const Chart3DRenderer = ({
     if (factor >= 1) return data;
     
     const targetSize = Math.floor(data.length * factor);
-    console.log(`🎯 Sampling ${data.length} points down to ${targetSize} points`);
+    console.log(`Sampling ${data.length} points down to ${targetSize} points`);
     
     // Use systematic sampling to maintain data distribution
     const step = data.length / targetSize;
@@ -322,7 +336,7 @@ const Chart3DRenderer = ({
       }
     }
     
-    console.log(`✅ Sampled to ${sampled.length} points`);
+    console.log(`Sampled to ${sampled.length} points`);
     return sampled;
   };
 
@@ -411,13 +425,13 @@ const Chart3DRenderer = ({
           hovertemplate: `<div style="background-color: ${isDarkMode ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)'}; border: 1px solid ${currentPalette.primary}; border-radius: 8px; padding: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); font-family: Inter, system-ui, sans-serif; max-width: 300px;">
             <div style="color: ${isDarkMode ? '#f9fafb' : '#374151'};">
               <div style="font-weight: 600; margin-bottom: 8px; color: ${currentPalette.primary};">
-                🔍 3D Scatter Point
+                3D Scatter Point
               </div>
               <div style="display: grid; gap: 4px; font-size: 12px;">
                 %{text}
               </div>
               <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}; font-size: 10px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'};">
-                🎯 3D coordinates in space
+                3D coordinates in space
               </div>
             </div>
           </div><extra></extra>`,
@@ -460,7 +474,7 @@ const Chart3DRenderer = ({
           hovertemplate: `<div style="background-color: ${isDarkMode ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)'}; border: 1px solid ${currentPalette.primary}; border-radius: 8px; padding: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); font-family: Inter, system-ui, sans-serif; max-width: 300px;">
             <div style="color: ${isDarkMode ? '#f9fafb' : '#374151'};">
               <div style="font-weight: 600; margin-bottom: 8px; color: ${currentPalette.primary};">
-                🌊 3D Surface Point
+                3D Surface Point
               </div>
               <div style="display: grid; gap: 4px;">
                 <div style="display: flex; justify-content: space-between;">
@@ -473,7 +487,7 @@ const Chart3DRenderer = ({
                 </div>
               </div>
               <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}; font-size: 10px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'};">
-                🏔️ Continuous surface visualization
+                Continuous surface visualization
               </div>
             </div>
           </div><extra></extra>`,
@@ -499,7 +513,7 @@ const Chart3DRenderer = ({
           hovertemplate: `<div style="background-color: ${isDarkMode ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)'}; border: 1px solid ${currentPalette.primary}; border-radius: 8px; padding: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); font-family: Inter, system-ui, sans-serif; max-width: 300px;">
             <div style="color: ${isDarkMode ? '#f9fafb' : '#374151'};">
               <div style="font-weight: 600; margin-bottom: 8px; color: ${currentPalette.primary};">
-                🔗 3D Mesh Point
+                3D Mesh Point
               </div>
               <div style="display: grid; gap: 4px;">
                 <div style="display: flex; justify-content: space-between;">
@@ -516,7 +530,7 @@ const Chart3DRenderer = ({
                 </div>
               </div>
               <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}; font-size: 10px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'};">
-                🌐 Interconnected 3D mesh structure
+                Interconnected 3D mesh structure
               </div>
             </div>
           </div><extra></extra>`,
@@ -589,7 +603,7 @@ const Chart3DRenderer = ({
             hovertemplate: `<div style="background-color: ${isDarkMode ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)'}; border: 1px solid ${currentPalette.primary}; border-radius: 8px; padding: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); font-family: Inter, system-ui, sans-serif; max-width: 300px;">
               <div style="color: ${isDarkMode ? '#f9fafb' : '#374151'};">
                 <div style="font-weight: 600; margin-bottom: 8px; color: ${currentPalette.primary};">
-                  📊 3D Bar Chart
+                  3D Bar Chart
                 </div>
                 <div style="display: grid; gap: 4px;">
                   <div style="display: flex; justify-content: space-between;">
@@ -606,7 +620,7 @@ const Chart3DRenderer = ({
                   </div>
                 </div>
                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}; font-size: 10px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'};">
-                  💡 Click and drag to rotate • Scroll to zoom
+                  Click and drag to rotate • Scroll to zoom
                 </div>
               </div>
             </div><extra></extra>`,
@@ -796,7 +810,7 @@ const Chart3DRenderer = ({
           return `
             <div style="color: ${isDarkMode ? '#f9fafb' : '#374151'};">
               <div style="font-weight: 600; margin-bottom: 8px; color: ${currentPalette.primary};">
-                📊 3D Bar Chart
+                3D Bar Chart
               </div>
               <div style="display: grid; gap: 4px;">
                 <div style="display: flex; justify-content: space-between;">
@@ -848,7 +862,7 @@ const Chart3DRenderer = ({
                     onmouseover="this.style.opacity='0.8'"
                     onmouseout="this.style.opacity='1'"
                   >
-                    🔄 Reset
+                    Reset
                   </button>
                   ${enableSave ? `
                     <button 
@@ -867,7 +881,7 @@ const Chart3DRenderer = ({
                       onmouseover="this.style.opacity='0.8'"
                       onmouseout="this.style.opacity='1'"
                     >
-                      💾 Save
+                      Save
                     </button>
                   ` : ''}
                   <button 
@@ -1406,18 +1420,30 @@ const Chart3DRenderer = ({
                 </span>
                 {finalData?.length !== data?.length && (
                   <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
-                    ⚡ <strong>{finalData?.length?.toLocaleString() || 0}</strong> rendered 
+                    <Zap className="w-3 h-3" /> <strong>{finalData?.length?.toLocaleString() || 0}</strong> rendered 
                     ({((finalData?.length / data?.length) * 100).toFixed(1)}%)
                   </span>
                 )}
                 <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                  🚀 {performanceOpts.renderMode.toUpperCase()} mode
+                  <Rocket className="w-3 h-3" /> {performanceOpts.renderMode.toUpperCase()} mode
                 </span>
               </div>
               <div className="text-gray-500 dark:text-gray-400">
-                {performanceOpts.enableDataAggregation && '🔄 Aggregated'} 
-                {performanceOpts.samplingFactor < 1 && ' 📉 Sampled'}
-                {performanceOpts.useWebGL && ' 💨 WebGL'}
+                {performanceOpts.enableDataAggregation && (
+                  <span className="inline-flex items-center gap-1">
+                    <RotateCw className="w-3 h-3" /> Aggregated
+                  </span>
+                )} 
+                {performanceOpts.samplingFactor < 1 && (
+                  <span className="inline-flex items-center gap-1">
+                    <Target className="w-3 h-3" /> Sampled
+                  </span>
+                )}
+                {performanceOpts.useWebGL && (
+                  <span className="inline-flex items-center gap-1">
+                    <Zap className="w-3 h-3" /> WebGL
+                  </span>
+                )}
               </div>
             </div>
           </div>

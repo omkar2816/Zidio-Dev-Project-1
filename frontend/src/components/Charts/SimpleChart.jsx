@@ -5,7 +5,7 @@ import Plot from 'react-plotly.js';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import toast from 'react-hot-toast';
-import { BarChart3, LineChart, PieChart, ScatterChart, Activity, TrendingUp, Settings, Download, FileImage, FileText, Edit3, Copy, Trash2, Palette, Move, Check, ZoomIn, ZoomOut, RotateCcw, Box, Eye } from 'lucide-react';
+import { BarChart3, LineChart, PieChart, ScatterChart, Activity, TrendingUp, Settings, Download, FileImage, FileText, Edit3, Copy, Trash2, Palette, Move, Check, ZoomIn, ZoomOut, RotateCcw, Box, Eye, Star, Rocket } from 'lucide-react';
 import Chart3DRenderer from './Chart3DRenderer';
 
 const AdvancedChart = ({ 
@@ -1190,7 +1190,12 @@ const AdvancedChart = ({
                 onMouseLeave={() => setShowTooltip(null)}
               >
                 {extremePerformanceMode 
-                  ? `🚀 ${String(performanceLevel || 'normal').toUpperCase()} MODE` 
+                  ? (
+                    <span className="flex items-center gap-1">
+                      <Rocket className="w-3 h-3" />
+                      {String(performanceLevel || 'normal').toUpperCase()} MODE
+                    </span>
+                  ) 
                   : 'Performance Mode'
                 }
               </span>
@@ -1199,7 +1204,9 @@ const AdvancedChart = ({
                   <div className="text-center">
                     {extremePerformanceMode ? (
                       <>
-                        <div className="font-semibold mb-1">🚀 Extreme Performance Active</div>
+                        <div className="font-semibold mb-1 flex items-center gap-1">
+                          <Rocket className="w-3 h-3" /> Extreme Performance Active
+                        </div>
                         <div>Rendering {data.length.toLocaleString()} points with:</div>
                         <div className="mt-1 text-left space-y-1">
                           {renderingStrategy === 'progressive' && <div>• Progressive rendering</div>}

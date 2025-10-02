@@ -30,7 +30,10 @@ import {
   List,
   ArrowUpDown,
   ChevronDown,
-  Box
+  Box,
+  RotateCw,
+  Pause,
+  Play
 } from 'lucide-react';
 
 const ChartHistoryRedesigned = () => {
@@ -138,8 +141,8 @@ const ChartHistoryRedesigned = () => {
       }, 500);
       
       // Show real-time notification
-      toast.success('📊 New chart added to history!', {
-        icon: '✨',
+      toast.success('New chart added to history!', {
+        icon: <BarChart3 className="w-4 h-4" />,
         duration: 3000,
         style: {
           background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
@@ -262,7 +265,7 @@ const ChartHistoryRedesigned = () => {
     try {
       await fetchHistory(true);
       toast.success('Chart history refreshed', {
-        icon: '🔄',
+        icon: <RotateCw className="w-4 h-4" />,
         style: { background: '#3b82f6', color: 'white' }
       });
     } catch (error) {
@@ -278,7 +281,7 @@ const ChartHistoryRedesigned = () => {
     setIsRealTimeEnabled(!isRealTimeEnabled);
     toast.success(
       isRealTimeEnabled ? 'Real-time updates disabled' : 'Real-time updates enabled',
-      { icon: isRealTimeEnabled ? '⏸️' : '▶️' }
+      { icon: isRealTimeEnabled ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" /> }
     );
   };
 
@@ -311,7 +314,7 @@ const ChartHistoryRedesigned = () => {
       });
       
       toast.success(`Opening ${chart.chartTitle || 'chart'}`, { 
-        icon: '👁️',
+        icon: <Eye className="w-4 h-4" />,
         duration: 2000 
       });
       
@@ -333,7 +336,7 @@ const ChartHistoryRedesigned = () => {
 
     try {
       await dispatch(deleteChartFromHistory(chartId)).unwrap();
-      toast.success('Chart deleted from history', { icon: '🗑️' });
+      toast.success('Chart deleted from history', { icon: <Trash2 className="w-4 h-4" /> });
       fetchHistory(true);
     } catch (error) {
       toast.error('Failed to delete chart');
