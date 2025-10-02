@@ -1,5 +1,14 @@
 # 📊 Excel Analytics Platform
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-18.0%2B-green.svg)](https://nodejs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-6.0%2B-green.svg)](https://mongodb.com/)
+[![Express.js](https://img.shields.io/badge/Express.js-4.18.2-lightgrey.svg)](https://expressjs.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-blue.svg)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-5.0.0-646CFF.svg)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.3.6-38B2AC.svg)](https://tailwindcss.com/)
+
 A comprehensive full-stack web application for uploading, analyzing, and visualizing Excel data with advanced chart generation capabilities including both 2D and 3D visualizations.
 
 ## 🌟 Features
@@ -497,5 +506,9 @@ For support and questions:
 - **Tailwind CSS** - Styling framework
 
 ---
+
+**Made by the Omkar Korgaonkar**
+
+> 🌟 **Star this repository if you found it helpful!**
 
 **Happy Analyzing! 📊✨**

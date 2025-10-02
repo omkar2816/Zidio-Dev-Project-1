@@ -1,4 +1,10 @@
+# ==========================================
+# Excel Analytics Platform - .gitignore
+# ==========================================
+
+# ==========================================
 # Dependencies
+# ==========================================
 node_modules/
 npm-debug.log*
 yarn-debug.log*
@@ -6,78 +12,290 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Environment variables and sensitive configuration
+# ==========================================
+# Environment Variables & Configuration
+# ==========================================
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.staging
 
-# Build outputs
+# Production configuration files
+config/production.js
+config/production.json
+config/secrets.json
+
+# ==========================================
+# Build Outputs & Distribution
+# ==========================================
 dist/
 dist-ssr/
 build/
 *.tsbuildinfo
+out/
+public/build/
 
-# Runtime and cache
+# ==========================================
+# Development & Runtime Files
+# ==========================================
 *.local
 .cache/
 .temp/
 .tmp/
+.vite/
+.next/
+.nuxt/
+.output/
 
-# IDE and editor files
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# ==========================================
+# IDE & Editor Files
+# ==========================================
+# Visual Studio Code
 .vscode/
+.vscode-test/
+
+# JetBrains IDEs
 .idea/
+*.iml
+*.ipr
+*.iws
+
+# Vim
 *.swp
 *.swo
 *~
 
-# OS generated files
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# ==========================================
+# Operating System Files
+# ==========================================
+# macOS
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
-Thumbs.db
-desktop.ini
+.AppleDouble
+.LSOverride
+Icon
 
-# Logs
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ==========================================
+# Logs & Debug Files
+# ==========================================
 logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Uploads and user content
-uploads/
-files/
-temp/
-
-# Package manager lock files (optional - you can uncomment if needed)
-# package-lock.json
-# yarn.lock
-
-# Production config files
-config/production.js
-config/production.json
-
-# Coverage and testing
-coverage/
-.nyc_output/
-.coverage/
-
-# Miscellaneous
-*.pid
-*.seed
-*.pid.lock
-
-# Runtime data
+# Runtime logs
 pids/
 lib-cov/
 
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+.nyc_output/
+.coverage/
+
+# ==========================================
+# Database Files
+# ==========================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# MongoDB dump files
+dump/
+*.bson
+
+# ==========================================
+# File Uploads & User Content
+# ==========================================
+uploads/
+files/
+temp/
+user-uploads/
+static/uploads/
+public/uploads/
+
+# ==========================================
+# Package Manager Files
+# ==========================================
+# npm
+.npm
+.npmrc
+package-lock.json
+
+# Yarn
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.yarn-integrity
+.pnp.*
+yarn.lock
+
+# pnpm
+.pnpm-store/
+pnpm-lock.yaml
+
+# ==========================================
+# Testing & Coverage
+# ==========================================
+# Jest
+coverage/
+.nyc_output/
+junit.xml
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# ==========================================
+# Build Tools & Bundlers
+# ==========================================
+# Webpack
+.webpack/
+
+# Vite
+.vite/
+vite.config.js.timestamp-*
+
+# Rollup
+.rollup.cache/
+
+# Parcel
+.parcel-cache/
+
+# ==========================================
+# TypeScript
+# ==========================================
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# ==========================================
+# ESLint & Prettier
+# ==========================================
+.eslintcache
+.prettierignore
+
+# ==========================================
+# Docker
+# ==========================================
+.dockerignore
+docker-compose.override.yml
+.docker/
+
+# ==========================================
+# Cloud & Deployment
+# ==========================================
+# Vercel
+.vercel/
+
+# Netlify
+.netlify/
+
+# AWS
+.aws/
+
+# Heroku
+.heroku/
+
+# ==========================================
+# Security & Sensitive Files
+# ==========================================
+# SSL Certificates
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# JWT Secrets
+jwt-secret.txt
+private-key.pem
+public-key.pem
+
+# Database credentials
+db-credentials.json
+mongodb-cert.pem
+
+# API Keys
+api-keys.json
+service-account.json
+
+# ==========================================
+# Project Specific Files
+# ==========================================
+# Admin scripts (sensitive)
+createSuperAdmin.js
+ensureSingleSuperAdmin.js
+checkSuperAdmin.js
+cleanupUsers.js
+migrate-files-to-mongodb.js
+
+# Backup files
+*.backup
+*.bak
+backup/
+
+# Analytics data
+analytics-data/
+chart-exports/
+
+# ==========================================
+# Temporary & Cache Files
+# ==========================================
 # Optional npm cache directory
 .npm
 
@@ -87,25 +305,67 @@ lib-cov/
 # Output of 'npm pack'
 *.tgz
 
-# Yarn Integrity file
-.yarn-integrity
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
 
-# dotenv environment variables file
-.env.test
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# ==========================================
+# Monitoring & Analytics
+# ==========================================
+# Sentry
+.sentryclirc
+
+# New Relic
+newrelic_agent.log
+
+# ==========================================
+# Documentation Build
+# ==========================================
+# Docusaurus
+.docusaurus/
+
+# VuePress
+.vuepress/dist/
+
+# GitBook
+_book/
+
+# ==========================================
+# Misc
+# ==========================================
+.serverless/
+.fusebox/
+.dynamodb/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 
-# yarn v2
-.yarn/cache
-.yarn/unplugged
-.yarn/build-state.yml
-.yarn/install-state.gz
-.pnp.*
+# Temporary folders
+tmp/
+temp/
 
-# Sensitive scripts and files
-createSuperAdmin.js
-ensureSingleSuperAdmin.js
-checkSuperAdmin.js
-cleanupUsers.js
-migrate-files-to-mongodb.js
+# Editor directories and files
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ==========================================
+# End of .gitignore
+# ==========================================
