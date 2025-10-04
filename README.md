@@ -11,6 +11,10 @@
 
 A comprehensive full-stack web application for uploading, analyzing, and visualizing Excel data with advanced chart generation capabilities including both 2D and 3D visualizations.
 
+## Project Preview Video
+
+[![Thumbnail](https://github.com/user-attachments/assets/de065d9f-bcfd-4e6d-83f3-2867c2f14fc6)](https://github.com/user-attachments/assets/0df43549-1b8e-4618-8f91-13def8fe206e)
+
 ## 🌟 Features
 
 ### Core Functionality
